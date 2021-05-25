@@ -6,7 +6,7 @@ description   = "Game Engine"
 license       = "GPLv2.0"
 srcDir        = "src"
 installExt    = @["nim"]
-bin           = @["engine"]
+bin           = @["shade"]
 
 
 # Dependencies
