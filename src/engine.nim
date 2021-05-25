@@ -7,11 +7,11 @@ import
 proc render(image: pixie.Image)
 
 let
-  w: int32 = 256
-  h: int32 = 256
+  imageWidth: int32 = 256
+  imageHeight: int32 = 256
 
 var
-  screen = newImage(w, h)
+  screen = newImage(imageWidth, imageHeight)
   ctx = newContext(screen)
   frameCount = 0
   window: Window
@@ -19,10 +19,17 @@ var
 proc display() =
   ## Called every frame by main while loop
   render(ctx.image)
- 
+
   # update texture with new pixels from surface
   var dataPtr = ctx.image.data[0].addr
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GLsizei w, GLsizei h, GL_RGBA, GL_UNSIGNED_BYTE, dataPtr)
+  glTexSubImage2D(
+    GL_TEXTURE_2D, 0, 0, 0,
+    GLsizei imageWidth,
+    GLsizei imageHeight,
+    GL_RGBA,
+    GL_UNSIGNED_BYTE,
+    dataPtr
+  )
 
   # draw a quad over the whole screen
   glClear(GL_COLOR_BUFFER_BIT)
@@ -40,15 +47,22 @@ if init() == 0:
   quit("Failed to Initialize GLFW.")
 
 windowHint(RESIZABLE, false.cint)
-window = createWindow(w.cint, h.cint, "GLFW/Pixie", nil, nil)
+window = createWindow(imageWidth.cint, imageHeight.cint, "GLFW/Pixie", nil, nil)
 
 makeContextCurrent(window)
 loadExtensions()
 
 # allocate a texture and bind it
 var dataPtr = ctx.image.data[0].addr
-glTexImage2D(GL_TEXTURE_2D, 0, 3, GLsizei w, GLsizei h, 0, GL_RGBA,
-    GL_UNSIGNED_BYTE, dataPtr)
+glTexImage2D(
+  GL_TEXTURE_2D, 0, 3,
+  GLsizei imageWidth,
+  GLsizei imageHeight,
+  0,
+  GL_RGBA,
+  GL_UNSIGNED_BYTE,
+  dataPtr
+)
 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
