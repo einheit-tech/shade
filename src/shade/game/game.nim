@@ -1,9 +1,11 @@
 import
   std/monotimes,
   os,
-  math
+  math,
+  pixie
 
-import scene
+import
+  scene
 
 const
   # TODO: Get hz of monitor or allow this to be configurable.
@@ -15,17 +17,21 @@ const
 type Game* = object
   scene: Scene
   running: bool
+  ctx: Context
 
 proc update*(this: Game, deltaTime: float)
-proc render*(this: Game)
+proc render*(this: Game, ctx: Context)
 
-proc newGame*(scene: Scene): Game =
+proc newGame*(gameWidth, gameHeight: int, scene: Scene = newScene()): Game =
+  let screen = newImage(gameWidth, gameHeight)
   Game(
-    scene: scene,
-    running: false
+    running: false,
+    ctx: newContext(screen),
+    scene: newScene()
   )
 
 template isRunning*(this: Game): bool = this.running
+template ctx*(this: Game): Context = this.ctx
 template `scene=`*(this: Game, scene: Scene) = this.scene = scene
 
 proc loop(this: Game) =
@@ -37,7 +43,7 @@ proc loop(this: Game) =
     # Determine elapsed time in seconds
     let deltaTime: float = elapsedNanos.float64 / oneBillion.float64
     this.update(deltaTime)
-    this.render()
+    this.render(this.ctx)
 
     # Calculate sleep time
     elapsedNanos = getMonoTime().ticks - startTimeNanos
@@ -60,7 +66,7 @@ proc update*(this: Game, deltaTime: float) =
   if this.scene != nil:
     this.scene.update(deltaTime)
 
-proc render*(this: Game) =
+proc render*(this: Game, ctx: Context) =
   if this.scene != nil:
-    this.scene.render()
+    this.scene.render(ctx)
 

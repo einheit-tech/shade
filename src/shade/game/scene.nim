@@ -1,3 +1,4 @@
+import pixie
 import algorithm
 
 import layer, entity
@@ -36,8 +37,8 @@ method update*(this: Scene, deltaTime: float) {.base.} =
   this.forEachLayer(layer):
     layer.update(deltaTime)
 
-method render*(this: Scene) {.base.} =
+method render*(this: Scene, ctx: Context) {.base.} =
   this.sortLayers()
   this.forEachLayer(layer):
-    layer.render()
+    layer.render(ctx)
 

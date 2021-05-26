@@ -1,3 +1,4 @@
+import pixie
 import entity
 
 type
@@ -76,8 +77,8 @@ method update*(this: Layer, deltaTime: float) {.base.} =
     if e.flags.includes(loUpdate):
       e.update(deltaTime)
 
-method render*(this: Layer) {.base.} =
+method render*(this: Layer, ctx: Context) {.base.} =
   for e in this:
     if e.flags.includes(loRender):
-      e.render()
+      e.render(ctx)
 

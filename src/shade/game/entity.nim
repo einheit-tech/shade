@@ -1,4 +1,4 @@
-import nico
+import pixie
 import hashes
 import
   ../math/[vector2, rectangle],
@@ -70,5 +70,5 @@ method update*(this: Entity, deltaTime: float) {.base.} =
   this.lastMoveVector = this.velocity * deltaTime
   this.center += this.lastMoveVector
 
-method render*(this: Entity) {.base.} = discard
+method render*(this: Entity, ctx: Context) {.base.} = discard
 
