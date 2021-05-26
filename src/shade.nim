@@ -1,4 +1,5 @@
 import shade / [
+  game/game,
   game/scene,
   game/layer,
   game/physicslayer,
@@ -18,6 +19,7 @@ import shade / [
 ]
 
 export
+  game,
   scene,
   layer,
   physicslayer,
