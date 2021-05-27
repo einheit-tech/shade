@@ -69,6 +69,7 @@ proc loop(this: Game) =
     elapsedNanos: int64 = 0
 
   while this.window.windowShouldClose != staticglfw.TRUE:
+    pollEvents()
     # Determine elapsed time in seconds
     let deltaTime: float = elapsedNanos.float64 / oneBillion.float64
     this.update(deltaTime)
@@ -83,6 +84,9 @@ proc loop(this: Game) =
     let time = getMonoTime().ticks
     elapsedNanos = time - startTimeNanos
     startTimeNanos = time
+
+  this.window.destroyWindow()
+  terminate()
 
 proc start*(this: Game) =
   # TODO: Make this async so it's non-blocking
