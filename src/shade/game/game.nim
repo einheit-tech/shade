@@ -32,6 +32,7 @@ proc newGame*(gameWidth, gameHeight: int, scene: Scene = newScene()): Game =
 
 template isRunning*(this: Game): bool = this.running
 template ctx*(this: Game): Context = this.ctx
+template scene*(this: Game): Scene = this.scene
 template `scene=`*(this: Game, scene: Scene) = this.scene = scene
 
 proc loop(this: Game) =
@@ -56,6 +57,7 @@ proc loop(this: Game) =
     startTimeNanos = time
 
 proc start*(this: var Game) =
+  # TODO: Make this async so it's non-blocking
   this.running = true
   this.loop()
 

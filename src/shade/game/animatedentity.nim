@@ -2,6 +2,7 @@
 ## AnimatedEntity's `LayerObjectFlags` is set to `loUpdateRender`.
 import
   nico,
+  pixie,
   tables
 
 import
@@ -78,7 +79,7 @@ method update*(this: AnimatedEntity, deltaTime: float) =
   procCall Entity(this).update(deltaTime)
   this.updateCurrentAnimation(deltaTime)
 
-method render*(this: AnimatedEntity) =
-  procCall Entity(this).render()
+method render*(this: AnimatedEntity, ctx: Context) =
+  procCall Entity(this).render(ctx)
   this.renderCurrentAnimation()
 
