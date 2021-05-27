@@ -5,7 +5,7 @@ import
   ../math/collision/collisionhull,
   material
 
-export vector2, rectangle, collisionhull, material
+export pixie, vector2, rectangle, collisionhull, material
 
 ## Flags indicating how the object should be treated by a layer.
 type LayerObjectFlags* = enum

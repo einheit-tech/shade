@@ -2,7 +2,9 @@ import
   std/monotimes,
   os,
   math,
-  pixie
+  pixie,
+  opengl,
+  staticglfw
 
 import
   scene
@@ -16,21 +18,47 @@ const
 
 type Game* = object
   scene: Scene
-  running: bool
   ctx: Context
+  window: Window
 
 proc update*(this: Game, deltaTime: float)
 proc render*(this: Game, ctx: Context)
 
-proc newGame*(gameWidth, gameHeight: int, scene: Scene = newScene()): Game =
+proc newGame*(title: string, gameWidth, gameHeight: int, scene: Scene = newScene()): Game =
+  if init() == staticglfw.FALSE:
+    quit("Failed to initialize GLFW.")
+
   let screen = newImage(gameWidth, gameHeight)
-  Game(
-    running: false,
+  result = Game(
     ctx: newContext(screen),
     scene: newScene()
   )
 
-template isRunning*(this: Game): bool = this.running
+  # Create a window
+  windowHint(RESIZABLE, false.cint)
+  result.window = createWindow(gameWidth.cint, gameHeight.cint, title, nil, nil)
+
+  # Create the rendering context
+  makeContextCurrent(result.window)
+  loadExtensions()
+
+  # Allocate a texture and bind it
+  var dataPtr = result.ctx.image.data[0].addr
+  glTexImage2D(
+    GL_TEXTURE_2D, 0, 3,
+    GLsizei gameWidth,
+    GLsizei gameHeight,
+    0,
+    GL_RGBA,
+    GL_UNSIGNED_BYTE,
+    dataPtr
+  )
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+  glEnable(GL_TEXTURE_2D)
+
 template ctx*(this: Game): Context = this.ctx
 template scene*(this: Game): Scene = this.scene
 template `scene=`*(this: Game, scene: Scene) = this.scene = scene
@@ -40,7 +68,7 @@ proc loop(this: Game) =
     startTimeNanos = getMonoTime().ticks
     elapsedNanos: int64 = 0
 
-  while this.isRunning:
+  while this.window.windowShouldClose != staticglfw.TRUE:
     # Determine elapsed time in seconds
     let deltaTime: float = elapsedNanos.float64 / oneBillion.float64
     this.update(deltaTime)
@@ -56,19 +84,42 @@ proc loop(this: Game) =
     elapsedNanos = time - startTimeNanos
     startTimeNanos = time
 
-proc start*(this: var Game) =
+proc start*(this: Game) =
   # TODO: Make this async so it's non-blocking
-  this.running = true
   this.loop()
 
-proc stop*(this: var Game) =
-  this.running = false
+proc stop*(this: Game) =
+  this.window.setWindowShouldClose(staticglfw.TRUE)
 
 proc update*(this: Game, deltaTime: float) =
   if this.scene != nil:
     this.scene.update(deltaTime)
 
-proc render*(this: Game, ctx: Context) =
-  if this.scene != nil:
-    this.scene.render(ctx)
+proc render(this: Game, ctx: Context) =
+  if this.scene == nil:
+    return
+
+  this.scene.render(ctx)
+
+  # Update texture with new pixels from surface
+  var dataPtr = ctx.image.data[0].addr
+  glTexSubImage2D(
+    GL_TEXTURE_2D, 0, 0, 0,
+    GLsizei ctx.image.width,
+    GLsizei ctx.image.height,
+    GL_RGBA,
+    GL_UNSIGNED_BYTE,
+    dataPtr
+  )
+
+  # Draw a quad over the whole screen
+  glClear(GL_COLOR_BUFFER_BIT)
+  glBegin(GL_QUADS)
+  glTexCoord2d(0.0, 0.0); glVertex2d(-1.0, +1.0)
+  glTexCoord2d(1.0, 0.0); glVertex2d(+1.0, +1.0)
+  glTexCoord2d(1.0, 1.0); glVertex2d(+1.0, -1.0)
+  glTexCoord2d(0.0, 1.0); glVertex2d(-1.0, -1.0)
+  glEnd()
+
+  swapBuffers(this.window)
 
