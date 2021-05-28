@@ -9,7 +9,7 @@ import shade / [
   game/animatedentity,
   game/material,
   input/controller,
-  math/vector2,
+  math/mathutils,
   math/polygon,
   math/rectangle,
   math/circle,
@@ -29,11 +29,11 @@ export
   animatedentity,
   material,
   controller,
-  vector2,
   polygon,
   rectangle,
   circle,
   collisionhull,
   sat,
-  spatialgrid
+  spatialgrid,
+  mathutils
 

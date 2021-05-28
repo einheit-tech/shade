@@ -1,11 +1,13 @@
-import pixie
-import hashes
 import
-  ../math/[vector2, rectangle],
+  pixie,
+  hashes
+
+import
+  ../math/rectangle,
   ../math/collision/collisionhull,
   material
 
-export pixie, vector2, rectangle, collisionhull, material
+export pixie, rectangle, collisionhull, material
 
 ## Flags indicating how the object should be treated by a layer.
 type LayerObjectFlags* = enum
@@ -23,11 +25,11 @@ template includes*(this, flags: LayerObjectFlags): bool =
 
 type Entity* = ref object of RootObj
   flags*: LayerObjectFlags
-  center*: Vector2
+  center*: Vec2
   # Pixels per second.
-  velocity*: Vector2
+  velocity*: Vec2
   rotation*: float
-  lastMoveVector*: Vector2
+  lastMoveVector*: Vec2
   collisionHull*: CollisionHull
   material*: Material
 
@@ -39,7 +41,7 @@ proc newEntity*(
   result = Entity(
     flags: flags,
     material: material,
-    center: initVector2(x, y)
+    center: vec2(x, y)
   )
 
 template getMass*(this: Entity): float =
@@ -51,7 +53,7 @@ template getMass*(this: Entity): float =
 template x*(this: Entity): float = this.center.x
 template y*(this: Entity): float = this.center.y
 
-template translate*(this: Entity, delta: Vector2) =
+template translate*(this: Entity, delta: Vec2) =
   this.center += delta
 
 template rotate*(this: Entity, deltaRotation: float) =

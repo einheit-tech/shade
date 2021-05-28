@@ -1,8 +1,9 @@
 import options
+
 import
+  ../mathutils,
   collisionhull,
-  collisionresult,
-  ../vector2
+  collisionresult
 
 export
   collisionresult,
@@ -10,15 +11,15 @@ export
 
 type MinMaxProjectionInterval* = object
   min: float
-  minPoint: Vector2
+  minPoint: Vec2
   max: float
-  maxPoint: Vector2
+  maxPoint: Vec2
 
 proc newMinMaxProjectionInterval*(
   min: float,
-  minPoint: Vector2,
+  minPoint: Vec2,
   max: float,
-  maxPoint: Vector2
+  maxPoint: Vec2
 ): MinMaxProjectionInterval =
   ## @param min
   ## @param minPoint
@@ -44,7 +45,7 @@ func getMiddle*(this, interval: MinMaxProjectionInterval): MinMaxProjectionInter
       maxInterval.maxPoint
     )
 
-func projectionFrom*(vertices: seq[Vector2], axis: Vector2): MinMaxProjectionInterval =
+func projectionFrom*(vertices: seq[Vec2], axis: Vec2): MinMaxProjectionInterval =
   ## Calculates a min-max projection interval from the list of vertices and an axis.
   ## @param vertices:
   ##   The vertices to project.
@@ -62,11 +63,11 @@ func projectionFrom*(vertices: seq[Vector2], axis: Vector2): MinMaxProjectionInt
   var
     min = Inf
     max = NegInf
-    minPoint: Option[Vector2]
-    maxPoint: Option[Vector2]
+    minPoint: Option[Vec2]
+    maxPoint: Option[Vec2]
 
   for vert in vertices:
-    let value = vert.dotProduct(axis)
+    let value = vert.dot(axis)
     if value < min:
       min = value
       minPoint = vert.option
@@ -85,18 +86,18 @@ func projectionFrom*(vertices: seq[Vector2], axis: Vector2): MinMaxProjectionInt
 
   return newMinMaxProjectionInterval(min, minPoint.get, max, maxPoint.get)
 
-proc translateVertices(vertices: seq[Vector2], delta: Vector2): seq[Vector2] =
+proc translateVertices(vertices: seq[Vec2], delta: Vec2): seq[Vec2] =
   for i in 0..<vertices.len:
     result.add(vertices[i] + delta)
 
 func getContactPoint(
-  ownerLoc: Vector2,
+  ownerLoc: Vec2,
   ownerHull: CollisionHull,
-  ownerContactNormal: Vector2,
-  otherLoc: Vector2,
+  ownerContactNormal: Vec2,
+  otherLoc: Vec2,
   otherHull: CollisionHull,
-  otherContactNormal: Vector2
-): Vector2 =
+  otherContactNormal: Vec2
+): Vec2 =
   ## Gets the contact point of the collision between the two touching hulls.
   ## The hulls must be translated to the point in which they are touching
   ## before being passed into this method.
@@ -157,13 +158,13 @@ func getContactPoint(
   return mergeInterval.minPoint + mergeInterval.maxPoint * 0.5
 
 func getContactPoint(
-  locA: Vector2,
+  locA: Vec2,
   shapeA: CollisionHull,
-  locB: Vector2,
+  locB: Vec2,
   shapeB: CollisionHull,
-  contactNormal: Vector2,
+  contactNormal: Vec2,
   isShapeA: bool
-): Vector2 =
+): Vec2 =
   ## Gets the contact point of the collision between the two touching hulls.
   ## The hulls must be translated to the point in which they are touching,
   ## before being passed into this function.
@@ -188,8 +189,8 @@ func getContactPoint(
 
   # Resolve contact normals
   var
-    contactNormalA: Vector2
-    contactNormalB: Vector2
+    contactNormalA: Vec2
+    contactNormalB: Vec2
   if isShapeA:
     contactNormalA = contactNormal
     contactNormalB = contactNormal.negate()
@@ -203,7 +204,7 @@ func getContactPoint(
     # Flip the parameters to make the normal relative to shapeA.
     return getContactPoint(locB, shapeB, contactNormalB, locA, shapeA, contactNormalA)
 
-func normalizeNormal(isA: bool, axis, projA, projB: Vector2): Vector2 =
+func normalizeNormal(isA: bool, axis, projA, projB: Vec2): Vec2 =
   ## Generates a normal that is always pointing away from shape A.
   ##
   ## @param isA Whether the axis was provided from shape A or shape B.
@@ -216,12 +217,12 @@ func normalizeNormal(isA: bool, axis, projA, projB: Vector2): Vector2 =
   return if isA == (centerProjA > centerProjB): axis.negate() else: axis
 
 proc collides*(
-  locA: Vector2,
+  locA: Vec2,
   hullA: CollisionHull,
-  moveVectorA: Vector2,
-  locB: Vector2,
+  moveVectorA: Vec2,
+  locB: Vec2,
   hullB: CollisionHull,
-  moveVectorB: Vector2
+  moveVectorB: Vec2
 ): CollisionResult =
   ## Performs the SAT algorithm on the given collision hulls
   ## to determine whether they are colliding or will collide.
@@ -267,10 +268,10 @@ proc collides*(
   var
     isShapeA_MTV = true
     intrusion_MTV = Inf
-    mtvNormal: Option[Vector2]
+    mtvNormal: Option[Vec2]
     isShapeA_Contact = true
     intrusion_Contact = 0f
-    contactNormal: Option[Vector2]
+    contactNormal: Option[Vec2]
     minExitTimeRatio = Inf
     maxEnterTimeRatio = NegInf
 
@@ -280,10 +281,10 @@ proc collides*(
     let axis = if isA: projectionAxesA[i] else: projectionAxesB[i - numOfShapeAxesA]
     # Find the projection of each hull on the current axis.
     let projA = hullA.project(relativeLocation, axis)
-    let projB = hullB.project(VectorZero, axis)
+    let projB = hullB.project(vec2(), axis)
 
     # Project the velocity on the current axis.
-    let moveVectorProjection = relativeMoveVector.dotProduct(axis)
+    let moveVectorProjection = relativeMoveVector.dot(axis)
     var totalProjectionMinA = projA.x
     var totalProjectionMaxA = projA.y
 
@@ -346,7 +347,7 @@ proc collides*(
   if maxEnterTimeRatio <= minExitTimeRatio:
     if contactNormal.isSome:
       # Dynamic collision
-      let moveVectorDot = contactNormal.get.dotProduct(relativeMoveVector)
+      let moveVectorDot = contactNormal.get.dot(relativeMoveVector)
       if moveVectorDot != 0:
         # Calculate the location of hullA at time of collision
         let collisionLocA = locA + (relativeMoveVector * maxEnterTimeRatio)

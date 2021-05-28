@@ -2,7 +2,6 @@
 
 import
   entity,
-  ../math/vector2,
   ../input/controller as contrllr
 
 type Camera* = ref object of Entity
@@ -18,7 +17,7 @@ proc newCamera*(trackedEntity: Entity, controller: Controller): Camera =
     controller: controller
   )
 
-template calcRenderOffset(trackedEntity: Entity, mouseLoc: Vector2): Vector2 =
+template calcRenderOffset(trackedEntity: Entity, mouseLoc: Vec2): Vec2 =
   let dist = mouseLoc - trackedEntity.center
   trackedEntity.center + dist * 0.33
 

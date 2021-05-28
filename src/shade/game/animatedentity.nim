@@ -31,7 +31,7 @@ proc newAnimatedEntity*(
   result = AnimatedEntity(
     flags: loUpdateRender,
     spritesheetIndex: spritesheetIndex,
-    center: initVector2(x, y),
+    center: vec2(x, y),
     spriteWidth: spriteWidth,
     spriteHeight: spriteHeight
   )
@@ -64,7 +64,7 @@ method renderCurrentAnimation(this: AnimatedEntity) {.base.} =
   let frame = this.getCurrentAnimationFrame()
   if this.rotation == 0.0:
     # Draw the sprite based on the top left coord.
-    let topLeft = this.center - initVector2(this.spriteWidth / 2, this.spriteHeight / 2)
+    let topLeft = this.center - vec2(this.spriteWidth / 2, this.spriteHeight / 2)
     spr(frame.index, topLeft.x, topLeft.y, hflip = frame.hflip, vflip = frame.vflip)
   else:
     # TODO: There's currently no way to flip AND rotate.

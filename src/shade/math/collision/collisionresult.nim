@@ -1,17 +1,17 @@
-import ../vector2
+import ../mathutils
 
 type CollisionResult* = ref object
   isCollisionOwnerA*: bool
   intrusion*: float
-  contactNormal*: Vector2
+  contactNormal*: Vec2
   contactRatio*: float
-  contactPoint*: Vector2
+  contactPoint*: Vec2
 
 proc newCollisionResult*(
   isCollisionOwnerA: bool,
   intrusion: float,
-  contactNormal: Vector2,
-  contactPoint: Vector2,
+  contactNormal: Vec2,
+  contactPoint: Vec2,
   contactRatio: float = NaN
 ): CollisionResult =
   ## @param isCollisionOwnerA:
@@ -48,7 +48,7 @@ proc flip*(this: CollisionResult): CollisionResult =
     this.contactRatio
   )
 
-proc getMinimumTranslationVector*(this: CollisionResult): Vector2 =
+proc getMinimumTranslationVector*(this: CollisionResult): Vec2 =
   ## Calculates a vector which can be used to separate the objects.
   ## This vector may be seen abbreviated as `mtv`.
   return this.contactNormal * -this.intrusion

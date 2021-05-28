@@ -5,15 +5,11 @@
 ## if the goal is to center it on its owner for collisions.
 
 import
-  math
-
-import
-  ../vector2,
   ../circle,
-  ../polygon
+  ../polygon,
+  ../mathutils
 
 export
-  vector2,
   circle,
   polygon
 
@@ -61,20 +57,20 @@ proc getArea*(this: CollisionHull): float =
 template width*(this: CollisionHull): float = this.getBounds().width
 template height*(this: CollisionHull): float = this.getBounds().height
 
-template center*(this: CollisionHull): Vector2 =
+template center*(this: CollisionHull): Vec2 =
   case this.kind:
   of chkPolygon:
     this.polygon.center
   of chkCirle:
     this.circle.center
 
-func getCircleToCircleProjectionAxes(circleA, circleB: Circle, aToB: Vector2): seq[Vector2] =
+func getCircleToCircleProjectionAxes(circleA, circleB: Circle, aToB: Vec2): seq[Vec2] =
   result.add(
     (circleB.center - circleA.center + aToB)
     .normalize()
   )
 
-func getPolygonProjectionAxes(poly: Polygon): seq[Vector2] =
+func getPolygonProjectionAxes(poly: Polygon): seq[Vec2] =
   ## Fills an array with the projection axes of the PolygonCollisionHull facing away from the hull.
   ## @param poly the Polygon of the PolygonCollisionHull.
   ## @returns The array of axes facing away from the hull.
@@ -87,9 +83,9 @@ func getPolygonProjectionAxes(poly: Polygon): seq[Vector2] =
       nextPoint = if j == poly.len: poly[0] else: poly[j]
       currentPoint = poly[i]
       edge = nextPoint - currentPoint
-    if edge.getMagnitude() == 0f:
+    if edge.length() == 0f:
         continue
-    let axis: Vector2 = edge.perpendicular().normalize()
+    let axis: Vec2 = edge.perpendicular().normalize()
     result.add(if clockwise: axis.negate() else: axis)
     i.inc
     j.inc
@@ -97,8 +93,8 @@ func getPolygonProjectionAxes(poly: Polygon): seq[Vector2] =
 func getCircleToPolygonProjectionAxes(
   circle: Circle,
   poly: Polygon,
-  circleToPoly: Vector2
-): seq[Vector2] =
+  circleToPoly: Vec2
+): seq[Vec2] =
   for i in 0..<poly.len:
     result.add(
       normalize((poly[i] - circle.center) - circleToPoly)
@@ -107,8 +103,8 @@ func getCircleToPolygonProjectionAxes(
 func getProjectionAxes*(
   this: CollisionHull,
   otherHull: CollisionHull,
-  toOther: Vector2
-): seq[Vector2] =
+  toOther: Vec2
+): seq[Vec2] =
   ## Generates projection axes facing away from this hull towards the given other hull.
   ## @param toOther A vector from this hull's reference frame to the other hull's reference frame.
   ## @param otherHull The collision hull being tested against.
@@ -128,32 +124,32 @@ func getProjectionAxes*(
     of chkPolygon:
       return this.polygon.getPolygonProjectionAxes()
 
-func project*(this: CollisionHull, relativeLoc, axis: Vector2): Vector2 =
+func project*(this: CollisionHull, relativeLoc, axis: Vec2): Vec2 =
   case this.kind:
   of chkPolygon:
     return this.polygon.project(relativeLoc, axis)
   of chkCirle:
     return this.circle.project(relativeLoc, axis)
 
-func polygonGetFarthest(this: Polygon, direction: Vector2): seq[Vector2] =
+func polygonGetFarthest(this: Polygon, direction: Vec2): seq[Vec2] =
   ## Gets the farthest point(s) of the Polygon in the direction of the vector.
   var max = NegInf
   for i in 0..<this.len:
     let vertex = this[i]
     # Normalize the numeric precision of the dot product.
     # NOTE: strformat will be much slower.
-    let projection = round(direction.dotProduct(vertex), MaxFloatPrecision)
+    let projection = round(direction.dot(vertex), MaxFloatPrecision)
     if projection >= max:
       if projection > max:
         max = projection
         result.setLen(0)
       result.add(vertex)
 
-func getFarthest*(this: CollisionHull, direction: Vector2): seq[Vector2] =
+func getFarthest*(this: CollisionHull, direction: Vec2): seq[Vec2] =
   ## Gets the farthest point(s) of the CollisionHull in the direction of the vector.
   case this.kind:
   of chkCirle:
-    return @[this.circle.center + direction.normalize(this.circle.radius)];
+    return @[this.circle.center + direction.normalize(this.circle.radius)]
   of chkPolygon:
     return this.polygon.polygonGetFarthest(direction)
 
@@ -164,7 +160,7 @@ proc rotate*(this: CollisionHull, deltaRotation: float) =
   of chkPolygon:
     this.polygon.rotate(deltaRotation)
 
-proc render*(this: CollisionHull, offset: Vector2) =
+proc render*(this: CollisionHull, offset: Vec2) =
   case this.kind:
   of chkPolygon:
     this.polygon.render(offset)

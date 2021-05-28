@@ -15,7 +15,7 @@ proc newCustomEntity(): CustomEntity =
   CustomEntity(
     flags: loUpdateRender,
     material: NULL,
-    center: VectorZero
+    center: Vec2()
   )
 
 method update*(this: CustomEntity, deltaTime: float) =

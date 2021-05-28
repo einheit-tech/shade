@@ -1,12 +1,10 @@
-import tables, sets, math
+import tables, sets, math, vmath
 import
-  ../vector2,
   ../rectangle,
   ../../game/entity
 
 export
   sets,
-  vector2,
   rectangle,
   entity
 
@@ -92,7 +90,7 @@ proc addStaticEntity*(this: SpatialGrid, entity: Entity) =
   let bounds = this.scaleToGrid(entity.bounds())
   this.addEntityWithBounds(entity, bounds)
 
-proc getRectangleMovementBounds(this: Rectangle, delta: Vector2): Rectangle =
+proc getRectangleMovementBounds(this: Rectangle, delta: Vec2): Rectangle =
   let
     minX = if delta.x > 0.0: this.x else: this.x + delta.x
     minY = if delta.y > 0.0: this.y else: this.y + delta.y
@@ -104,7 +102,7 @@ proc getRectangleMovementBounds(this: Rectangle, delta: Vector2): Rectangle =
     width, height
   )
 
-proc addEntity*(this: SpatialGrid, entity: Entity, deltaMovement: Vector2) =
+proc addEntity*(this: SpatialGrid, entity: Entity, deltaMovement: Vec2) =
   ## Adds an entity to the grid.
   ## If the entity's bounds are nil, this proc will do nothing.
   if not this.canEntityBeAdded(entity):

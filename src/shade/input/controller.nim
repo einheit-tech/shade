@@ -1,10 +1,8 @@
-import nico
-
-import ../math/vector2
+import nico, vmath
 
 type
   Mouse* = ref object
-    location*: Vector2
+    location*: Vec2
     isPressed*: bool
     justPressed*: bool
 
@@ -30,9 +28,9 @@ proc update*(this: Controller, deltaTime: float) =
   # Mouse Coordinates
   let mouseScreenCoords = mouse()
   let cameraLoc = getCamera()
-  this.mouse.location = initVector2(
-    mouseScreenCoords[0] + cameraLoc[0],
-    mouseScreenCoords[1] + cameraLoc[1]
+  this.mouse.location = vec2(
+    mouseScreenCoords[0].float + cameraLoc[0].float,
+    mouseScreenCoords[1].float + cameraLoc[1].float
   )
 
   # Mouse Button
