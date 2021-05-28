@@ -8,6 +8,7 @@
 
 ## Running examples
 
+`nimble example` or
 `nim r examples/basic/basic_game.nim`
 
 ## Setting up local shade repo to be used in another project

@@ -16,3 +16,7 @@ requires "opengl >= 1.1.0"
 requires "staticglfw >= 4.1.2"
 requires "pixie#122956a8930c70fe4384fb3bc743be82884612df"
 
+# Tasks
+task example, "Runs the basic example":
+  exec "nim r examples/basic/basic_game.nim"
+
