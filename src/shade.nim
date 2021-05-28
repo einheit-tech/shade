@@ -1,4 +1,4 @@
-import shade / [
+import shadepkg / [
   game/game,
   game/scene,
   game/layer,
