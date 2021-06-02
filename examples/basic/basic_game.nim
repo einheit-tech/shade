@@ -4,7 +4,6 @@ const
   width = 800
   height = 600
 
-# TODO: Show full example with a game rendering.
 var game: Game = newGame("Basic Example Game", width, height)
 let layer = newLayer()
 game.scene.addLayer layer
@@ -19,14 +18,12 @@ proc newCustomEntity(): CustomEntity =
   )
 
 method update*(this: CustomEntity, deltaTime: float) =
-  echo "CustomEntity: " & $deltaTime
+  this.translate vec2(1, 1)
 
 method render*(this: CustomEntity, ctx: Context) =
   ctx.fillStyle = rgba(255, 0, 0, 255)
-  let
-    pos = vec2(50, 50)
-    size = vec2(100, 100)
-  ctx.fillRect(rect(pos, size))
+  let size = vec2(100, 100)
+  ctx.fillRect(rect(this.center, size))
 
 layer.add(newCustomEntity())
 

@@ -127,3 +127,5 @@ proc render(this: Game, ctx: Context) =
 
   swapBuffers(this.window)
 
+  ctx.image.fill(rgba(0, 0, 0, 255))
+
