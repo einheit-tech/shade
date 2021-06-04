@@ -192,6 +192,8 @@ func cubicBezierVector*(t: float, p0, p1, p2, p3: Vec2): Vec2 =
 
 # Vectors
 
+const VEC2_ZERO* = vec2()
+
 func cross*(v1, v2: Vec2): float =
   return
     v1.x * v2.y -

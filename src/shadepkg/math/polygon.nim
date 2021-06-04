@@ -1,4 +1,4 @@
-import nico
+import pixie
 
 import
   options,
@@ -323,13 +323,12 @@ proc rotate*(this: var Polygon, deltaRotation: float) =
 
   this.center = none(Vec2)
 
-proc render*(this: Polygon, offset: Vec2 = vec2()) =
+proc render*(
+  this: Polygon,
+  ctx: Context,
+  offset: Vec2 = VEC2_ZERO
+) =
   for i, v in this:
     let nextVert = this[(i + 1) mod this.len]
-    line(
-      offset.x + v.x,
-      offset.y + v.y,
-      offset.x + nextVert.x,
-      offset.y + nextVert.y
-    )
+    ctx.strokeSegment(segment(v + offset, nextVert + offset))
 

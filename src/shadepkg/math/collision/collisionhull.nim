@@ -4,6 +4,8 @@
 ## so the hull should be centered around the origin (0, 0),
 ## if the goal is to center it on its owner for collisions.
 
+import pixie/context
+
 import
   ../circle,
   ../polygon,
@@ -160,10 +162,10 @@ proc rotate*(this: CollisionHull, deltaRotation: float) =
   of chkPolygon:
     this.polygon.rotate(deltaRotation)
 
-proc render*(this: CollisionHull, offset: Vec2) =
+proc render*(this: CollisionHull, ctx: Context, offset: Vec2 = VEC2_ZERO) =
   case this.kind:
   of chkPolygon:
-    this.polygon.render(offset)
+    this.polygon.render(ctx, offset)
   of chkCirle:
-    this.circle.render(offset)
+    this.circle.render(ctx, offset)
 

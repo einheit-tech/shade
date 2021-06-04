@@ -1,6 +1,7 @@
-import nico
+import pixie/context
+import mathutils
+
 import options
-import vmath
 
 type Circle* = ref object
   center*: Vec2
@@ -27,6 +28,6 @@ proc getArea*(this: Circle): float =
     this.area = (PI * this.radius * this.radius).option
   return this.area.get
 
-proc render*(this: Circle, offset: Vec2 = vec2()) =
-  circ(offset.x + this.center.x, offset.y + this.center.y, this.radius)
+proc render*(this: Circle, ctx: Context, offset: Vec2 = VEC2_ZERO) =
+  ctx.fillCircle(this.center + offset, this.radius)
 
