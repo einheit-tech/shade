@@ -328,7 +328,10 @@ proc render*(
   ctx: Context,
   offset: Vec2 = VEC2_ZERO
 ) =
+  var path: Path
+  path.moveTo(this[0] + offset)
   for i, v in this:
-    let nextVert = this[(i + 1) mod this.len]
-    ctx.strokeSegment(segment(v + offset, nextVert + offset))
+    path.lineTo(v + offset)
+
+  ctx.image.fillPath(path, ctx.fillStyle)
 
