@@ -20,18 +20,25 @@ type Game* = object
   scene: Scene
   ctx: Context
   window: Window
+  bgColor: ColorRGBX
 
 proc update*(this: Game, deltaTime: float)
 proc render*(this: Game, ctx: Context)
 
-proc newGame*(title: string, gameWidth, gameHeight: int, scene: Scene = newScene()): Game =
+proc newGame*(
+  title: string,
+  gameWidth, gameHeight: int,
+  scene: Scene = newScene(),
+  bgColor: ColorRGBX = rgba(0, 0, 0, 255)
+): Game =
   if init() == staticglfw.FALSE:
     quit("Failed to initialize GLFW.")
 
   let screen = newImage(gameWidth, gameHeight)
   result = Game(
     ctx: newContext(screen),
-    scene: newScene()
+    scene: scene,
+    bgColor: bgColor
   )
 
   # Create a window
@@ -127,5 +134,5 @@ proc render(this: Game, ctx: Context) =
 
   swapBuffers(this.window)
 
-  ctx.image.fill(rgba(0, 0, 0, 255))
+  ctx.image.fill(this.bgColor)
 

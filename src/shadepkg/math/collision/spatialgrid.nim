@@ -26,7 +26,7 @@ proc newSpatialCell(cellID: CellID): SpatialCell = SpatialCell(cellID: cellID)
 template add(this: var SpatialCell, entity: Entity) =
   this.entities.incl(entity)
 
-iterator forEachEntity(this: SpatialCell): Entity =
+iterator items(this: SpatialCell): Entity =
   for entity in this.entities:
     yield entity
 
@@ -133,8 +133,8 @@ proc query*(
     if this.cells.hasKey(cellID):
       result.cellIDs.add(cellID)
       let cell = this.cells[cellID]
-      # Add all entityects in each cell.
-      for entity in cell.forEachEntity:
+      # Add all entities in each cell.
+      for entity in cell:
         result.entities.incl(entity)
 
 proc clear*(this: SpatialGrid) =
