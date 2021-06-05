@@ -15,16 +15,17 @@ type LayerObjectFlags* = enum
   loUpdate = 0b1
   ## Only render
   loRender = 0b10
-  ## Render and update
-  loUpdateRender = loUpdate.int or loRender.int
+  # ## Render and update
+  # loUpdateRender = loUpdate.int or loRender.int
   ## Render, update, and use in physics
-  loPhysics = loUpdateRender.int or 0b100
+  # loPhysics = loUpdateRender.int or 0b100
+  loPhysics = 0b100
 
 template includes*(this, flags: LayerObjectFlags): bool =
   (this.int and flags.int) == flags.int
 
 type Entity* = ref object of RootObj
-  flags*: LayerObjectFlags
+  flags*: set[LayerObjectFlags]
   center*: Vec2
   # Pixels per second.
   velocity*: Vec2
@@ -34,7 +35,7 @@ type Entity* = ref object of RootObj
   material*: Material
 
 proc newEntity*(
-  flags: LayerObjectFlags,
+  flags: set[LayerObjectFlags],
   material: Material = NULL,
   x, y: float = 0.0
 ): Entity =

@@ -74,11 +74,11 @@ template remove*(this: Layer, obj: Entity) =
 
 method update*(this: Layer, deltaTime: float) {.base.} =
   for e in this:
-    if e.flags.includes(loUpdate):
+    if loUpdate in e.flags:
       e.update(deltaTime)
 
 method render*(this: Layer, ctx: Context) {.base.} =
   for e in this:
-    if e.flags.includes(loRender):
+    if loRender in e.flags:
       e.render(ctx)
 

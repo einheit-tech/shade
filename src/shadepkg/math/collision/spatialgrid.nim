@@ -78,7 +78,7 @@ template addEntityWithBounds(this: SpatialGrid, entity: Entity, bounds: Rectangl
     this.cells[cellID] = cell
 
 template canEntityBeAdded(this: SpatialGrid, entity: Entity): bool =
-  entity.bounds() != nil and entity.flags.includes(loPhysics)
+  entity.bounds() != nil and loPhysics in entity.flags
 
 proc addStaticEntity*(this: SpatialGrid, entity: Entity) =
   ## Adds an entity to the grid.

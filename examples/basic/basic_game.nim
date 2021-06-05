@@ -12,9 +12,9 @@ type CustomEntity = ref object of Entity
 
 proc newCustomEntity(): CustomEntity =
   CustomEntity(
-    flags: loUpdateRender,
+    flags: {loUpdate, loRender},
     material: NULL,
-    center: Vec2()
+    center: VEC2_ZERO
   )
 
 method update*(this: CustomEntity, deltaTime: float) =

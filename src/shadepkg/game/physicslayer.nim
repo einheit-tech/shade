@@ -89,7 +89,7 @@ method update*(this: PhysicsLayer, deltaTime: float) =
 
   # Add all entities to the spatial grid.
   for entity in this:
-    if entity.collisionHull != nil and entity.flags.includes(loPhysics):
+    if entity.collisionHull != nil and loPhysics in entity.flags:
       this.spatialGrid.addEntity(entity, entity.lastMoveVector)
 
   # Detect collisions using the data in the spatial grid.

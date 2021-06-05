@@ -11,7 +11,7 @@ type Camera* = ref object of Entity
 proc newCamera*(trackedEntity: Entity, controller: Controller): Camera =
   let loc = calcRenderOffset(trackedEntity, controller.mouse.location)
   return Camera(
-    flags: loUpdate,
+    flags: {loUpdate},
     center: loc,
     trackedEntity: trackedEntity,
     controller: controller
