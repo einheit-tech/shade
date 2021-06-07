@@ -57,7 +57,7 @@ method getCurrentAnimationFrame*(this: AnimatedEntity): AnimationFrame {.base.} 
   ## By default, it invokes `Animation.getCurrentFrame(this.currentAnimationTime)`
   return this.currentAnimation.getCurrentFrame(this.currentAnimationTime)
 
-method renderCurrentAnimation(this: AnimatedEntity) {.base.} =
+method renderCurrentAnimation(this: AnimatedEntity, ctx: Context) {.base.} =
   ## Renders the current animation frame.
   ## This is automatically invoked by render()
   setSpritesheet(this.spritesheetIndex)
@@ -79,7 +79,10 @@ method update*(this: AnimatedEntity, deltaTime: float) =
   procCall Entity(this).update(deltaTime)
   this.updateCurrentAnimation(deltaTime)
 
-method render*(this: AnimatedEntity, ctx: Context) =
-  procCall Entity(this).render(ctx)
-  this.renderCurrentAnimation()
+method render*(this: AnimatedEntity, ctx: Context, callback: proc() = nil) =
+  procCall Entity(this).render(ctx, proc =
+    this.renderCurrentAnimation(ctx)
+    if callback != nil:
+      callback()
+  )
 

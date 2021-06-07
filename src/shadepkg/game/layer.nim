@@ -1,4 +1,5 @@
 import pixie
+
 import entity
 
 type
@@ -77,7 +78,7 @@ method update*(this: Layer, deltaTime: float) {.base.} =
     if loUpdate in e.flags:
       e.update(deltaTime)
 
-method render*(this: Layer, ctx: Context) {.base.} =
+method render*(this: Layer, ctx: Context, callback: proc() = nil) {.base.} =
   for e in this:
     if loRender in e.flags:
       e.render(ctx)

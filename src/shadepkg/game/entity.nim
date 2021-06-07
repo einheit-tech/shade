@@ -73,5 +73,17 @@ method update*(this: Entity, deltaTime: float) {.base.} =
   this.lastMoveVector = this.velocity * deltaTime
   this.center += this.lastMoveVector
 
-method render*(this: Entity, ctx: Context) {.base.} = discard
+method render*(
+  this: Entity,
+  ctx: Context,
+  callback: proc() = nil
+) {.base.} =
+  ctx.translate(this.center)
+  ctx.rotate(this.rotation)
+
+  if callback != nil:
+    callback()
+
+  ctx.translate(-this.center)
+  ctx.rotate(-this.rotation)
 
