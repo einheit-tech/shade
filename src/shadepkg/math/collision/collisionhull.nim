@@ -162,10 +162,17 @@ proc rotate*(this: CollisionHull, deltaRotation: float) =
   of chkPolygon:
     this.polygon.rotate(deltaRotation)
 
-proc render*(this: CollisionHull, ctx: Context, offset: Vec2 = VEC2_ZERO) =
+proc stroke*(this: CollisionHull, ctx: Context, offset: Vec2 = VEC2_ZERO) =
   case this.kind:
   of chkPolygon:
     this.polygon.stroke(ctx, offset)
   of chkCirle:
     this.circle.stroke(ctx, offset)
+
+proc fill*(this: CollisionHull, ctx: Context, offset: Vec2 = VEC2_ZERO) =
+  case this.kind:
+  of chkPolygon:
+    this.polygon.fill(ctx, offset)
+  of chkCirle:
+    this.circle.fill(ctx, offset)
 

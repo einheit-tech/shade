@@ -1,6 +1,7 @@
 import
   pixie,
-  hashes
+  hashes,
+  macros
 
 import
   ../math/rectangle,
@@ -73,9 +74,6 @@ method update*(this: Entity, deltaTime: float) {.base.} =
   this.lastMoveVector = this.velocity * deltaTime
   this.center += this.lastMoveVector
 
-# TODO: Having a macro for this WOULD be nice.
-# Do it.
-
 method render*(
   this: Entity,
   ctx: Context,
@@ -89,4 +87,15 @@ method render*(
 
   ctx.translate(-this.center)
   ctx.rotate(-this.rotation)
+
+macro render*(this: typedesc, parent: typedesc, body: untyped): untyped =
+  result = quote do:
+    method render*(
+      this {.inject.}: `this`,
+      ctx {.inject.}: Context,
+      callback {.inject.}: proc() = nil
+    ) =
+      procCall `parent`(this).render(ctx, proc =
+        `body`
+      )
 
