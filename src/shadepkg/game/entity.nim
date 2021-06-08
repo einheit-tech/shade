@@ -73,6 +73,9 @@ method update*(this: Entity, deltaTime: float) {.base.} =
   this.lastMoveVector = this.velocity * deltaTime
   this.center += this.lastMoveVector
 
+# TODO: Having a macro for this WOULD be nice.
+# Do it.
+
 method render*(
   this: Entity,
   ctx: Context,

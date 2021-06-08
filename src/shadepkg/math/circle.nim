@@ -28,6 +28,9 @@ proc getArea*(this: Circle): float =
     this.area = (PI * this.radius * this.radius).option
   return this.area.get
 
-proc render*(this: Circle, ctx: Context, offset: Vec2 = VEC2_ZERO) =
+proc stroke*(this: Circle, ctx: Context, offset: Vec2 = VEC2_ZERO) =
+  ctx.strokeCircle(this.center + offset, this.radius)
+
+proc fill*(this: Circle, ctx: Context, offset: Vec2 = VEC2_ZERO) =
   ctx.fillCircle(this.center + offset, this.radius)
 

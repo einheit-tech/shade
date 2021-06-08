@@ -323,15 +323,17 @@ proc rotate*(this: var Polygon, deltaRotation: float) =
 
   this.center = none(Vec2)
 
-proc render*(
-  this: Polygon,
-  ctx: Context,
-  offset: Vec2 = VEC2_ZERO
-) =
+proc fill*(this: Polygon, ctx: Context, offset: Vec2 = VEC2_ZERO) =
   var path: Path
   path.moveTo(this[0] + offset)
   for i, v in this:
     path.lineTo(v + offset)
-
   ctx.image.fillPath(path, ctx.fillStyle)
+
+proc stroke*(this: Polygon, ctx: Context, offset: Vec2 = VEC2_ZERO) =
+  for i, v in this:
+    var start: Vec2 = this[i]
+    var finish: Vec2 =
+      if i == this.len - 1: this[0] else: this[i + 1]
+    ctx.strokeSegment(segment(start, finish))
 

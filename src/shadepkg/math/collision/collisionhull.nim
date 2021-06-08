@@ -24,9 +24,9 @@ type
     bounds: Rectangle
     case kind: CollisionHullKind
     of chkCirle:
-      circle: Circle
+      circle*: Circle
     of chkPolygon:
-      polygon: Polygon
+      polygon*: Polygon
 
 proc newPolygonCollisionHull*(polygon: Polygon): CollisionHull =
   CollisionHull(kind: chkPolygon, polygon: polygon)
@@ -165,7 +165,7 @@ proc rotate*(this: CollisionHull, deltaRotation: float) =
 proc render*(this: CollisionHull, ctx: Context, offset: Vec2 = VEC2_ZERO) =
   case this.kind:
   of chkPolygon:
-    this.polygon.render(ctx, offset)
+    this.polygon.stroke(ctx, offset)
   of chkCirle:
-    this.circle.render(ctx, offset)
+    this.circle.stroke(ctx, offset)
 
