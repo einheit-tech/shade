@@ -12,20 +12,15 @@ type CustomEntity = ref object of Entity
 
 proc newCustomEntity(): CustomEntity =
   CustomEntity(
+    velocity: vec2(100, 100),
     flags: {loUpdate, loRender},
-    material: NULL,
     center: VEC2_ZERO
   )
 
-method update*(this: CustomEntity, deltaTime: float) =
-  this.translate vec2(1, 1)
-
-method render*(this: CustomEntity, ctx: Context, callback: proc() = nil) =
-  procCall Entity(this).render(ctx, proc =
-    ctx.fillStyle = rgba(255, 0, 0, 255)
-    let size = vec2(100, 100)
-    ctx.fillRect(rect(this.center, size))
-  )
+render(CustomEntity, Entity):
+  ctx.fillStyle = rgba(255, 0, 0, 255)
+  let size = vec2(100, 100)
+  ctx.fillRect(rect(this.center, size))
 
 layer.add(newCustomEntity())
 

@@ -1,21 +1,21 @@
 import tables, sets, math, vmath
 import
   ../rectangle,
-  ../../game/entity
+  ../../game/physicsbody
 
 export
   sets,
   rectangle,
-  entity
+  physicsbody
 
 type
   CellID = string
   SpatialCell = object
     cellID: CellID
-    entities: HashSet[Entity]
+    bodies: HashSet[PhysicsBody]
   SpatialGrid* = ref object
-    # All entities is the grid.
-    entities: HashSet[Entity]
+    # All bodies is the grid.
+    bodies: HashSet[PhysicsBody]
     cells: TableRef[CellID, SpatialCell]
     cellSize: Positive
     # Scalar from grid coords to game coords.
@@ -23,12 +23,12 @@ type
 
 proc newSpatialCell(cellID: CellID): SpatialCell = SpatialCell(cellID: cellID)
 
-template add(this: var SpatialCell, entity: Entity) =
-  this.entities.incl(entity)
+template add(this: var SpatialCell, body: PhysicsBody) =
+  this.bodies.incl(body)
 
-iterator items(this: SpatialCell): Entity =
-  for entity in this.entities:
-    yield entity
+iterator items(this: SpatialCell): PhysicsBody =
+  for body in this.bodies:
+    yield body
 
 proc newSpatialGrid*(width, height, cellSize: Positive): SpatialGrid =
   ## @param width:
@@ -39,15 +39,15 @@ proc newSpatialGrid*(width, height, cellSize: Positive): SpatialGrid =
   ##
   ## @param cellSize:
   ##  The size of each cell in the grid.
-  ##  This should be approx. double the size of the average entity.
+  ##  This should be approx. double the size of the average body.
   SpatialGrid(
     cells: newTable[CellID, SpatialCell](width * height),
     cellSize: cellSize.int,
     gridToPixelScalar: 1.0 / cellSize.float
   )
 
-iterator items*(this: SpatialGrid): Entity =
-  for e in this.entities:
+iterator items*(this: SpatialGrid): PhysicsBody =
+  for e in this.bodies:
     yield e
 
 template getCellID(cellX, cellY: int): CellID =
@@ -67,28 +67,28 @@ iterator cellInBounds*(this: SpatialGrid, queryRect: Rectangle): tuple[x, y: int
     for y in floor(topLeft.y).int .. floor(bottomRight.y).int:
       yield (x, y)
 
-template addEntityWithBounds(this: SpatialGrid, entity: Entity, bounds: Rectangle) =
-  ## Adds an entity to the grid.
+template addBodyWithBounds(this: SpatialGrid, body: PhysicsBody, bounds: Rectangle) =
+  ## Adds a body to the grid.
   ## Assumes the bounds are not nil.
-  this.entities.incl(entity)
+  this.bodies.incl(body)
   for cell in this.cellInBounds(bounds):
     let cellID = getCellID(cell.x, cell.y)
     var cell = this.cells.getOrDefault(cellID, newSpatialCell(cellID))
-    cell.add(entity)
+    cell.add(body)
     this.cells[cellID] = cell
 
-template canEntityBeAdded(this: SpatialGrid, entity: Entity): bool =
-  entity.bounds() != nil and loPhysics in entity.flags
+template canPhysicsBodyBeAdded(this: SpatialGrid, body: PhysicsBody): bool =
+  body.bounds() != nil and loPhysics in body.flags
 
-proc addStaticEntity*(this: SpatialGrid, entity: Entity) =
-  ## Adds an entity to the grid.
-  ## If the entity's bounds are nil, this proc will do nothing.
-  if not this.canEntityBeAdded(entity):
+proc addStaticBody*(this: SpatialGrid, body: PhysicsBody) =
+  ## Adds a body to the grid.
+  ## If the body's bounds are nil, this proc will do nothing.
+  if not this.canPhysicsBodyBeAdded(body):
     return
 
-  # Add the entity to all cells its bounds intersect with.
-  let bounds = this.scaleToGrid(entity.bounds())
-  this.addEntityWithBounds(entity, bounds)
+  # Add the body to all cells its bounds intersect with.
+  let bounds = this.scaleToGrid(body.bounds())
+  this.addBodyWithBounds(body, bounds)
 
 proc getRectangleMovementBounds(this: Rectangle, delta: Vec2): Rectangle =
   let
@@ -102,29 +102,29 @@ proc getRectangleMovementBounds(this: Rectangle, delta: Vec2): Rectangle =
     width, height
   )
 
-proc addEntity*(this: SpatialGrid, entity: Entity, deltaMovement: Vec2) =
-  ## Adds an entity to the grid.
-  ## If the entity's bounds are nil, this proc will do nothing.
-  if not this.canEntityBeAdded(entity):
+proc addBody*(this: SpatialGrid, body: PhysicsBody, deltaMovement: Vec2) =
+  ## Adds a body to the grid.
+  ## If the body's bounds are nil, this proc will do nothing.
+  if not this.canPhysicsBodyBeAdded(body):
     return
 
-  let bounds = entity.bounds.getRectangleMovementBounds(deltaMovement)
-  this.addEntityWithBounds(entity, this.scaleToGrid(bounds))
+  let bounds = body.bounds.getRectangleMovementBounds(deltaMovement)
+  this.addBodyWithBounds(body, this.scaleToGrid(bounds))
 
 proc removeFromCells*(
   this: var SpatialGrid,
-  entity: Entity,
+  body: PhysicsBody,
   cellIDs: openArray[CellID]
 ) =
-  ## Removes the entity from all given cells.
+  ## Removes the body from all given cells.
   for id in cellIDs:
     if this.cells.hasKey(id):
-      this.cells[id].entities.excl(entity)
+      this.cells[id].bodies.excl(body)
 
 proc query*(
   this: SpatialGrid,
   bounds: Rectangle
-): tuple[entities: HashSet[Entity], cellIDs: seq[CellID]] =
+): tuple[bodies: HashSet[PhysicsBody], cellIDs: seq[CellID]] =
 
   let scaledBounds: Rectangle = this.scaleToGrid(bounds)
   # Find all cells that intersect with the bounds.
@@ -133,12 +133,12 @@ proc query*(
     if this.cells.hasKey(cellID):
       result.cellIDs.add(cellID)
       let cell = this.cells[cellID]
-      # Add all entities in each cell.
-      for entity in cell:
-        result.entities.incl(entity)
+      # Add all bodies in each cell.
+      for body in cell:
+        result.bodies.incl(body)
 
 proc clear*(this: SpatialGrid) =
   ## Clears the entire grid.
   this.cells.clear()
-  this.entities.clear()
+  this.bodies.clear()
 

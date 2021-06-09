@@ -6,20 +6,20 @@ type
   ZChangeListener = proc(oldZ, newZ: float): void
   ## Layer is a container of entities that exist on a two-dimensional plane,
   ## perpendicular to the camera which views the game.
-  ## Entityhey update and render any objects they hold.
+  ## They update and render any entities they hold.
   ##
   ## Layers have a `z` axis coordinate.
-  ## All objects on the layer are assumed to share this same coordinate.
+  ## All entities on the layer are assumed to share this same coordinate.
   ##
   Layer* = ref object of RootObj
-    objects: seq[Entity]
+    entities: seq[Entity]
     # Location of the layer on the `z` axis.
     z: float
     zChangeListeners: seq[ZChangeListener]
 
 proc newLayer*(z: float = 1.0): Layer = Layer(z: z)
 
-template objectCount*(this: Layer): int = this.objects.len
+template entityCount*(this: Layer): int = this.entities.len
 
 template z*(this: Layer): float = this.z
 
@@ -42,7 +42,7 @@ proc removeZChangeListener*(this: Layer, listener: ZChangeListener) =
 proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeListener =
   ## Add a listener that is removed automatically after one invocation.
   ## Returns the listener that was directly added to the Layer.
-  ## Use this returned object if you need to remove the listener early.
+  ## Use this returned entity if you need to remove the listener early.
   let onceListener =
     proc(oldZ, newZ: float) =
       listener(oldZ, newZ)
@@ -52,22 +52,22 @@ proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeLis
   return onceListener
 
 iterator items*(this: Layer): Entity =
-  for e in this.objects:
+  for e in this.entities:
     yield e
 
 iterator pairs*(this: Layer): (int, Entity) =
-  for i, e in this.objects:
+  for i, e in this.entities:
     yield (i, e)
 
 template add*(this: Layer, obj: Entity) =
-  this.objects.add(obj)
+  this.entities.add(obj)
 
 template remove*(this: Layer, i: Natural) =
-  ## Removes the object at the given index, maintaining object order.
-  this.objects.delete(i)
+  ## Removes the entity at the given index, maintaining entity order.
+  this.entities.delete(i)
 
 template remove*(this: Layer, obj: Entity) =
-  ## Removes the object, maintaining object order.
+  ## Removes the entity, maintaining entity order.
   for i, o in this:
     if o == obj:
       this.remove(i)

@@ -10,47 +10,29 @@ import
 
 export pixie, rectangle, collisionhull, material
 
-## Flags indicating how the object should be treated by a layer.
-type LayerObjectFlags* = enum
-  ## Only update
-  loUpdate = 0b1
-  ## Only render
-  loRender = 0b10
-  # ## Render and update
-  # loUpdateRender = loUpdate.int or loRender.int
-  ## Render, update, and use in physics
-  # loPhysics = loUpdateRender.int or 0b100
-  loPhysics = 0b100
+type 
+  ## Flags indicating how the object should be treated by a layer.
+  LayerObjectFlags* = enum
+    loUpdate
+    loRender
+    loPhysics
 
-template includes*(this, flags: LayerObjectFlags): bool =
-  (this.int and flags.int) == flags.int
-
-type Entity* = ref object of RootObj
-  flags*: set[LayerObjectFlags]
-  center*: Vec2
-  # Pixels per second.
-  velocity*: Vec2
-  rotation*: float
-  lastMoveVector*: Vec2
-  collisionHull*: CollisionHull
-  material*: Material
+  Entity* = ref object of RootObj
+    flags*: set[LayerObjectFlags]
+    center*: Vec2
+    rotation*: float
+    # Pixels per second.
+    velocity*: Vec2
+    lastMoveVector*: Vec2
 
 proc newEntity*(
   flags: set[LayerObjectFlags],
-  material: Material = NULL,
-  x, y: float = 0.0
+  centerX, centerY: float = 0.0
 ): Entity =
-  result = Entity(
+  return Entity(
     flags: flags,
-    material: material,
-    center: vec2(x, y)
+    center: vec2(centerX, centerY)
   )
-
-template getMass*(this: Entity): float =
-  if this.collisionHull != nil:
-    this.collisionHull.getArea() * this.material.density
-  else:
-    0.0
 
 template x*(this: Entity): float = this.center.x
 template y*(this: Entity): float = this.center.y
@@ -62,13 +44,7 @@ template rotate*(this: Entity, deltaRotation: float) =
   this.rotation += deltaRotation
   this.collisionHull.rotate(deltaRotation)
 
-method bounds*(this: Entity): Rectangle {.base.} =
-  ## Gets the bounds of the Entity's collision hull.
-  ## The bounds are relative to the center of the object.
-  if this.collisionHull != nil:
-    return this.collisionHull.getBounds()
-
-method hash*(this: Entity): Hash {.base.} = hash(this[].unsafeAddr)
+method hash*(this: Entity): Hash {.base.} = hash(this.unsafeAddr)
 
 method update*(this: Entity, deltaTime: float) {.base.} =
   this.lastMoveVector = this.velocity * deltaTime
@@ -89,7 +65,21 @@ method render*(
   ctx.rotate(-this.rotation)
 
 macro render*(this: typedesc, parent: typedesc, body: untyped): untyped =
-  result = quote do:
+  ## Macro as a helper for the render method.
+  ## `this`, `ctx`, and `callback` are all injected.
+  ## All code in the macro is ran inside the parent's render callback.
+  ##
+  ## Example:
+  ## render(B, A):
+  ##   ctx.fillStyle = rgba(255, 0, 0, 255)
+  ##   let
+  ##     pos = vec2(50, 50)
+  ##     wh = vec2(100, 100)
+  ##   ctx.fillRect(rect(pos, wh))
+  ##   if callback != nil:
+  ##    callback()
+
+  quote do:
     method render*(
       this {.inject.}: `this`,
       ctx {.inject.}: Context,

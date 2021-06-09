@@ -2,18 +2,19 @@
 
 import
   layer,
-  entity,
+  physicsbody,
   ../math/collision/spatialgrid as sgrid,
-  ../math/collision/sat
+  ../math/collision/sat,
+  ../math/mathutils
 
 export
   layer,
-  entity,
+  physicsbody,
   sgrid,
   sat
 
 type
-  CollisionListener* = proc(collisionOwner, collided: Entity, result: CollisionResult)
+  CollisionListener* = proc(collisionOwner, collided: PhysicsBody, result: CollisionResult)
   PhysicsLayer* = ref object of Layer
     spatialGrid*: SpatialGrid
     collisionListeners: seq[CollisionListener]
@@ -22,16 +23,16 @@ proc newPhysicsLayer*(grid: SpatialGrid, z: float = 1.0): PhysicsLayer =
   result = PhysicsLayer(spatialGrid: grid)
   result.z = z
 
-proc addCollisionListener*(this: var PhysicsLayer, listener: CollisionListener) =
+method addCollisionListener*(this: PhysicsLayer, listener: CollisionListener) {.base.} =
   this.collisionListeners.add(listener)
 
-proc removeCollisionListener*(this: var PhysicsLayer, listener: CollisionListener) =
+method removeCollisionListener*(this: PhysicsLayer, listener: CollisionListener) {.base.} =
   for i, l in this.collisionListeners:
     if l == listener:
       this.collisionListeners.delete(i)
       break
 
-proc removeAllCollisionListeners*(this: var PhysicsLayer) =
+method removeAllCollisionListeners*(this: PhysicsLayer) {.base.} =
   this.collisionListeners.setLen(0)
 
 proc detectCollisions(this: PhysicsLayer, deltaTime: float) =
@@ -42,7 +43,7 @@ proc detectCollisions(this: PhysicsLayer, deltaTime: float) =
 
   # Perform collision checks.
   for objA in this.spatialGrid:
-    # Active entity information.
+    # Active body information.
     let
       locA = objA.center
       hullA = objA.collisionHull
@@ -89,8 +90,8 @@ method update*(this: PhysicsLayer, deltaTime: float) =
 
   # Add all entities to the spatial grid.
   for entity in this:
-    if entity.collisionHull != nil and loPhysics in entity.flags:
-      this.spatialGrid.addEntity(entity, entity.lastMoveVector)
+    if entity of PhysicsBody and loPhysics in entity.flags:
+      this.spatialGrid.addBody(PhysicsBody entity, entity.lastMoveVector)
 
   # Detect collisions using the data in the spatial grid.
   # All listeners are notified.
