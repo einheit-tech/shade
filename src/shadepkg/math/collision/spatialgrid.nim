@@ -108,6 +108,7 @@ proc addBody*(this: SpatialGrid, body: PhysicsBody, deltaMovement: Vec2) =
   if not this.canPhysicsBodyBeAdded(body):
     return
 
+  # TODO: Investigate getRectangleMovementBounds
   let bounds = body.bounds.getRectangleMovementBounds(deltaMovement)
   this.addBodyWithBounds(body, this.scaleToGrid(bounds))
 

@@ -28,7 +28,7 @@ proc newPhysicsBody*(
 template getMass*(this: Entity): float =
   this.collisionHull.getArea() * this.material.density
 
-method hash*(this: PhysicsBody): Hash = hash(this.unsafeAddr)
+method hash*(this: PhysicsBody): Hash = hash(this[].unsafeAddr)
 
 method bounds*(this: PhysicsBody): Rectangle {.base.} =
   ## Gets the bounds of the Entity's collision hull.

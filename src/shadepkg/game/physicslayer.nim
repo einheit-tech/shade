@@ -43,6 +43,8 @@ proc detectCollisions(this: PhysicsLayer, deltaTime: float) =
 
   # Perform collision checks.
   for objA in this.spatialGrid:
+    if objA.kind == pbStatic:
+      continue
     # Active body information.
     let
       locA = objA.center
