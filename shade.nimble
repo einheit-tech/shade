@@ -18,5 +18,5 @@ requires "pixie#122956a8930c70fe4384fb3bc743be82884612df"
 
 # Tasks
 task example, "Runs the basic example":
-  exec "nim r examples/basic/basic_game.nim"
+  exec "nim -d:collisionoutlines r examples/basic/basic_game.nim"
 

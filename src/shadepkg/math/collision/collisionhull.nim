@@ -66,7 +66,7 @@ template center*(this: CollisionHull): Vec2 =
   of chkCirle:
     this.circle.center
 
-func getCircleToCircleProjectionAxes(circleA, circleB: Circle, aToB: Vec2): seq[Vec2] =
+proc getCircleToCircleProjectionAxes(circleA, circleB: Circle, aToB: Vec2): seq[Vec2] =
   result.add(
     (circleB.center - circleA.center + aToB)
     .normalize()
@@ -102,14 +102,14 @@ func getCircleToPolygonProjectionAxes(
       normalize((poly[i] - circle.center) - circleToPoly)
     )
 
-func getProjectionAxes*(
+proc getProjectionAxes*(
   this: CollisionHull,
   otherHull: CollisionHull,
   toOther: Vec2
 ): seq[Vec2] =
   ## Generates projection axes facing away from this hull towards the given other hull.
-  ## @param toOther A vector from this hull's reference frame to the other hull's reference frame.
   ## @param otherHull The collision hull being tested against.
+  ## @param toOther A vector from this hull's reference frame to the other hull's reference frame.
   ## @return The array of axes.
   case this.kind:
   of chkCirle:

@@ -9,8 +9,8 @@ export collisionhull, material, entity.LayerObjectFlags
 
 type
   PhysicsBodyKind* = enum
-    pbStatic,
-    pbKinematic
+    pbKinematic,
+    pbStatic
 
   PhysicsBody* = ref object of Entity
     collisionHull*: CollisionHull
@@ -19,11 +19,18 @@ type
 
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
+  hull: CollisionHull,
   flags: set[LayerObjectFlags] = {loUpdate, loRender, loPhysics},
   material: Material = NULL,
   centerX, centerY: float = 0.0
 ): PhysicsBody =
-  return PhysicsBody(flags: flags, material: material, center: vec2(centerX, centerY))
+  return PhysicsBody(
+    kind: kind,
+    collisionHull: hull,
+    flags: flags,
+    material: material,
+    center: vec2(centerX, centerY)
+  )
 
 template getMass*(this: Entity): float =
   this.collisionHull.getArea() * this.material.density
@@ -37,8 +44,7 @@ method bounds*(this: PhysicsBody): Rectangle {.base.} =
 
 method update*(this: PhysicsBody, deltaTime: float) {.locks: 0.} =
   if this.kind != pbStatic:
-    this.lastMoveVector = this.velocity * deltaTime
-    this.center += this.lastMoveVector
+    procCall Entity(this).update(deltaTime)
 
 render(PhysicsBody, Entity):
   if callback != nil:
@@ -46,8 +52,8 @@ render(PhysicsBody, Entity):
 
   # Render the collisionHull outlines.
   when defined(collisionoutlines):
-    ctx.strokeStyle = rgba(255, 0, 0, 255)
+    ctx.strokeStyle = rgba(0, 0, 255, 255)
     ctx.lineWidth = 1
     ctx.lineCap = lcSquare
-    this.collisionHull.stroke(ctx, this.center)
+    this.collisionHull.stroke(ctx, this.collisionHull.center)
 

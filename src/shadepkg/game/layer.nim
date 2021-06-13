@@ -12,7 +12,7 @@ type
   ## All entities on the layer are assumed to share this same coordinate.
   ##
   Layer* = ref object of RootObj
-    entities: seq[Entity]
+    entities*: seq[Entity]
     # Location of the layer on the `z` axis.
     z: float
     zChangeListeners: seq[ZChangeListener]

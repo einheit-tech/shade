@@ -9,14 +9,14 @@ export
   physicsbody
 
 type
-  CellID = string
-  SpatialCell = object
+  CellID = tuple[x: int, y: int]
+  SpatialCell = ref object
     cellID: CellID
     bodies: HashSet[PhysicsBody]
   SpatialGrid* = ref object
     # All bodies is the grid.
     bodies: HashSet[PhysicsBody]
-    cells: TableRef[CellID, SpatialCell]
+    cells: Table[CellID, SpatialCell]
     cellSize: Positive
     # Scalar from grid coords to game coords.
     gridToPixelScalar: float
@@ -30,18 +30,12 @@ iterator items(this: SpatialCell): PhysicsBody =
   for body in this.bodies:
     yield body
 
-proc newSpatialGrid*(width, height, cellSize: Positive): SpatialGrid =
-  ## @param width:
-  ##  The width of the grid.
-  ##
-  ## @param height:
-  ##  The height of the grid.
-  ##
+proc newSpatialGrid*(cellSize: Positive): SpatialGrid =
   ## @param cellSize:
   ##  The size of each cell in the grid.
   ##  This should be approx. double the size of the average body.
   SpatialGrid(
-    cells: newTable[CellID, SpatialCell](width * height),
+    cells: initTable[CellID, SpatialCell](),
     cellSize: cellSize.int,
     gridToPixelScalar: 1.0 / cellSize.float
   )
@@ -50,8 +44,7 @@ iterator items*(this: SpatialGrid): PhysicsBody =
   for e in this.bodies:
     yield e
 
-template getCellID(cellX, cellY: int): CellID =
-  $cellX & "," & $cellY
+template getCellID(cellX, cellY: int): CellID = (cellX, cellY)
 
 template scaleToGrid*(this: SpatialGrid, rect: Rectangle): Rectangle =
   rect.getScaledInstance(this.gridToPixelScalar)
@@ -73,9 +66,14 @@ template addBodyWithBounds(this: SpatialGrid, body: PhysicsBody, bounds: Rectang
   this.bodies.incl(body)
   for cell in this.cellInBounds(bounds):
     let cellID = getCellID(cell.x, cell.y)
-    var cell = this.cells.getOrDefault(cellID, newSpatialCell(cellID))
+    var cell: SpatialCell
+    if this.cells.hasKey(cellID):
+      cell = this.cells[cellID]
+    else:
+      cell = newSpatialCell(cellID)
+      this.cells[cellID] = cell
+
     cell.add(body)
-    this.cells[cellID] = cell
 
 template canPhysicsBodyBeAdded(this: SpatialGrid, body: PhysicsBody): bool =
   body.bounds() != nil and loPhysics in body.flags
@@ -108,7 +106,6 @@ proc addBody*(this: SpatialGrid, body: PhysicsBody, deltaMovement: Vec2) =
   if not this.canPhysicsBodyBeAdded(body):
     return
 
-  # TODO: Investigate getRectangleMovementBounds
   let bounds = body.bounds.getRectangleMovementBounds(deltaMovement)
   this.addBodyWithBounds(body, this.scaleToGrid(bounds))
 
@@ -122,11 +119,20 @@ proc removeFromCells*(
     if this.cells.hasKey(id):
       this.cells[id].bodies.excl(body)
 
+proc removeFromCell*(
+  this: var SpatialGrid,
+  body: PhysicsBody,
+  cellID: CellID
+) =
+  if this.cells.hasKey(cellID):
+    this.cells[cellID].bodies.excl(body)
+
 proc query*(
   this: SpatialGrid,
   bounds: Rectangle
 ): tuple[bodies: HashSet[PhysicsBody], cellIDs: seq[CellID]] =
 
+  # var res: tuple[body: PhysicsBody, cellID: CellID] 
   let scaledBounds: Rectangle = this.scaleToGrid(bounds)
   # Find all cells that intersect with the bounds.
   for x, y in this.cellInBounds(scaledBounds):
@@ -140,6 +146,8 @@ proc query*(
 
 proc clear*(this: SpatialGrid) =
   ## Clears the entire grid.
-  this.cells.clear()
   this.bodies.clear()
+  # TODO: This is slow for some reason.
+  for cell in this.cells.values:
+    cell.bodies.clear()
 

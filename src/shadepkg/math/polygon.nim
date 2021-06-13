@@ -328,12 +328,12 @@ proc fill*(this: Polygon, ctx: Context, offset: Vec2 = VEC2_ZERO) =
   path.moveTo(this[0] + offset)
   for i, v in this:
     path.lineTo(v + offset)
-  ctx.image.fillPath(path, ctx.fillStyle)
+  ctx.fill(path)
 
 proc stroke*(this: Polygon, ctx: Context, offset: Vec2 = VEC2_ZERO) =
   for i, v in this:
-    var start: Vec2 = this[i]
+    var start: Vec2 = this[i] + offset
     var finish: Vec2 =
-      if i == this.len - 1: this[0] else: this[i + 1]
+      (if i == this.len - 1: this[0] else: this[i + 1]) + offset
     ctx.strokeSegment(segment(start, finish))
 

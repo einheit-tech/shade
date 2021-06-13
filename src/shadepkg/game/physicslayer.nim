@@ -55,7 +55,6 @@ proc detectCollisions(this: PhysicsLayer, deltaTime: float) =
     let (objectsInBounds, cells) = this.spatialGrid.query(boundsA)
     # Iterate through collidable objects to check for collisions with the local object (objA).
     for objB in objectsInBounds:
-
       # Don't collide with yourself, dummy.
       if objA == objB:
         continue

@@ -5,24 +5,31 @@ const
   height = 600
 
 var game: Game = newGame("Basic Example Game", width, height)
-let layer = newLayer()
+let layer = newPhysicsLayer(newSpatialGrid(150))
 game.scene.addLayer layer
 
-type CustomEntity = ref object of Entity
+type CustomBody = ref object of PhysicsBody
+  color*: ColorRGBX
 
-proc newCustomEntity(): CustomEntity =
-  CustomEntity(
-    velocity: vec2(100, 100),
-    flags: {loUpdate, loRender},
-    center: VEC2_ZERO
+proc newCustomBody(radius: float, center: Vec2, velocity: Vec2 = VEC2_ZERO): CustomBody =
+  CustomBody(
+    kind: pbKinematic,
+    velocity: velocity,
+    collisionhull: newCircleCollisionHull(newCircle(VEC2_ZERO, radius)),
+    flags: {loUpdate, loRender, loPhysics},
+    center: center,
+    color: rgba(0, 255, 0, 255)
   )
 
-render(CustomEntity, Entity):
-  ctx.fillStyle = rgba(255, 0, 0, 255)
-  let size = vec2(100, 100)
-  ctx.fillRect(rect(this.center, size))
+# TODO: Add custom rendering example
+render(CustomBody, PhysicsBody):
+  ctx.fillStyle = rgba(0, 0, 255, 255)
+  ctx.fillCircle(VEC2_ZERO, this.collisionHull.circle.radius)
 
-layer.add(newCustomEntity())
+let bodyA = newCustomBody(24f, VEC2_ZERO, vec2(50, 50))
+let bodyB = newCustomBody(150f, vec2(174, 174))
+layer.add(bodyA)
+layer.add(bodyB)
 
 game.start()
 

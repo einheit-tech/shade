@@ -5,11 +5,10 @@ import
 
 import
   ../math/rectangle,
-  ../math/collision/collisionhull,
   ../math/mathutils,
   material
 
-export pixie, rectangle, collisionhull, material, mathutils
+export pixie, rectangle, material, mathutils
 
 type 
   ## Flags indicating how the object should be treated by a layer.
@@ -43,7 +42,6 @@ template translate*(this: Entity, delta: Vec2) =
 
 template rotate*(this: Entity, deltaRotation: float) =
   this.rotation += deltaRotation
-  this.collisionHull.rotate(deltaRotation)
 
 method hash*(this: Entity): Hash {.base.} = hash(this[].unsafeAddr)
 
