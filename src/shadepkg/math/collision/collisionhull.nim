@@ -98,7 +98,7 @@ func getCircleToPolygonProjectionAxes(
   circleToPoly: Vec2
 ): seq[Vec2] =
   for i in 0..<poly.len:
-    result.add(normalize(poly[i] - circle.center))
+    result.add(normalize(poly[i] - circle.center + circleToPoly))
 
 proc getProjectionAxes*(
   this: CollisionHull,
@@ -119,9 +119,7 @@ proc getProjectionAxes*(
 
   of chkPolygon:
     case otherHull.kind:
-    of chkCirle:
-      return otherHull.circle.getCircleToPolygonProjectionAxes(this.polygon, toOther.negate())
-    of chkPolygon:
+    of chkCirle, chkPolygon:
       return this.polygon.getPolygonProjectionAxes()
 
 func project*(this: CollisionHull, relativeLoc, axis: Vec2): Vec2 =

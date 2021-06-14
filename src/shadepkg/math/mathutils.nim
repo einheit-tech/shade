@@ -227,10 +227,9 @@ func perpendicular*(v: Vec2): Vec2 =
   ## @return {Vec2}
   return vec2(-v.y, v.x)
 
-func negate*(v: Vec2): Vec2 =
-  vec2(-v.x, -v.y)
+func negate*(v: Vec2): Vec2 = -v
 
 func normalize*(v: Vec2, magnitude: float = 1.0): Vec2 =
   let scale = magnitude / v.length()
-  return vec2(v.x * scale, v.y * scale)
+  return v * scale
 
