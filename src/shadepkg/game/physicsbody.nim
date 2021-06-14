@@ -20,16 +20,16 @@ type
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
   hull: CollisionHull,
+  center: Vec2 = VEC2_ZERO,
   flags: set[LayerObjectFlags] = {loUpdate, loRender, loPhysics},
   material: Material = NULL,
-  centerX, centerY: float = 0.0
 ): PhysicsBody =
   return PhysicsBody(
     kind: kind,
     collisionHull: hull,
+    center: center,
     flags: flags,
-    material: material,
-    center: vec2(centerX, centerY)
+    material: material
   )
 
 template getMass*(this: Entity): float =
@@ -52,8 +52,8 @@ render(PhysicsBody, Entity):
 
   # Render the collisionHull outlines.
   when defined(collisionoutlines):
-    ctx.strokeStyle = rgba(0, 0, 255, 255)
+    ctx.strokeStyle = rgba(255, 0, 0, 255)
     ctx.lineWidth = 1
     ctx.lineCap = lcSquare
-    this.collisionHull.stroke(ctx, this.collisionHull.center)
+    this.collisionHull.stroke(ctx)
 

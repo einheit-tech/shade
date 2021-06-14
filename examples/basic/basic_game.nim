@@ -1,8 +1,8 @@
 import ../../src/shade
 
 const
-  width = 800
-  height = 600
+  width = 1920
+  height = 1080
 
 var game: Game = newGame("Basic Example Game", width, height)
 let layer = newPhysicsLayer(newSpatialGrid(150))
@@ -12,24 +12,38 @@ type CustomBody = ref object of PhysicsBody
   color*: ColorRGBX
 
 proc newCustomBody(radius: float, center: Vec2, velocity: Vec2 = VEC2_ZERO): CustomBody =
-  CustomBody(
+  result = CustomBody(
     kind: pbKinematic,
-    velocity: velocity,
     collisionhull: newCircleCollisionHull(newCircle(VEC2_ZERO, radius)),
-    flags: {loUpdate, loRender, loPhysics},
     center: center,
+    flags: {loUpdate, loRender, loPhysics},
     color: rgba(0, 255, 0, 255)
   )
+  result.velocity = velocity
 
-# TODO: Add custom rendering example
-render(CustomBody, PhysicsBody):
-  ctx.fillStyle = rgba(0, 0, 255, 255)
-  ctx.fillCircle(VEC2_ZERO, this.collisionHull.circle.radius)
+# TODO: Debug weird collision detection issue.
 
-let bodyA = newCustomBody(24f, VEC2_ZERO, vec2(50, 50))
-let bodyB = newCustomBody(150f, vec2(174, 174))
-layer.add(bodyA)
-layer.add(bodyB)
+let ball = newCustomBody(10, vec2(1000, 100), vec2(128, 0))
+
+let rect = newPhysicsBody(
+  kind = pbStatic,
+  hull = newPolygonCollisionHull(newPolygon([
+    vec2(0, 0),
+    vec2(0, -624),
+    vec2(-32, -624),
+    vec2(-32, 0),
+  ])),
+  center = vec2(1232, 672)
+)
+
+layer.add(ball)
+layer.add(rect)
+
+proc listener(collisionOwner, collided: PhysicsBody, result: CollisionResult) =
+  if result != nil:
+    echo "collision: " & $result.contactNormal
+
+layer.addCollisionListener listener
 
 game.start()
 

@@ -67,9 +67,10 @@ template addBodyWithBounds(this: SpatialGrid, body: PhysicsBody, bounds: Rectang
   for cell in this.cellInBounds(bounds):
     let cellID = getCellID(cell.x, cell.y)
     var cell: SpatialCell
-    if this.cells.hasKey(cellID):
-      cell = this.cells[cellID]
-    else:
+    # TODO: Change when https://github.com/nim-lang/Nim/pull/18255 is merged.
+    this.cells.withValue(cellID, storedCell) do:
+      cell = storedCell[]
+    do:
       cell = newSpatialCell(cellID)
       this.cells[cellID] = cell
 
