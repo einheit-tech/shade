@@ -14,19 +14,19 @@ export
   sat
 
 type
-  CollisionListener* = proc(collisionOwner, collided: PhysicsBody, result: CollisionResult)
+  CollisionListener*[T] = proc(t: T, collisionOwner, collided: PhysicsBody, result: CollisionResult)
   PhysicsLayer* = ref object of Layer
     spatialGrid*: SpatialGrid
-    collisionListeners: seq[CollisionListener]
+    collisionListeners: seq[CollisionListener[PhysicsLayer]]
 
 proc newPhysicsLayer*(grid: SpatialGrid, z: float = 1.0): PhysicsLayer =
   result = PhysicsLayer(spatialGrid: grid)
   result.z = z
 
-method addCollisionListener*(this: PhysicsLayer, listener: CollisionListener) {.base.} =
+method addCollisionListener*(this: PhysicsLayer, listener: CollisionListener[PhysicsLayer]) {.base.} =
   this.collisionListeners.add(listener)
 
-method removeCollisionListener*(this: PhysicsLayer, listener: CollisionListener) {.base.} =
+method removeCollisionListener*(this: PhysicsLayer, listener: CollisionListener[PhysicsLayer]) {.base.} =
   for i, l in this.collisionListeners:
     if l == listener:
       this.collisionListeners.delete(i)
@@ -81,7 +81,7 @@ proc detectCollisions(this: PhysicsLayer, deltaTime: float) =
 
       # Notify collision listeners.
       for listener in this.collisionListeners:
-        listener(objA, objB, collisionResult)
+        listener(this, objA, objB, collisionResult)
 
     # Remove the object so we don't have duplicate collision checks.
     this.spatialGrid.removeFromCells(objA, cells)

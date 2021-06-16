@@ -233,3 +233,7 @@ func normalize*(v: Vec2, magnitude: float = 1.0): Vec2 =
   let scale = magnitude / v.length()
   return v * scale
 
+func reflect*(this, normal: Vec2): Vec2 =
+  let scalar = 2 * this.dot(normal)
+  return this - normal * scalar
+

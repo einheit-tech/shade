@@ -39,7 +39,7 @@ let rect = newPhysicsBody(
 layer.add(ball)
 layer.add(rect)
 
-proc listener(collisionOwner, collided: PhysicsBody, result: CollisionResult) =
+proc listener(layer: PhysicsLayer, collisionOwner, collided: PhysicsBody, result: CollisionResult) =
   if result != nil:
     echo "collision: " & $result.contactNormal
 
