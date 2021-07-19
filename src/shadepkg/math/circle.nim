@@ -1,4 +1,4 @@
-import pixie/context
+import pixie/contexts
 import mathutils
 
 import options

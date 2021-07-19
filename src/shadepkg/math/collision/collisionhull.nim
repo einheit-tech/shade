@@ -4,7 +4,7 @@
 ## so the hull should be centered around the origin (0, 0),
 ## if the goal is to center it on its owner for collisions.
 
-import pixie/context
+import pixie/contexts
 
 import
   ../circle,
