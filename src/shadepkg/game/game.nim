@@ -7,7 +7,8 @@ import
   staticglfw
 
 import
-  scene
+  scene,
+  ../inputhandler
 
 const
   # TODO: Get hz of monitor or allow this to be configurable.
@@ -16,11 +17,12 @@ const
   oneMillion = 1000000
   sleepNanos = round(oneBillion / fps).int
 
-type Game* = object
-  scene: Scene
-  ctx: Context
-  window: Window
-  bgColor: ColorRGBX
+type 
+  Game* = object
+    scene: Scene
+    ctx: Context
+    window: Window
+    bgColor: ColorRGBX
 
 proc update*(this: Game, deltaTime: float)
 proc render*(this: Game, ctx: Context)
@@ -44,6 +46,7 @@ proc newGame*(
   # Create a window
   windowHint(RESIZABLE, false.cint)
   result.window = createWindow(gameWidth.cint, gameHeight.cint, title, nil, nil)
+  initInputHandlerSingleton(result.window)
 
   # Create the rendering context
   makeContextCurrent(result.window)
@@ -81,6 +84,8 @@ proc loop(this: Game) =
     let deltaTime: float = elapsedNanos.float64 / oneBillion.float64
     this.update(deltaTime)
     this.render(this.ctx)
+
+    Input.update(deltaTime)
 
     # Calculate sleep time
     elapsedNanos = getMonoTime().ticks - startTimeNanos
@@ -135,4 +140,7 @@ proc render(this: Game, ctx: Context) =
   swapBuffers(this.window)
 
   ctx.image.fill(this.bgColor)
+
+  when defined(inputdebug):
+    renderInputInfo(ctx)
 

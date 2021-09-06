@@ -2,28 +2,26 @@
 
 import
   entity,
-  ../input/controller as contrllr
+  ../inputhandler
 
 type Camera* = ref object of Entity
   trackedEntity*: Entity
-  controller: Controller
 
-proc newCamera*(trackedEntity: Entity, controller: Controller): Camera =
-  let loc = calcRenderOffset(trackedEntity, controller.mouse.location)
+proc newCamera*(trackedEntity: Entity): Camera =
+  let loc = calcRenderOffset(trackedEntity, Input.mouseLocation)
   return Camera(
     flags: {loUpdate},
     center: loc,
-    trackedEntity: trackedEntity,
-    controller: controller
+    trackedEntity: trackedEntity
   )
 
-template calcRenderOffset(trackedEntity: Entity, mouseLoc: Vec2): Vec2 =
-  let dist = mouseLoc - trackedEntity.center
+template calcRenderOffset(trackedEntity: Entity, loc: Vec2): Vec2 =
+  let dist = loc - trackedEntity.center
   trackedEntity.center + dist * 0.33
 
 proc update*(this: Camera, dt: float) =
   procCall Entity(this).update(dt)
-  let loc = this.controller.mouse.location
+  let loc = Input.mouseLocation
   let preferredLoc = calcRenderOffset(this.trackedEntity, loc)
   this.translate((preferredLoc - this.center) * (5 * dt))
 

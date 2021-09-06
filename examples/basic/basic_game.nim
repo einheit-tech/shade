@@ -21,8 +21,6 @@ proc newCustomBody(radius: float, center: Vec2, velocity: Vec2 = VEC2_ZERO): Cus
   )
   result.velocity = velocity
 
-# TODO: Debug weird collision detection issue.
-
 let ball = newCustomBody(10, vec2(1000, 100), vec2(128, 0))
 
 let rect = newPhysicsBody(

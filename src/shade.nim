@@ -1,5 +1,6 @@
 import shadepkg / [
   game/game,
+  inputhandler,
   game/scene,
   game/layer,
   game/physicslayer,
@@ -7,7 +8,6 @@ import shadepkg / [
   game/camera,
   game/animation,
   game/material,
-  input/controller,
   math/mathutils,
   math/polygon,
   math/rectangle,
@@ -26,7 +26,7 @@ export
   camera,
   animation,
   material,
-  controller,
+  inputhandler,
   polygon,
   rectangle,
   circle,
