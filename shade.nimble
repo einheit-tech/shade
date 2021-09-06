@@ -14,7 +14,7 @@ bin           = @["shade"]
 requires "nim >= 1.4.6"
 requires "opengl >= 1.1.0"
 requires "staticglfw >= 4.1.2"
-requires "pixie#122956a8930c70fe4384fb3bc743be82884612df"
+requires "pixie >= 2.1.1"
 
 # Tasks
 task example, "Runs the basic example":

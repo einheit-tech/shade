@@ -1,6 +1,7 @@
 import shadepkg / [
   game/game,
   inputhandler,
+  game/render,
   game/scene,
   game/layer,
   game/physicslayer,
@@ -19,6 +20,7 @@ import shadepkg / [
 
 export
   game,
+  render,
   scene,
   layer,
   physicslayer,

@@ -3,7 +3,8 @@ import hashes
 import 
   ../math/collision/collisionhull,
   material,
-  entity
+  entity,
+  render
 
 export collisionhull, material, entity.LayerObjectFlags
 

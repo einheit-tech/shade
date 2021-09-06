@@ -83,3 +83,6 @@ method render*(this: Layer, ctx: Context, callback: proc() = nil) {.base.} =
     if loRender in e.flags:
       e.render(ctx)
 
+  if callback != nil:
+    callback()
+

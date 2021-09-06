@@ -44,8 +44,7 @@ proc newGame*(
   )
 
   # Create a window
-  windowHint(RESIZABLE, false.cint)
-  result.window = createWindow(gameWidth.cint, gameHeight.cint, title, nil, nil)
+  result.window = createWindow(gameWidth.cint, gameHeight.cint, title, getPrimaryMonitor(), nil)
   initInputHandlerSingleton(result.window)
 
   # Create the rendering context
