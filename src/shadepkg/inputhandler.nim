@@ -1,5 +1,5 @@
 import 
-  staticglfw,
+  sdl2_nim/sdl,
   pixie,
   tables
 
@@ -11,12 +11,11 @@ type
     pressed: bool
     justPressed: bool
     justReleased: bool
+
   MouseInfo = object
     location: Vec2
     buttons: Table[int, MouseButtonState]
 
-  # TODO: is there a better way to represent this data?
-  # Need to inform user if key is pressed, repeating, or just released.
   KeyState* = object
     pressed: bool
     justPressed: bool
@@ -26,118 +25,108 @@ type
     window: Window
     mouse: MouseInfo
     keys: Table[int, KeyState]
-    # TODO: Key info
-    # https://www.glfw.org/docs/3.0/group__input.html#gaef49b72d84d615bca0a6ed65485e035d
 
 # InputHandler singleton
 var Input*: InputHandler
 
-proc bindMouseButtonCallback(this: InputHandler)
-proc bindKeyboardCallback(this: InputHandler)
-
 proc initInputHandlerSingleton*(window: Window) =
   Input = InputHandler(window: window)
-  Input.bindMouseButtonCallback()
-  Input.bindKeyboardCallback()
+ 
+proc processEvent*(this: InputHandler, event: Event): bool =
+  ## Processes events.
+  ## Returns if the user wants to exit the application.
+
+  case event.kind:
+    of QUIT:
+      return true
+
+    # Mouse
+    of MOUSEMOTION:
+      Input.mouse.location.x = (float) event.motion.x
+      Input.mouse.location.y = (float) event.motion.y
+
+    of MOUSEBUTTONUP:
+      let button = event.button.button
+      if not Input.mouse.buttons.hasKey(button):
+        Input.mouse.buttons[button] = MouseButtonState()
+      Input.mouse.buttons[button].pressed = false
+      Input.mouse.buttons[button].justPressed = false
+
+    of MOUSEBUTTONDOWN:
+      let button = event.button.button
+      if not Input.mouse.buttons.hasKey(button):
+        Input.mouse.buttons[button] = MouseButtonState()
+      Input.mouse.buttons[button].pressed = true
+      Input.mouse.buttons[button].justPressed = true
+
+    # Keyboard
+    of KEYDOWN, KEYUP:
+      let 
+        keycode = event.key.keysym.sym.cint
+        pressed = event.key.state == PRESSED
+
+      if not Input.keys.hasKey(keycode):
+        Input.keys[keycode] = KeyState()
+
+      Input.keys[keycode].pressed = pressed
+      Input.keys[keycode].justPressed = pressed
+
+    else:
+      return false
 
 # Mouse
 
-proc getMouseButtonState*(button: int): MouseButtonState =
-  if not Input.mouse.buttons.hasKey(button):
-    Input.mouse.buttons[button] = MouseButtonState()
-  return Input.mouse.buttons[button]
+proc getMouseButtonState*(this: InputHandler, button: int): MouseButtonState =
+  if not this.mouse.buttons.hasKey(button):
+    this.mouse.buttons[button] = MouseButtonState()
+  return this.mouse.buttons[button]
 
-template isMouseButtonPressed*(button: int): bool =
-  getMouseButtonState(button).pressed
+template isMouseButtonPressed*(this: InputHandler, button: int): bool =
+  this.getMouseButtonState(button).pressed
 
-template wasMouseButtonJustPressed*(button: int): bool =
-  getMouseButtonState(button).justPressed
+template wasMouseButtonJustPressed*(this: InputHandler, button: int): bool =
+  this.getMouseButtonState(button).justPressed
 
-template wasMouseButtonJustReleased*(button: int): bool =
-  getMouseButtonState(button).justReleased
+template wasMouseButtonJustReleased*(this: InputHandler, button: int): bool =
+  this.getMouseButtonState(button).justReleased
 
 # Keyboard
 
-proc getKeyState*(keycode: int): KeyState =
-  if not Input.keys.hasKey(keycode):
-    Input.keys[keycode] = KeyState()
-  return Input.keys[keycode]
+proc getKeyState*(this: InputHandler, keycode: int): KeyState =
+  if not this.keys.hasKey(keycode):
+    this.keys[keycode] = KeyState()
+  return this.keys[keycode]
 
-template isKeyPressed*(keycode: int): bool =
-  getKeyState(keycode).pressed
+template isKeyPressed*(this: InputHandler, keycode: int): bool =
+  this.getKeyState(keycode).pressed
 
-template wasKeyJustPressed*(keycode: int): bool =
-  getKeyState(keycode).justPressed
+template wasKeyJustPressed*(this: InputHandler, keycode: int): bool =
+  this.getKeyState(keycode).justPressed
 
-template wasKeyJustReleased*(keycode: int): bool =
-  getKeyState(keycode).justReleased
-
+template wasKeyJustReleased*(this: InputHandler, keycode: int): bool =
+  this.getKeyState(keycode).justReleased
 
 # Left mouse button
 
-template isLeftMouseButtonPressed*(): bool =
-  isMouseButtonPressed(MOUSE_BUTTON_LEFT)
+template isLeftMouseButtonPressed*(this: InputHandler): bool =
+  this.isMouseButtonPressed(BUTTON_LEFT)
 
-template wasLeftMouseButtonJustPressed*(): bool =
-  wasMouseButtonJustPressed(MOUSE_BUTTON_LEFT)
+template wasLeftMouseButtonJustPressed*(this: InputHandler): bool =
+  this.wasMouseButtonJustPressed(BUTTON_LEFT)
 
-template wasLeftMouseButtonJustReleased*(): bool =
-  wasMouseButtonJustReleased(MOUSE_BUTTON_LEFT)
+template wasLeftMouseButtonJustReleased*(this: InputHandler): bool =
+  this.wasMouseButtonJustReleased(BUTTON_LEFT)
 
 # Right mouse button
 
-template isRightMouseButtonPressed*(): bool =
-  isMouseButtonPressed(MOUSE_BUTTON_RIGHT)
+template isRightMouseButtonPressed*(this: InputHandler): bool =
+  this.isMouseButtonPressed(BUTTON_RIGHT)
 
-template wasRightMouseButtonJustPressed*(): bool =
-  wasMouseButtonJustPressed(MOUSE_BUTTON_RIGHT)
+template wasRightMouseButtonJustPressed*(this: InputHandler): bool =
+  this.wasMouseButtonJustPressed(BUTTON_RIGHT)
 
-template wasRightMouseButtonJustReleased*(): bool =
-  wasMouseButtonJustReleased(MOUSE_BUTTON_RIGHT)
-
-proc bindMouseButtonCallback(this: InputHandler) =
-
-  # C-binding callback when mouse events occur.
-  proc onMouseButtonEvent(window: Window, button, action, modifiers: cint) {.cdecl.} =
-    if not Input.mouse.buttons.hasKey(button):
-      Input.mouse.buttons[button] = MouseButtonState()
-
-    # Assign appropriate state to the button.
-    Input.mouse.buttons[button].pressed = action == PRESS
-    if action == PRESS:
-      Input.mouse.buttons[button].justPressed = true
-    elif action == RELEASE:
-      Input.mouse.buttons[button].justReleased = true
-
-  discard this.window.setMouseButtonCallback(onMouseButtonEvent)
-
-  proc onMouseMoveEvent(window: Window, x, y: float) {.cdecl.} =
-    Input.mouse.location.x = x
-    Input.mouse.location.y = y
-
-  discard this.window.setCursorPosCallback(onMouseMoveEvent)
-
-proc bindKeyboardCallback(this: InputHandler) =
-
-  # C-binding callback when key events occur.
-  proc onKeyboardEvent(window: Window, key, scancode, action, mods: cint) {.cdecl.} =
-    ## key: The keyboard key that was pressed or released (KEY_FOO).
-    ## scancode: The system-specific scancode of the key.
-    ## action: PRESS, RELEASE, or REPEAT
-    ## mods: Bit field describing which modifier keys were held down.
-    ##       MOD_SHIFT, MOD_CONTROL, MOD_ALT, MOD_SUPER
-
-    if not Input.keys.hasKey(key):
-      Input.keys[key] = KeyState()
-
-    # Assign appropriate state to the key.
-    Input.keys[key].pressed = action == PRESS or action == REPEAT
-    if action == PRESS:
-      Input.keys[key].justPressed = true
-    elif action == RELEASE:
-      Input.keys[key].justReleased = true
-
-  discard this.window.setKeyCallback(onKeyboardEvent)
+template wasRightMouseButtonJustReleased*(this: InputHandler): bool =
+  this.wasMouseButtonJustReleased(BUTTON_RIGHT)
 
 proc mouseLocation*(this: InputHandler): Vec2 =
   return this.mouse.location
@@ -166,14 +155,14 @@ when defined(inputdebug):
     mouseLocationText &= "(" & $mouseLoc.x & ", " & $mouseLoc.y & ")"
 
     var leftButtonText  = "\n\nLeft Button:"
-    leftButtonText &= "\n  Pressed: " & $isLeftMouseButtonPressed()
-    leftButtonText &= "\n  Just Pressed: " & $wasLeftMouseButtonJustPressed()
-    leftButtonText &= "\n  Just Released: " & $wasLeftMouseButtonJustReleased()
+    leftButtonText &= "\n  Pressed: " & $Input.isLeftMouseButtonPressed()
+    leftButtonText &= "\n  Just Pressed: " & $Input.wasLeftMouseButtonJustPressed()
+    leftButtonText &= "\n  Just Released: " & $Input.wasLeftMouseButtonJustReleased()
 
     var rightButtonText = "\n\nRight Button:"
-    rightButtonText &= "\n  Pressed: " & $isRightMouseButtonPressed()
-    rightButtonText &= "\n  Just Pressed: " & $wasRightMouseButtonJustPressed()
-    rightButtonText &= "\n  Just Released: " & $wasRightMouseButtonJustReleased()
+    rightButtonText &= "\n  Pressed: " & $Input.isRightMouseButtonPressed()
+    rightButtonText &= "\n  Just Pressed: " & $Input.wasRightMouseButtonJustPressed()
+    rightButtonText &= "\n  Just Released: " & $Input.wasRightMouseButtonJustReleased()
 
     # Keyboard
     

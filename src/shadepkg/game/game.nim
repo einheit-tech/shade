@@ -3,8 +3,7 @@ import
   os,
   math,
   pixie,
-  opengl,
-  staticglfw
+  sdl2_nim/sdl
 
 import
   scene,
@@ -17,70 +16,87 @@ const
   oneMillion = 1000000
   sleepNanos = round(oneBillion / fps).int
 
+const
+  rmask = uint32 0x000000ff
+  gmask = uint32 0x0000ff00
+  bmask = uint32 0x00ff0000
+  amask = uint32 0xff000000
+
+var
+  surface: Surface
+  texture: Texture
+
 type 
   Game* = object
+    window*: Window
+    renderer: Renderer
+    texture: Texture
+
+    gameWidth: int
+    gameHeight: int
     scene: Scene
     ctx: Context
-    window: Window
     bgColor: ColorRGBX
 
 proc update*(this: Game, deltaTime: float)
 proc render*(this: Game, ctx: Context)
+proc stop*(this: Game)
 
 proc newGame*(
   title: string,
   gameWidth, gameHeight: int,
   scene: Scene = newScene(),
-  bgColor: ColorRGBX = rgba(0, 0, 0, 255)
+  bgColor: ColorRGBX = rgba(0, 0, 0, 255),
+  windowFlags: int = WINDOW_FULLSCREEN_DESKTOP,
+  renderFlags: int = RendererAccelerated
 ): Game =
-  if init() == staticglfw.FALSE:
-    quit("Failed to initialize GLFW.")
+  if sdl.init(INIT_EVERYTHING) != 0:
+    discard
 
   let screen = newImage(gameWidth, gameHeight)
   result = Game(
     ctx: newContext(screen),
     scene: scene,
+    gameWidth: gameWidth,
+    gameHeight: gameHeight,
     bgColor: bgColor
   )
 
-  # Create a window
-  result.window = createWindow(gameWidth.cint, gameHeight.cint, title, getPrimaryMonitor(), nil)
-  initInputHandlerSingleton(result.window)
-
-  # Create the rendering context
-  makeContextCurrent(result.window)
-  loadExtensions()
-
-  # Allocate a texture and bind it
-  var dataPtr = result.ctx.image.data[0].addr
-  glTexImage2D(
-    GL_TEXTURE_2D, 0, 3,
-    GLsizei gameWidth,
-    GLsizei gameHeight,
+  result.window = createWindow(
+    title,
     0,
-    GL_RGBA,
-    GL_UNSIGNED_BYTE,
-    dataPtr
+    0,
+    cint result.gameWidth,
+    cint result.gameHeight,
+    uint32 windowFlags
   )
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
-  glEnable(GL_TEXTURE_2D)
+  result.renderer = createRenderer(result.window, -1, uint32 renderFlags)
+  initInputHandlerSingleton(result.window)
 
 template ctx*(this: Game): Context = this.ctx
 template scene*(this: Game): Scene = this.scene
 template `scene=`*(this: Game, scene: Scene) = this.scene = scene
 
+proc handleEvents(this: Game): bool =
+  ## Passes all pending events to the inputhandler singleton.
+  ## Returns if the application should exit.
+  var event: Event
+  while pollEvent(event.addr) != 0:
+    if Input.processEvent(event):
+      return true
+  return false
+    
 proc loop(this: Game) =
   var
     startTimeNanos = getMonoTime().ticks
     elapsedNanos: int64 = 0
+    shouldExit = false
 
-  while this.window.windowShouldClose != staticglfw.TRUE:
-    pollEvents()
+  while not shouldExit:
     # Determine elapsed time in seconds
     let deltaTime: float = elapsedNanos.float64 / oneBillion.float64
+
+    shouldExit = this.handleEvents()
     this.update(deltaTime)
     this.render(this.ctx)
 
@@ -96,15 +112,17 @@ proc loop(this: Game) =
     elapsedNanos = time - startTimeNanos
     startTimeNanos = time
 
-  this.window.destroyWindow()
-  terminate()
+  this.stop()
 
 proc start*(this: Game) =
   # TODO: Make this async so it's non-blocking
   this.loop()
 
 proc stop*(this: Game) =
-  this.window.setWindowShouldClose(staticglfw.TRUE)
+  this.renderer.destroyRenderer()
+  this.window.destroyWindow()
+  logInfo(sdl.LogCategoryApplication, "SDL shutdown completed")
+  sdl.quit()
 
 proc update*(this: Game, deltaTime: float) =
   if this.scene != nil:
@@ -114,32 +132,28 @@ proc render(this: Game, ctx: Context) =
   if this.scene == nil:
     return
 
-  this.scene.render(ctx)
-
-  # Update texture with new pixels from surface
-  var dataPtr = ctx.image.data[0].addr
-  glTexSubImage2D(
-    GL_TEXTURE_2D, 0, 0, 0,
-    GLsizei ctx.image.width,
-    GLsizei ctx.image.height,
-    GL_RGBA,
-    GL_UNSIGNED_BYTE,
-    dataPtr
-  )
-
-  # Draw a quad over the whole screen
-  glClear(GL_COLOR_BUFFER_BIT)
-  glBegin(GL_QUADS)
-  glTexCoord2d(0.0, 0.0); glVertex2d(-1.0, +1.0)
-  glTexCoord2d(1.0, 0.0); glVertex2d(+1.0, +1.0)
-  glTexCoord2d(1.0, 1.0); glVertex2d(+1.0, -1.0)
-  glTexCoord2d(0.0, 1.0); glVertex2d(-1.0, -1.0)
-  glEnd()
-
-  swapBuffers(this.window)
-
   ctx.image.fill(this.bgColor)
+  this.scene.render(ctx)
 
   when defined(inputdebug):
     renderInputInfo(ctx)
+
+  # Render data to sdl renderer
+  var dataPtr = ctx.image.data[0].addr
+  surface = createRGBSurfaceFrom(
+    dataPtr,
+    cint this.gameWidth,
+    cint this.gameHeight,
+    cint 32,
+    cint 4 * this.gameWidth,
+    rmask,
+    gmask,
+    bmask,
+    amask
+  )
+  texture = this.renderer.createTextureFromSurface(surface)
+  discard this.renderer.renderCopy(texture, nil, nil)
+
+  # Actual screen rendering
+  this.renderer.renderPresent()
 

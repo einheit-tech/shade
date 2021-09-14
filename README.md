@@ -1,6 +1,6 @@
 # shade
 
-2D Game Engine using OpenGL
+2D Game Engine using sdl2
 
 ## Install dependencies
 

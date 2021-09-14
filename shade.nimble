@@ -12,8 +12,7 @@ bin           = @["shade"]
 # Dependencies
 
 requires "nim >= 1.4.6"
-requires "opengl >= 1.1.0"
-requires "staticglfw >= 4.1.2"
+requires "sdl2_nim >= 2.0.14.2"
 requires "pixie >= 2.1.1"
 
 # Tasks
