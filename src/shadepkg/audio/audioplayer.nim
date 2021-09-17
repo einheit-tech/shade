@@ -22,12 +22,13 @@ proc destroyAudioPlayerSingleton*() =
   quitSdlMixer()
   Audio = nil
 
+# TODO: Allow audio settings to be passed in via compiler flags.
 proc initAudioPlayerSingleton*(
   initFlags: int = INIT_OGG and INIT_MP3,
   frequency: int = mixer.DEFAULT_FREQUENCY,
   format: int = mixer.DEFAULT_FORMAT,
-  channels: int = 2,
-  chunksize: int = 2048
+  channels: int = mixer.DEFAULT_CHANNELS,
+  chunksize: int = 1024
 ) =
   ## Initializes the AudioPlayer singleton (Audio).
   ## SDL must be initialized with `sdl.INIT_AUDIO` before this call.
