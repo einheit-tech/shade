@@ -52,7 +52,7 @@ proc initGame*(
   scene: Scene = newScene(),
   bgColor: ColorRGBX = rgba(0, 0, 0, 255),
   windowFlags: int = WINDOW_FULLSCREEN_DESKTOP,
-  renderFlags: int = RendererAccelerated
+  renderFlags: int = RendererAccelerated and RENDERER_PRESENTVSYNC
 ) =
   if sdl.init(INIT_EVERYTHING) != 0:
     discard
@@ -82,7 +82,7 @@ proc newGame*(
   scene: Scene = newScene(),
   bgColor: ColorRGBX = rgba(0, 0, 0, 255),
   windowFlags: int = WINDOW_FULLSCREEN_DESKTOP,
-  renderFlags: int = RendererAccelerated
+  renderFlags: int = RendererAccelerated and RENDERER_PRESENTVSYNC
 ): Game =
   result = Game()
   initGame(
@@ -177,7 +177,9 @@ method render(this: Game, ctx: Context) {.base.} =
     amask
   )
   texture = this.renderer.createTextureFromSurface(surface)
+  sdl.freeSurface(surface)
   discard this.renderer.renderCopy(texture, nil, nil)
+  sdl.destroyTexture(texture)
 
   # Actual screen rendering
   this.renderer.renderPresent()
