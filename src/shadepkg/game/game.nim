@@ -28,7 +28,8 @@ var
   texture: Texture
 
 type 
-  Game* = object
+  Game* = ref object of RootObj
+    shouldExit: bool
     window*: Window
     renderer: Renderer
     texture: Texture
@@ -39,9 +40,41 @@ type
     ctx: Context
     bgColor: ColorRGBX
 
-proc update*(this: Game, deltaTime: float)
-proc render*(this: Game, ctx: Context)
-proc stop*(this: Game)
+method update*(this: Game, deltaTime: float) {.base.}
+method render*(this: Game, ctx: Context) {.base.}
+method stop*(this: Game) {.base.}
+method teardown*(this: Game) {.base.}
+
+proc initGame*(
+  game: var Game,
+  title: string,
+  gameWidth, gameHeight: int,
+  scene: Scene = newScene(),
+  bgColor: ColorRGBX = rgba(0, 0, 0, 255),
+  windowFlags: int = WINDOW_FULLSCREEN_DESKTOP,
+  renderFlags: int = RendererAccelerated
+) =
+  if sdl.init(INIT_EVERYTHING) != 0:
+    discard
+
+  let screen = newImage(gameWidth, gameHeight)
+  game.ctx = newContext(screen)
+  game.scene = scene
+  game.gameWidth = gameWidth
+  game.gameHeight = gameHeight
+  game.bgColor = bgColor
+
+  game.window = createWindow(
+    title,
+    0,
+    0,
+    cint game.gameWidth,
+    cint game.gameHeight,
+    uint32 windowFlags
+  )
+  game.renderer = createRenderer(game.window, -1, uint32 renderFlags)
+  initInputHandlerSingleton(game.window)
+  initAudioPlayerSingleton()
 
 proc newGame*(
   title: string,
@@ -51,29 +84,17 @@ proc newGame*(
   windowFlags: int = WINDOW_FULLSCREEN_DESKTOP,
   renderFlags: int = RendererAccelerated
 ): Game =
-  if sdl.init(INIT_EVERYTHING) != 0:
-    discard
-
-  let screen = newImage(gameWidth, gameHeight)
-  result = Game(
-    ctx: newContext(screen),
-    scene: scene,
-    gameWidth: gameWidth,
-    gameHeight: gameHeight,
-    bgColor: bgColor
-  )
-
-  result.window = createWindow(
+  result = Game()
+  initGame(
+    result,
     title,
-    0,
-    0,
-    cint result.gameWidth,
-    cint result.gameHeight,
-    uint32 windowFlags
+    gameWidth,
+    gameHeight,
+    scene,
+    bgColor,
+    windowFlags,
+    renderFlags
   )
-  result.renderer = createRenderer(result.window, -1, uint32 renderFlags)
-  initInputHandlerSingleton(result.window)
-  initAudioPlayerSingleton()
 
 template ctx*(this: Game): Context = this.ctx
 template scene*(this: Game): Scene = this.scene
@@ -92,13 +113,12 @@ proc loop(this: Game) =
   var
     startTimeNanos = getMonoTime().ticks
     elapsedNanos: int64 = 0
-    shouldExit = false
 
-  while not shouldExit:
+  while not this.shouldExit:
     # Determine elapsed time in seconds
     let deltaTime: float = elapsedNanos.float64 / oneBillion.float64
 
-    shouldExit = this.handleEvents()
+    this.shouldExit = this.handleEvents()
     this.update(deltaTime)
     this.render(this.ctx)
 
@@ -114,23 +134,26 @@ proc loop(this: Game) =
     elapsedNanos = time - startTimeNanos
     startTimeNanos = time
 
-  this.stop()
+  this.teardown()
 
 proc start*(this: Game) =
   # TODO: Make this async so it's non-blocking
   this.loop()
 
-proc stop*(this: Game) =
+method stop*(this: Game) {.base.} =
+  this.shouldExit = true
+
+method teardown*(this: Game) {.base.} =
   this.renderer.destroyRenderer()
   this.window.destroyWindow()
   logInfo(sdl.LogCategoryApplication, "SDL shutdown completed")
   sdl.quit()
 
-proc update*(this: Game, deltaTime: float) =
+method update*(this: Game, deltaTime: float) {.base.} =
   if this.scene != nil:
     this.scene.update(deltaTime)
 
-proc render(this: Game, ctx: Context) =
+method render(this: Game, ctx: Context) {.base.} =
   if this.scene == nil:
     return
 
