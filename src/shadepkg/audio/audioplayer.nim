@@ -61,7 +61,7 @@ proc loadMusic*(filePath: string): Music =
   if result == nil:
     raise newException(Exception, "loadMusic: " & $mixer.getError())
 
-proc loadSound*(filePath: string): SoundEffect =
+proc loadSoundEffect*(filePath: string): SoundEffect =
   result = mixer.loadWAV(filePath)
   if result == nil:
     raise newException(Exception, "loadSound: " & $mixer.getError())
@@ -75,7 +75,6 @@ proc playMusic*(
   ## volume {float} Volume (0.0 - 1.0) to play the music.
   ## numLoops {int} The number of times to loop the music.
   ##   -1 will cause the music to loop forever.
-  ## @returns {bool} If the music playing was successful.
   discard mixer.volumeMusic(cint(volume * mixer.MAX_VOLUME))
   if mixer.playMusic(music, cint numLoops) != 0:
     raise newException(Exception, "Failed to play music: " & $mixer.getError())
@@ -116,7 +115,14 @@ proc fadeOutMusic*(timeInSeconds: float = 1.0) =
   ## Fades out music over the given duration.
   discard mixer.fadeOutMusic(cint(timeInSeconds * 1000))
 
-proc fadeOutSfx*(timeInSeconds: float = 1.0) =
+proc playSoundEffect*(sound: SoundEffect, volume: float = 1.0) =
+  ## sound {SoundEffect} The sound effect to play.
+  ## volume {float} Volume (0.0 - 1.0) to play the music.
+  discard mixer.volumeChunk(sound, cint(volume * mixer.MAX_VOLUME))
+  if mixer.playChannel(-1, sound, 0) == -1:
+    raise newException(Exception, "Failed to play sound effect: " & $mixer.getError())
+
+proc fadeOutSoundEffect*(timeInSeconds: float = 1.0) =
   ## Fades out all sound effects over the given duration.
   discard mixer.fadeOutChannel(cint -1, cint(timeInSeconds * 1000))
 
