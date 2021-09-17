@@ -23,15 +23,12 @@ const
   bmask = uint32 0x00ff0000
   amask = uint32 0xff000000
 
-var
-  surface: Surface
-  texture: Texture
-
 type 
   Game* = ref object of RootObj
     shouldExit: bool
     window*: Window
     renderer: Renderer
+    surface: Surface
     texture: Texture
 
     gameWidth: int
@@ -57,12 +54,26 @@ proc initGame*(
   if sdl.init(INIT_EVERYTHING) != 0:
     discard
 
-  let screen = newImage(gameWidth, gameHeight)
-  game.ctx = newContext(screen)
   game.scene = scene
   game.gameWidth = gameWidth
   game.gameHeight = gameHeight
   game.bgColor = bgColor
+
+  let screen = newImage(gameWidth, gameHeight)
+  game.ctx = newContext(screen)
+
+  var dataPtr = game.ctx.image.data[0].addr
+  game.surface = createRGBSurfaceFrom(
+    dataPtr,
+    cint game.gameWidth,
+    cint game.gameHeight,
+    cint 32,
+    cint 4 * game.gameWidth,
+    rmask,
+    gmask,
+    bmask,
+    amask
+  )
 
   game.window = createWindow(
     title,
@@ -164,22 +175,12 @@ method render(this: Game, ctx: Context) {.base.} =
     renderInputInfo(ctx)
 
   # Render data to sdl renderer
-  var dataPtr = ctx.image.data[0].addr
-  surface = createRGBSurfaceFrom(
-    dataPtr,
-    cint this.gameWidth,
-    cint this.gameHeight,
-    cint 32,
-    cint 4 * this.gameWidth,
-    rmask,
-    gmask,
-    bmask,
-    amask
-  )
-  texture = this.renderer.createTextureFromSurface(surface)
-  sdl.freeSurface(surface)
-  discard this.renderer.renderCopy(texture, nil, nil)
-  sdl.destroyTexture(texture)
+  this.texture = this.renderer.createTextureFromSurface(this.surface)
+  if this.texture != nil:
+    discard this.renderer.renderCopy(this.texture, nil, nil)
+    sdl.destroyTexture(this.texture)
+  else:
+    echo "Failed to create texture from render surface!"
 
   # Actual screen rendering
   this.renderer.renderPresent()
