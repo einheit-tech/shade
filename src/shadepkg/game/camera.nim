@@ -2,7 +2,7 @@
 
 import
   entity,
-  ../inputhandler
+  ../input/inputhandler
 
 type Camera* = ref object of Entity
   trackedEntity*: Entity

@@ -43,5 +43,10 @@ proc listener(layer: PhysicsLayer, collisionOwner, collided: PhysicsBody, result
 
 layer.addCollisionListener listener
 
+let (someSong, err) = capture loadMusic("./examples/basic/night_prowler.ogg")
+
+if err == nil:
+  discard capture fadeInMusic(someSong, 2.0, 0.15)
+
 game.start()
 

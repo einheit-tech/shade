@@ -1,6 +1,8 @@
 import shadepkg / [
+  errors,
   game/game,
-  inputhandler,
+  input/inputhandler,
+  audio/audioplayer,
   game/render,
   game/scene,
   game/layer,
@@ -19,6 +21,7 @@ import shadepkg / [
 ]
 
 export
+  errors,
   game,
   render,
   scene,
@@ -29,6 +32,7 @@ export
   animation,
   material,
   inputhandler,
+  audioplayer,
   polygon,
   rectangle,
   circle,

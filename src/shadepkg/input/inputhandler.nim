@@ -3,8 +3,12 @@ import
   pixie,
   tables
 
+from sdl2_nim/sdl import Scancode, Keycode
+
 import 
-  math/mathutils
+  ../math/mathutils
+
+export Scancode, Keycode
 
 type
   MouseButtonState* = object
@@ -24,12 +28,14 @@ type
   InputHandler* = ref object
     window: Window
     mouse: MouseInfo
-    keys: Table[int, KeyState]
+    keys: Table[Keycode, KeyState]
 
 # InputHandler singleton
 var Input*: InputHandler
 
 proc initInputHandlerSingleton*(window: Window) =
+  if Input != nil:
+    raise newException(Exception, "InputHandler singleton already active!")
   Input = InputHandler(window: window)
  
 proc processEvent*(this: InputHandler, event: Event): bool =
@@ -51,6 +57,7 @@ proc processEvent*(this: InputHandler, event: Event): bool =
         Input.mouse.buttons[button] = MouseButtonState()
       Input.mouse.buttons[button].pressed = false
       Input.mouse.buttons[button].justPressed = false
+      Input.mouse.buttons[button].justReleased = true
 
     of MOUSEBUTTONDOWN:
       let button = event.button.button
@@ -62,7 +69,7 @@ proc processEvent*(this: InputHandler, event: Event): bool =
     # Keyboard
     of KEYDOWN, KEYUP:
       let 
-        keycode = event.key.keysym.sym.cint
+        keycode = event.key.keysym.sym
         pressed = event.key.state == PRESSED
 
       if not Input.keys.hasKey(keycode):
@@ -70,6 +77,7 @@ proc processEvent*(this: InputHandler, event: Event): bool =
 
       Input.keys[keycode].pressed = pressed
       Input.keys[keycode].justPressed = pressed
+      Input.keys[keycode].justReleased = not pressed
 
     else:
       return false
@@ -92,18 +100,18 @@ template wasMouseButtonJustReleased*(this: InputHandler, button: int): bool =
 
 # Keyboard
 
-proc getKeyState*(this: InputHandler, keycode: int): KeyState =
+proc getKeyState*(this: InputHandler, keycode: Keycode): KeyState =
   if not this.keys.hasKey(keycode):
     this.keys[keycode] = KeyState()
   return this.keys[keycode]
 
-template isKeyPressed*(this: InputHandler, keycode: int): bool =
+template isKeyPressed*(this: InputHandler, keycode: Keycode): bool =
   this.getKeyState(keycode).pressed
 
-template wasKeyJustPressed*(this: InputHandler, keycode: int): bool =
+template wasKeyJustPressed*(this: InputHandler, keycode: Keycode): bool =
   this.getKeyState(keycode).justPressed
 
-template wasKeyJustReleased*(this: InputHandler, keycode: int): bool =
+template wasKeyJustReleased*(this: InputHandler, keycode: Keycode): bool =
   this.getKeyState(keycode).justReleased
 
 # Left mouse button

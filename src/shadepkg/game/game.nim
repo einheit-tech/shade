@@ -7,7 +7,8 @@ import
 
 import
   scene,
-  ../inputhandler
+  ../input/inputhandler,
+  ../audio/audioplayer
 
 const
   # TODO: Get hz of monitor or allow this to be configurable.
@@ -72,6 +73,7 @@ proc newGame*(
   )
   result.renderer = createRenderer(result.window, -1, uint32 renderFlags)
   initInputHandlerSingleton(result.window)
+  initAudioPlayerSingleton()
 
 template ctx*(this: Game): Context = this.ctx
 template scene*(this: Game): Scene = this.scene
