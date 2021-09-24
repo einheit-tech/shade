@@ -92,7 +92,7 @@ method update*(this: PhysicsLayer, deltaTime: float) =
   # Add all entities to the spatial grid.
   for entity in this:
     if entity of PhysicsBody and loPhysics in entity.flags:
-      this.spatialGrid.addBody(PhysicsBody entity, entity.lastMoveVector)
+      this.spatialGrid.addBody(PhysicsBody entity)
 
   # Detect collisions using the data in the spatial grid.
   # All listeners are notified.

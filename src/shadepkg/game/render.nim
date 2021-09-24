@@ -1,7 +1,7 @@
 import macros
-import pixie
+from pixie import Context
 
-macro render*(this: typedesc, parent: typedesc, body: untyped): untyped =
+macro render*(ChildType: typedesc, ParentType: typedesc, body: untyped): untyped =
   ## Macro as a helper for the render method.
   ## `this`, `ctx`, and `callback` are all injected.
   ## All code in the macro is ran inside the parent's render callback.
@@ -18,11 +18,11 @@ macro render*(this: typedesc, parent: typedesc, body: untyped): untyped =
 
   quote do:
     method render*(
-      this {.inject.}: `this`,
+      this {.inject.}: `ChildType`,
       ctx {.inject.}: Context,
       callback {.inject.}: proc() = nil
     ) =
-      procCall `parent`(this).render(ctx, proc =
+      procCall `ParentType`(this).render(ctx, proc =
         `body`
       )
 

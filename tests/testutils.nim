@@ -2,6 +2,8 @@ import
   macros,
   strformat
 
+from ../src/shadepkg/math/mathutils import almostEquals
+
 macro describe*(description: string, body: untyped): untyped =
   result = newStmtList()
   result.add quote do:
@@ -36,8 +38,13 @@ template it*(description: string, body: untyped) = test(description, body)
 
 template assertEquals*(a, b: untyped): untyped =
   if a != b:
+    # TODO: print the failed expression (as it exists in code)
     raise newException(Exception, "Expected " & (repr a) & " to equal " & (repr b))
-    # raise newException(Exception, "nope")
+
+template assertAlmostEquals*(a, b: float): untyped =
+  if not almostEquals(a, b):
+    # TODO: print the failed expression (as it exists in code)
+    raise newException(Exception, "Expected " & (repr a) & " to equal " & (repr b))
 
 template assertRaises*(exception: typedesc, errorMessage: string, code: untyped) =
   ## Raises ``AssertionDefect`` if specified ``code`` does not raise the

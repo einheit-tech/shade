@@ -1,6 +1,4 @@
-import
-  ../errors,
-  sdl2_nim/sdl_mixer as mixer
+import sdl2_nim/sdl_mixer as mixer
 
 type
   Music* = mixer.Music

@@ -101,7 +101,7 @@ proc getRectangleMovementBounds(this: Rectangle, delta: Vec2): Rectangle =
     width, height
   )
 
-proc addBody*(this: SpatialGrid, body: PhysicsBody, deltaMovement: Vec2) =
+proc addBody*(this: SpatialGrid, body: PhysicsBody, deltaMovement: Vec2 = body.lastMoveVector) =
   ## Adds a body to the grid.
   ## If the body's bounds are nil, this proc will do nothing.
   if not this.canPhysicsBodyBeAdded(body):

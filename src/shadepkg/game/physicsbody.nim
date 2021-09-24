@@ -1,12 +1,8 @@
-import hashes
-
 import 
   ../math/collision/collisionhull,
-  material,
-  entity,
-  render
+  entity
 
-export collisionhull, material, entity.LayerObjectFlags
+export entity, collisionhull
 
 type
   PhysicsBodyKind* = enum
@@ -35,8 +31,6 @@ proc newPhysicsBody*(
 
 template getMass*(this: Entity): float =
   this.collisionHull.getArea() * this.material.density
-
-method hash*(this: PhysicsBody): Hash = hash(this[].unsafeAddr)
 
 method bounds*(this: PhysicsBody): Rectangle {.base.} =
   ## Gets the bounds of the Entity's collision hull.

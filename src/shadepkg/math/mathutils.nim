@@ -2,6 +2,17 @@
 import math, vmath
 export math, vmath
 
+type
+  NumberKind* = enum
+    Int,
+    Float
+  IntOrFloat* = object
+    case kind: NumberKind:
+      of Int:
+        intVal: int
+      of Float:
+        floatVal: float
+
 func cubicBezierVector*(t: float, p0, p1, p2, p3: Vec2): Vec2
 func cubicBezier*(t, p0, p1, p2, p3: float): float
 func quadraticBezierVector*(t: float, p0, p1, p2: Vec2): Vec2
@@ -14,6 +25,7 @@ func easeInQuadratic*(startValue, endValue, completionRatio: float): float
 func smootherStep*(x: float): float
 func smoothStep*(x: float): float
 func lerp*(startValue, endValue, completionRatio: float): float
+func lerp*(startValue, endValue: int, completionRatio: float): int
 func minUnsignedAngle*(a1, a2, halfRange: float): float
 func minUnsignedDegreeAngle*(d1, d2: float): float
 func minUnsignedRadianAngle*(r1, r2: float): float
@@ -21,6 +33,23 @@ func minSignedAngle*(a1, a2, halfRange: float): float
 func minSignedDegreeAngle*(d1, d2: float): float
 func minSignedRadianAngle*(r1, r2: float): float
 func clamp*(min, value, max: float): float
+
+func almostEquals*(x, y: float; unitsInLastPlace: Natural = 8): bool =
+  # Can use https://github.com/nim-lang/Nim/blob/devel/lib/pure/math.nim#L262
+  # once this is in Nim stable.
+  runnableExamples:
+    doAssert almostEqual(PI, 3.14159265358979)
+    doAssert almostEqual(Inf, Inf)
+    doAssert not almostEqual(NaN, NaN)
+
+  if x == y:
+    # short circuit exact equality -- needed to catch two infinities of
+    # the same sign. And perhaps speeds things up a bit sometimes.
+    return true
+  let
+    diff = abs(x - y)
+    decimal = 1 / (10 ^ unitsInLastPlace)
+  return diff <= decimal
 
 # Vectors
 func cross*(v1, v2: Vec2): float
@@ -91,6 +120,10 @@ func lerp*(startValue, endValue, completionRatio: float): float =
   ## @return {float}
   return startValue + (endValue - startValue) * completionRatio
 
+func lerp*(startValue, endValue: int, completionRatio: float): int =
+  let f = lerp(startValue.float, endValue.float, completionRatio)
+  return int floor(f)
+
 func smoothStep*(x: float): float =
   ## @param {float} x The value to process through the step equation.
   ## @return {float}
@@ -118,7 +151,8 @@ func easeOutQuadratic*(startValue, endValue, completionRatio: float): float =
   return startValue + (-(endValue - startValue) * completionRatio * (completionRatio - 2))
 
 func easeInAndOutQuadratic*(startValue, endValue, completionRatio: float): float =
-  ## Returns a value quadratically accelerating from the start value until reaching average of startValue and endValue,
+  ## Returns a value quadratically accelerating from the start value
+  ## until reaching average of startValue and endValue,
   ## then quadratically decreases until reaching the end value.
   ##
   ## @param {float} startValue The starting value.
