@@ -12,6 +12,7 @@ type
         intVal: int
       of Float:
         floatVal: float
+  EasingFunction*[T] = proc(a, b: T, completionRatio: float): T
 
 func cubicBezierVector*(t: float, p0, p1, p2, p3: Vec2): Vec2
 func cubicBezier*(t, p0, p1, p2, p3: float): float
@@ -122,7 +123,11 @@ func lerp*(startValue, endValue, completionRatio: float): float =
 
 func lerp*(startValue, endValue: int, completionRatio: float): int =
   let f = lerp(startValue.float, endValue.float, completionRatio)
-  return int floor(f)
+  return 
+    if startValue < endValue:
+      int floor(f)
+    else:
+      int ceil(f)
 
 func smoothStep*(x: float): float =
   ## @param {float} x The value to process through the step equation.
@@ -224,7 +229,7 @@ func cubicBezierVector*(t: float, p0, p1, p2, p3: Vec2): Vec2 =
   ## @param {Vec2} p3 The end point.
   return vec2(cubicBezier(t, p0.x, p1.x, p2.x, p3.x), cubicBezier(t, p0.y, p1.y, p2.y, p3.y))
 
-# Vectors
+# Vec2
 
 const VEC2_ZERO* = vec2()
 
@@ -270,4 +275,47 @@ func normalize*(v: Vec2, magnitude: float = 1.0): Vec2 =
 func reflect*(this, normal: Vec2): Vec2 =
   let scalar = 2 * this.dot(normal)
   return this - normal * scalar
+
+proc ease*(v1, v2: Vec2, completionRatio: float, f: EasingFunction[float]): Vec2 =
+  ## Applies an easing function
+  ## @param {Vec2} v1 The starting vector values.
+  ## @param {Vec2} v2 The ending vector values.
+  ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation
+  ## @returns {Vector} A new vector with the lerped values.
+  return vec2(
+    f(v1.x, v2.x, completionRatio),
+    f(v1.y, v2.y, completionRatio)
+  )
+
+proc lerp*(v1, v2: Vec2, completionRatio: float): Vec2 =
+  ## Lerps the values between two vector (from v1 to v2).
+  ## @param {Vec2} v1 The starting vector values.
+  ## @param {Vec2} v2 The ending vector values.
+  ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation
+  ## @returns {Vector} A new vector with the lerped values.
+  return v1.ease(v2, completionRatio, mathutils.lerp)
+
+# Vec3
+
+const VEC3_ZERO* = vec3()
+
+proc ease*(v1, v2: Vec3, completionRatio: float, f: EasingFunction[float]): Vec3 =
+  ## Applies an easing function
+  ## @param {Vec3} v1 The starting vector values.
+  ## @param {Vec3} v2 The ending vector values.
+  ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation
+  ## @returns {Vector} A new vector with the lerped values.
+  return vec3(
+    f(v1.x, v2.x, completionRatio),
+    f(v1.y, v2.y, completionRatio),
+    f(v1.z, v2.z, completionRatio)
+  )
+
+proc lerp*(v1, v2: Vec3, completionRatio: float): Vec3 =
+  ## Lerps the values between two vector (from v1 to v2).
+  ## @param {Vec3} v1 The starting vector values.
+  ## @param {Vec3} v2 The ending vector values.
+  ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation
+  ## @returns {Vector} A new vector with the lerped values.
+  return v1.ease(v2, completionRatio, mathutils.lerp)
 

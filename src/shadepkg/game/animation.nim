@@ -1,3 +1,12 @@
+## Animations consist of one or more "tracks" (AnimationTrack).
+## Each track updates the value a variable over the couse of the animation.
+## The value is updated to match provided "frames" (Keyframe),
+## which is a pairing of a value and a time.
+## E.g.: A track updating a player's rotation may have:
+##       1. A frame at 0.0 seconds with a value of 0
+##       2. Another frame at 0.8 seconds with a value of 5
+## When the animation time reaches 0.8 seconds, the value will be 5.
+
 import macros
 
 import
@@ -15,6 +24,7 @@ type
   AnimateProc* = proc(currentTime, deltaTime: float, wrapInterpolation: bool = false)
   AnimationTrack* = object
     animateToTime*: AnimateProc
+    wrapInterpolation: bool
     case kind: TrackKind:
       of tkInt:
         framesInt: seq[Keyframe[int]]
@@ -32,6 +42,7 @@ type
     duration: float
     tracks: seq[AnimationTrack]
 
+template currentTime*(this: Animation): float = this.currentTime
 template duration*(this: Animation): float = this.duration
 
 proc newAnimation*(duration: float): Animation =
@@ -40,7 +51,7 @@ proc newAnimation*(duration: float): Animation =
 
 proc animateToTime*(this: Animation, currentTime, deltaTime: float) =
   for track in this.tracks:
-    track.animateToTime(currentTime, deltaTime)
+    track.animateToTime(currentTime, deltaTime, track.wrapInterpolation)
 
 method update*(this: Animation, deltaTime: float) =
   procCall Node(this).update(deltaTime)
@@ -50,33 +61,39 @@ method update*(this: Animation, deltaTime: float) =
 proc newAnimationTrack*[T: TrackType](
   field: T,
   frames: seq[Keyframe[T]],
-  animateToTime: AnimateProc
+  animateToTime: AnimateProc,
+  wrapInterpolation: bool = false
 ): AnimationTrack =
   # NOTE: This has to cover all cases of TrackType.
   when field is int:
     result = AnimationTrack(
       kind: tkInt,
-      framesInt: frames
+      framesInt: frames,
+      wrapInterpolation: wrapInterpolation
     )
   elif field is float:
     result = AnimationTrack(
       kind: tkFloat,
-      framesFloat: frames
+      framesFloat: frames,
+      wrapInterpolation: wrapInterpolation
     )
   elif field is Vec2:
     result = AnimationTrack(
       kind: tkVec2,
-      framesVec2: frames
+      framesVec2: frames,
+      wrapInterpolation: wrapInterpolation
     )
   elif field is Vec3:
     result = AnimationTrack(
       kind: tkVec3,
-      framesVec3: frames
+      framesVec3: frames,
+      wrapInterpolation: wrapInterpolation
     )
   elif field is ClosureProc:
     result = AnimationTrack(
       kind: tkClosureProc,
-      framesClosureProc: frames
+      framesClosureProc: frames,
+      wrapInterpolation: wrapInterpolation
     )
   else:
     raise newException(Exception, "Unsupported animation track type: " & typeof field)
@@ -90,8 +107,16 @@ macro addNewAnimationTrack*[T: TrackType](
   this: Animation,
   field: T,
   frames: openArray[Keyframe[T]],
-  easingFunc: proc(startValue, endValue: T, completionRatio: float): T = lerp
+  wrapInterpolation: bool = false,
+  ease: EasingFunction[T] = lerp
 ) =
+  ## Adds a new "track" to the animation.
+  ## This is a value that's updated at set intervals as the animation is updated.
+  ## @param {T} field The variable to update.
+  ## @param {openArray[Keyframe[T]]} frames The frames used to animate the track. 
+  ## @param {bool} wrapInterpolation If the track should interpolate
+  ##        from the last frame back to the first frame.
+  ## @param {EasingFunction[T]} ease The function used to interpolate the given field.
   let
     procName = gensym(nskProc, "sample" & $field.repr)
     trackName = gensym(nskLet, "track")
@@ -109,34 +134,46 @@ macro addNewAnimationTrack*[T: TrackType](
             currIndex = i
             break
 
-        # Between last and 1st frames
+        # Between last and first frames
         if currIndex == -1:
-          currIndex = `frames`.low
+          currIndex = `frames`.high
 
-        let 
-          timeBetweenFrames = (`frames`[currIndex + 1].time - `frames`[currIndex].time)
-          completionRatio = (currentTime - `frames`[currIndex].time) / timeBetweenFrames
+        let currentFrame = `frames`[currIndex]
+        # Between last and first frame, and NOT interpolating between them.
+        if currIndex == `frames`.high and not wrapInterpolation:
+          `field` = currentFrame.value
+          return
 
-        `field` = `easingFunc`(
-          `frames`[currIndex].value,
-          `frames`[currIndex + 1].value, completionRatio
+        # Ease between current and next frames
+        let nextFrame = `frames`[(currIndex + 1) mod `frames`.len]
+
+        let timeBetweenFrames =
+          if currIndex == `frames`.high:
+            `this`.duration - currentFrame.time + nextFrame.time
+          else:
+            nextFrame.time - currentFrame.time
+
+        let completionRatio = (currentTime - currentFrame.time) / timeBetweenFrames
+
+        `field` = `ease`(
+          currentFrame.value,
+          nextFrame.value,
+          completionRatio
         )
 
       else:
 
         # Find the start time
-        let startTime = currentTime - deltaTime
-        var startTimeConfined = startTime mod `this`.duration
-        if startTimeConfined < 0:
-          startTimeConfined += `this`.duration
+        var timeInAnim = currentTime - deltaTime
+        if timeInAnim < 0:
+          timeInAnim += `this`.duration
 
         var currIndex = -1
         for i in `frames`.low..<`frames`.high:
-          # TODO: Test edge cases for this logic
-          if startTimeConfined == `frames`[i].time:
+          if timeInAnim == `frames`[i].time:
             currIndex = i
             break
-          elif startTimeConfined > `frames`[i].time and startTimeConfined <= `frames`[i + 1].time:
+          elif timeInAnim > `frames`[i].time and timeInAnim <= `frames`[i + 1].time:
             currIndex = i + 1
             break
 
@@ -147,28 +184,24 @@ macro addNewAnimationTrack*[T: TrackType](
         var remainingTime = deltaTime
         while remainingTime > 0:
           let nextFrame = `frames`[currIndex]
-
-          # TODO: != 0 might not be right? Test more cases
           remainingTime =
-            if startTimeConfined != 0 and currIndex == `frames`.low:
-              remainingTime - (`this`.duration - startTimeConfined) + nextFrame.time
+            if timeInAnim != 0 and currIndex == `frames`.low:
+              remainingTime - (`this`.duration - timeInAnim) + nextFrame.time
             else:
-              remainingTime - (nextFrame.time - startTimeConfined)
+              remainingTime - (nextFrame.time - timeInAnim)
 
-          startTimeConfined = nextFrame.time
+          timeInAnim = nextFrame.time
           currIndex = (currIndex + 1) mod `frames`.len
 
-          if remainingTime > 0 and lastFiredProcIndex != currIndex:
+          if remainingTime >= 0 and lastFiredProcIndex != currIndex:
             nextFrame.value()
             lastFiredProcIndex = currIndex
-
-        # jump to the "next" keyframe (proc to call), subtrack that time from the deltaTime.
-        # if >= 0, invoke the proc.
 
     let `trackName` = newAnimationTrack(
       `field`,
       `frames`,
-      `procName`
+      `procName`,
+      `wrapInterpolation`
     )
 
     when (`field` is not proc):
