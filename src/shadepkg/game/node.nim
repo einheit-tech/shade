@@ -22,6 +22,7 @@ proc initNode*(node: Node, flags: set[LayerObjectFlags]) =
   node.flags = flags
 
 proc newNode*(flags: set[LayerObjectFlags]): Node =
+  result = Node()
   initNode(result, flags)
 
 method hash*(this: Node): Hash {.base.} =

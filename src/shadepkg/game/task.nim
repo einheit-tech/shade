@@ -16,6 +16,7 @@ proc initTask*(
   checkCompletionCondition: proc(): bool,
   onCompletion: proc()
 ) =
+  initNode(Node(task), {loUpdate})
   task.onUpdate = onUpdate
   task.checkCompletionCondition = checkCompletionCondition
   task.onCompletion = onCompletion
@@ -28,6 +29,7 @@ proc newTask*(
   result = Task()
   initTask(result, onUpdate, checkCompletionCondition, onCompletion)
 
+# TODO: Need a decent way to autoremove a task?
 method update*(this: Task, deltaTime: float) =
   if this.completed:
     raise newException(Exception, "Task has already been completed - cannot update.")

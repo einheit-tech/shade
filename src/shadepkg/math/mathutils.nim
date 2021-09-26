@@ -292,8 +292,32 @@ proc lerp*(v1, v2: Vec2, completionRatio: float): Vec2 =
   ## @param {Vec2} v1 The starting vector values.
   ## @param {Vec2} v2 The ending vector values.
   ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation
-  ## @returns {Vector} A new vector with the lerped values.
+  ## @returns {Vec2} A new vector with the lerped values.
   return v1.ease(v2, completionRatio, mathutils.lerp)
+
+# IVec2
+
+const IVEC2_ZERO* = ivec2()
+
+proc ease*(v1, v2: IVec2, completionRatio: float, f: EasingFunction[int]): IVec2 =
+  ## Applies an easing function
+  ## @param {IVec2} v1 The starting vector values.
+  ## @param {IVec2} v2 The ending vector values.
+  ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation
+  ## @returns {IVec2} A new vector with the lerped values.
+  return ivec2(
+    int32 f(v1.x, v2.x, completionRatio),
+    int32 f(v1.y, v2.y, completionRatio)
+  )
+
+proc lerp*(v1, v2: IVec2, completionRatio: float): IVec2 =
+  ## Lerps the values between two vector (from v1 to v2).
+  ## @param {IVec2} v1 The starting vector values.
+  ## @param {IVec2} v2 The ending vector values.
+  ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation
+  ## @returns {IVec2} A new vector with the lerped values.
+  return v1.ease(v2, completionRatio, mathutils.lerp)
+
 
 # Vec3
 

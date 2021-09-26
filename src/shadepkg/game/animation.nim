@@ -16,7 +16,7 @@ import
 
 type
   ClosureProc* = proc() {.closure.}
-  TrackType = int|float|Vec2|Vec3|ClosureProc
+  TrackType = int|float|Vec2|IVec2|Vec3|IVec3|ClosureProc
 makeEnum(TrackType, TrackKind, "tk")
 
 type
@@ -32,8 +32,12 @@ type
         framesFloat: seq[Keyframe[float]]
       of tkVec2:
         framesVec2: seq[Keyframe[Vec2]]
+      of tkIVec2:
+        framesIVec2: seq[Keyframe[IVec2]]
       of tkVec3:
         framesVec3: seq[Keyframe[Vec3]]
+      of tkIVec3:
+        framesIVec3: seq[Keyframe[IVec3]]
       of tkClosureProc:
         framesClosureProc: seq[Keyframe[ClosureProc]]
 
@@ -83,10 +87,22 @@ proc newAnimationTrack*[T: TrackType](
       framesVec2: frames,
       wrapInterpolation: wrapInterpolation
     )
+  elif field is IVec2:
+    result = AnimationTrack(
+      kind: tkIVec2,
+      framesIVec2: frames,
+      wrapInterpolation: wrapInterpolation
+    )
   elif field is Vec3:
     result = AnimationTrack(
       kind: tkVec3,
       framesVec3: frames,
+      wrapInterpolation: wrapInterpolation
+    )
+  elif field is IVec3:
+    result = AnimationTrack(
+      kind: tkIVec3,
+      framesIVec3: frames,
       wrapInterpolation: wrapInterpolation
     )
   elif field is ClosureProc:
@@ -130,6 +146,7 @@ macro addNewAnimationTrack*[T: TrackType](
       when (`field` is not proc):
         var currIndex = -1
         for i in `frames`.low..<`frames`.high:
+          # echo repr `frames`[i]
           if currentTime >= `frames`[i].time and currentTime <= `frames`[i + 1].time:
             currIndex = i
             break
