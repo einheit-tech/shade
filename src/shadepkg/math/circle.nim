@@ -1,7 +1,11 @@
-import pixie/contexts
-import mathutils
+import
+  options,
+  sdl2_nim/sdl,
+  sdl2_nim/sdl_gpu
 
-import options
+import
+  mathutils,
+  ../render/color
 
 type Circle* = ref object
   center*: Vec2
@@ -28,9 +32,19 @@ proc getArea*(this: Circle): float =
     this.area = (PI * this.radius * this.radius).option
   return this.area.get
 
-proc stroke*(this: Circle, ctx: Context, offset: Vec2 = VEC2_ZERO) =
-  ctx.strokeCircle(this.center + offset, this.radius)
+proc stroke*(this: Circle, ctx: Target, color: Color = RED) =
+  ctx.circle(
+    cfloat this.center.x,
+    cfloat this.center.y,
+    cfloat this.radius,
+    color
+  )
 
-proc fill*(this: Circle, ctx: Context, offset: Vec2 = VEC2_ZERO) =
-  ctx.fillCircle(this.center + offset, this.radius)
+proc fill*(this: Circle, ctx: Target, color: Color = RED) =
+  ctx.circleFilled(
+    cfloat this.center.x,
+    cfloat this.center.y,
+    cfloat this.radius,
+    color
+  )
 

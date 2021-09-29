@@ -2,13 +2,14 @@ import
   std/monotimes,
   os,
   math,
-  pixie,
-  sdl2_nim/sdl
+  sdl2_nim/sdl,
+  sdl2_nim/sdl_gpu
 
 import
   scene,
   ../input/inputhandler,
-  ../audio/audioplayer
+  ../audio/audioplayer,
+  ../render/color
 
 const
   # TODO: Get hz of monitor or allow this to be configurable.
@@ -17,101 +18,58 @@ const
   oneMillion = 1000000
   sleepNanos = round(oneBillion / fps).int
 
-const
-  rmask = uint32 0x000000ff
-  gmask = uint32 0x0000ff00
-  bmask = uint32 0x00ff0000
-  amask = uint32 0xff000000
-
 type 
-  Game* = ref object of RootObj
+  Engine* = ref object of RootObj
     shouldExit: bool
-    window*: Window
-    renderer: Renderer
-    surface: Surface
-    texture: Texture
+    screen: Target
 
     gameWidth: int
     gameHeight: int
     scene: Scene
-    ctx: Context
-    bgColor: ColorRGBX
 
-method update*(this: Game, deltaTime: float) {.base.}
-method render*(this: Game, ctx: Context) {.base.}
-method stop*(this: Game) {.base.}
-method teardown*(this: Game) {.base.}
+    # The color to fill the screen with to clear it every frame.
+    clearColor: Color
 
-proc initGame*(
-  game: var Game,
+proc update*(this: Engine, deltaTime: float)
+proc render*(this: Engine, screen: Target)
+proc stop*(this: Engine)
+proc teardown(this: Engine)
+
+# Singleton
+var Game*: Engine
+
+proc initEngineSingleton*(
   title: string,
   gameWidth, gameHeight: int,
   scene: Scene = newScene(),
-  bgColor: ColorRGBX = rgba(0, 0, 0, 255),
   windowFlags: int = WINDOW_FULLSCREEN_DESKTOP,
-  renderFlags: int = RendererAccelerated and RENDERER_PRESENTVSYNC
+  clearColor: Color = BLACK
 ) =
-  if sdl.init(INIT_EVERYTHING) != 0:
-    discard
+  if Game != nil:
+    raise newException(Exception, "Game has already been initialized!")
 
-  game.scene = scene
-  game.gameWidth = gameWidth
-  game.gameHeight = gameHeight
-  game.bgColor = bgColor
+  when defined(debug):
+    setDebugLevel(DEBUG_LEVEL_MAX)
 
-  let screen = newImage(gameWidth, gameHeight)
-  game.ctx = newContext(screen)
+  let target = init(uint16 gameWidth, uint16 gameHeight, uint32 windowFlags)
+  if target == nil:
+    raise newException(Exception, "Failed to init SDL!")
 
-  var dataPtr = game.ctx.image.data[0].addr
-  game.surface = createRGBSurfaceFrom(
-    dataPtr,
-    cint game.gameWidth,
-    cint game.gameHeight,
-    cint 32,
-    cint 4 * game.gameWidth,
-    rmask,
-    gmask,
-    bmask,
-    amask
-  )
+  Game = Engine()
+  Game.screen = target
+  Game.scene = scene
+  Game.gameWidth = gameWidth
+  Game.gameHeight = gameHeight
+  Game.clearColor = clearColor
 
-  game.window = createWindow(
-    title,
-    0,
-    0,
-    cint game.gameWidth,
-    cint game.gameHeight,
-    uint32 windowFlags
-  )
-  game.renderer = createRenderer(game.window, -1, uint32 renderFlags)
-  initInputHandlerSingleton(game.window)
+  initInputHandlerSingleton()
   initAudioPlayerSingleton()
 
-proc newGame*(
-  title: string,
-  gameWidth, gameHeight: int,
-  scene: Scene = newScene(),
-  bgColor: ColorRGBX = rgba(0, 0, 0, 255),
-  windowFlags: int = WINDOW_FULLSCREEN_DESKTOP,
-  renderFlags: int = RendererAccelerated and RENDERER_PRESENTVSYNC
-): Game =
-  result = Game()
-  initGame(
-    result,
-    title,
-    gameWidth,
-    gameHeight,
-    scene,
-    bgColor,
-    windowFlags,
-    renderFlags
-  )
+template screen*(this: Engine): Target = this.screen
+template scene*(this: Engine): Scene = this.scene
+template `scene=`*(this: Engine, scene: Scene) = this.scene = scene
 
-template ctx*(this: Game): Context = this.ctx
-template scene*(this: Game): Scene = this.scene
-template `scene=`*(this: Game, scene: Scene) = this.scene = scene
-
-proc handleEvents(this: Game): bool =
+proc handleEvents(this: Engine): bool =
   ## Passes all pending events to the inputhandler singleton.
   ## Returns if the application should exit.
   var event: Event
@@ -120,7 +78,7 @@ proc handleEvents(this: Game): bool =
       return true
   return false
     
-proc loop(this: Game) =
+proc loop(this: Engine) =
   var
     startTimeNanos = getMonoTime().ticks
     elapsedNanos: int64 = 0
@@ -131,7 +89,7 @@ proc loop(this: Game) =
 
     this.shouldExit = this.handleEvents()
     this.update(deltaTime)
-    this.render(this.ctx)
+    this.render(this.screen)
 
     Input.update(deltaTime)
 
@@ -147,41 +105,35 @@ proc loop(this: Game) =
 
   this.teardown()
 
-proc start*(this: Game) =
+proc start*(this: Engine) =
   # TODO: Make this async so it's non-blocking
   this.loop()
 
-method stop*(this: Game) {.base.} =
+proc stop*(this: Engine) =
   this.shouldExit = true
 
-method teardown*(this: Game) {.base.} =
-  this.renderer.destroyRenderer()
-  this.window.destroyWindow()
-  logInfo(sdl.LogCategoryApplication, "SDL shutdown completed")
-  sdl.quit()
+proc teardown(this: Engine) =
+  sdl_gpu.quit()
+  logInfo(LogCategoryApplication, "SDL shutdown completed")
 
-method update*(this: Game, deltaTime: float) {.base.} =
+proc update*(this: Engine, deltaTime: float) =
   if this.scene != nil:
     this.scene.update(deltaTime)
 
-method render(this: Game, ctx: Context) {.base.} =
+proc render*(this: Engine, screen: Target) =
   if this.scene == nil:
     return
 
-  ctx.image.fill(this.bgColor)
-  this.scene.render(ctx)
+  clearColor(this.screen, this.clearColor)
 
-  when defined(inputdebug):
-    renderInputInfo(ctx)
+  this.scene.render(screen)
 
-  # Render data to sdl renderer
-  this.texture = this.renderer.createTextureFromSurface(this.surface)
-  if this.texture != nil:
-    discard this.renderer.renderCopy(this.texture, nil, nil)
-    sdl.destroyTexture(this.texture)
-  else:
-    echo "Failed to create texture from render surface!"
+  # when defined(inputdebug):
+  #   renderInputInfo(ctx)
 
-  # Actual screen rendering
-  this.renderer.renderPresent()
+  flip(this.screen)
+
+when isMainModule:
+  initEngineSingleton("Test Game!", 1920, 1080)
+  Game.start()
 

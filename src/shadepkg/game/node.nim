@@ -1,10 +1,8 @@
 import
-  pixie,
-  render,
+  ../render/render,
   hashes
 
 export 
-  pixie,
   render,
   hashes
 
@@ -31,7 +29,7 @@ method hash*(this: Node): Hash {.base.} =
 method update*(this: Node, deltaTime: float) {.base.} =
   discard
 
-method render*(this: Node, ctx: Context, callback: proc() = nil) {.base.} =
+method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   if callback != nil:
     callback()
 

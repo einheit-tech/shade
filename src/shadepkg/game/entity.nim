@@ -1,7 +1,6 @@
 import
   node,
   material,
-  render,
   ../math/rectangle,
   ../math/mathutils
 
@@ -10,6 +9,7 @@ export node, rectangle, material, mathutils
 type 
   Entity* = ref object of Node
     center*: Vec2
+    # TODO: Would be nice to have radians, but `rotate` takes degrees.
     rotation*: float
     # Pixels per second.
     velocity*: Vec2
@@ -40,12 +40,19 @@ method update*(this: Entity, deltaTime: float) =
   this.center += this.lastMoveVector
 
 render(Entity, Node):
-  ctx.translate(this.center)
-  ctx.rotate(this.rotation)
+
+  if this.center != VEC2_ZERO:
+    translate(cfloat this.center.x, cfloat this.center.y, cfloat 0)
+
+  if this.rotation != 0:
+    rotate(this.rotation, cfloat 0, cfloat 0, cfloat 0)
 
   if callback != nil:
     callback()
 
-  ctx.translate(-this.center)
-  ctx.rotate(-this.rotation)
+  if this.rotation != 0:
+    rotate(-this.rotation, cfloat 0, cfloat 0, cfloat 0)
+
+  if this.center != VEC2_ZERO:
+    translate(cfloat -this.center.x, cfloat -this.center.y, cfloat 0)
 

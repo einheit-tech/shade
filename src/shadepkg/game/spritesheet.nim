@@ -1,37 +1,46 @@
-import pixie
+import
+  ../render/render,
+  ../math/mathutils,
+  ../images/imageatlas
 
 type Spritesheet* = ref object
   sheetImage: Image
-  spriteImages: seq[Image]
-  rows: int
+  spriteRects: seq[Rect]
   cols: int
+  rows: int
 
-proc newSpritesheet*(filepath: string, rows, cols: int): Spritesheet =
-  ## Creates a new Spritesheet with the given file name.
+proc loadSprites*(this: Spritesheet)
+
+template image*(this: Spritesheet): Image =
+  this.sheetImage
+
+proc newSpritesheet*(sheetImage: Image, cols, rows: int): Spritesheet =
+  ## Creates a new Spritesheet.
   ## The individual sprite images are not created here,
   ## but need to be loaded by invoking loadSprites.
-  return Spritesheet(
-    sheetImage: readImage(filepath),
-    rows: rows,
+  result = Spritesheet(
+    sheetImage: sheetImage,
     cols: cols,
-    spriteImages: newSeq[Image](rows * cols)
+    rows: rows,
+    spriteRects: newSeq[Rect](rows * cols)
   )
+  result.loadSprites()
 
 proc loadSprites*(this: Spritesheet) =
   ## Loads all individual sprite images from the sprite sheet.
   let
-    spriteWidth = this.sheetImage.width div this.cols
-    spriteHeight = this.sheetImage.height div this.rows
+    spriteWidth = this.sheetImage.w.float / this.cols.float
+    spriteHeight = this.sheetImage.h.float / this.rows.float
 
   for row in (0..<this.rows):
     for col in (0..<this.cols):
-      let spriteImage = this.sheetImage.subImage(
-        col * spriteWidth,
-        row * spriteHeight,
-        spriteWidth,
-        spriteHeight
-      )
-      this.spriteImages[col + row * this.cols] = spriteImage
+      this.spriteRects[col + row * this.cols] =
+        (
+          cfloat(col.float * spriteWidth),
+          cfloat(row.float * spriteHeight),
+          cfloat(spriteWidth),
+          cfloat(spriteHeight)
+        )
 
 template rows*(this: Spritesheet): int =
   this.rows
@@ -39,14 +48,11 @@ template rows*(this: Spritesheet): int =
 template cols*(this: Spritesheet): int =
   this.cols
 
-template `[]`*(this: Spritesheet, i: int): Image =
-  this.spriteImages[i]
-
-template `[]`*(this: Spritesheet, x, y: int): Image =
+template `[]`*(this: Spritesheet, x, y: int): Rect =
   ## Gets the sprite image at (x, y).
-  this[x + y * this.cols]
+  this.spriteRects[x + y * this.cols]
 
-template `[]`*(this: Spritesheet, coord: IVec2): Image =
+template `[]`*(this: Spritesheet, coord: IVec2): Rect =
   ## Gets the sprite image at (x, y).
   this[coord.x, coord.y]
 

@@ -4,12 +4,13 @@ const
   width = 1920
   height = 1080
 
-var game: Game = newGame("Basic Example Game", width, height)
+initEngineSingleton("Basic Example Game", width, height)
+
 let layer = newPhysicsLayer(newSpatialGrid(150))
-game.scene.addLayer layer
+Game.scene.addLayer layer
 
 type CustomBody = ref object of PhysicsBody
-  color*: ColorRGBX
+  color*: Color
 
 proc newCustomBody(radius: float, center: Vec2, velocity: Vec2 = VEC2_ZERO): CustomBody =
   result = CustomBody(
@@ -17,7 +18,7 @@ proc newCustomBody(radius: float, center: Vec2, velocity: Vec2 = VEC2_ZERO): Cus
     collisionhull: newCircleCollisionHull(newCircle(VEC2_ZERO, radius)),
     center: center,
     flags: {loUpdate, loRender, loPhysics},
-    color: rgba(0, 255, 0, 255)
+    color: GREEN
   )
   result.velocity = velocity
 
@@ -48,5 +49,5 @@ let (someSong, err) = capture loadMusic("./examples/basic/night_prowler.ogg")
 if err == nil:
   discard capture fadeInMusic(someSong, 2.0, 0.15)
 
-game.start()
+Game.start()
 

@@ -1,16 +1,14 @@
-import pixie
-
 import
   options,
-  math,
-  vmath,
   random,
   algorithm,
-  sequtils
+  sequtils,
+  sdl2_nim/sdl_gpu
 
 import
   rectangle,
-  mathutils
+  mathutils,
+  ../render/color
 
 export rectangle
 
@@ -323,17 +321,28 @@ proc rotate*(this: var Polygon, deltaRotation: float) =
 
   this.center = none(Vec2)
 
-proc fill*(this: Polygon, ctx: Context, offset: Vec2 = VEC2_ZERO) =
-  var path: Path
-  path.moveTo(this[0] + offset)
-  for i, v in this:
-    path.lineTo(v + offset)
-  ctx.fill(path)
+proc fill*(this: Polygon, ctx: Target, color: Color = RED) =
+  ctx.polygonFilled(
+    cuint this.vertices.len,
+    cast[ptr cfloat](addr this.vertices[0]),
+    color
+  )
 
-proc stroke*(this: Polygon, ctx: Context, offset: Vec2 = VEC2_ZERO) =
+proc stroke*(this: Polygon, ctx: Target, color: Color = RED) =
   for i, v in this:
-    var start: Vec2 = this[i] + offset
-    var finish: Vec2 =
-      (if i == this.len - 1: this[0] else: this[i + 1]) + offset
-    ctx.strokeSegment(segment(start, finish))
+    var
+      start: Vec2 = this[i]
+      finish: Vec2 =
+        if i == this.len - 1:
+          this[0]
+        else:
+          this[i + 1]
+
+    ctx.line(
+      cfloat start.x,
+      cfloat start.y,
+      cfloat finish.x,
+      cfloat finish.y,
+      color
+    )
 

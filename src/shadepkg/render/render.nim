@@ -1,5 +1,9 @@
-import macros
-from pixie import Context
+import 
+  macros,
+  sdl2_nim/sdl_gpu,
+  ../math/mathutils
+
+export sdl_gpu
 
 macro render*(ChildType: typedesc, ParentType: typedesc, body: untyped): untyped =
   ## Macro as a helper for the render method.
@@ -8,18 +12,14 @@ macro render*(ChildType: typedesc, ParentType: typedesc, body: untyped): untyped
   ##
   ## Example:
   ## render(B, A):
-  ##   ctx.fillStyle = rgba(255, 0, 0, 255)
-  ##   let
-  ##     pos = vec2(50, 50)
-  ##     wh = vec2(100, 100)
-  ##   ctx.fillRect(rect(pos, wh))
+  ##   ctx.blit(...)
   ##   if callback != nil:
   ##    callback()
 
   quote do:
     method render*(
       this {.inject.}: `ChildType`,
-      ctx {.inject.}: Context,
+      ctx {.inject.}: Target,
       callback {.inject.}: proc() = nil
     ) =
       procCall `ParentType`(this).render(ctx, proc =

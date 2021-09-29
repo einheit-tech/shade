@@ -1,6 +1,7 @@
 import 
   ../math/collision/collisionhull,
-  entity
+  entity,
+  ../render/color
 
 export entity, collisionhull
 
@@ -47,8 +48,5 @@ render(PhysicsBody, Entity):
 
   # Render the collisionHull outlines.
   when defined(collisionoutlines):
-    ctx.strokeStyle = rgba(255, 0, 0, 255)
-    ctx.lineWidth = 1
-    ctx.lineCap = lcSquare
-    this.collisionHull.stroke(ctx)
+    this.collisionHull.stroke(ctx, RED)
 

@@ -1,16 +1,23 @@
-import pixie
 import algorithm
 
-import layer, entity
+import
+  layer,
+  entity
 
-export layer, entity
+export
+  layer,
+  entity
 
 type Scene* = ref object of RootObj
   layers: seq[Layer]
   isLayerOrderValid: bool
 
-proc newScene*: Scene = 
-  Scene(isLayerOrderValid: true)
+proc initScene*(scene: Scene) =
+  scene.isLayerOrderValid = true
+
+proc newScene*(): Scene = 
+  result = Scene()
+  initScene(result)
 
 proc invalidateLayerOrder(this: Scene) =
   this.isLayerOrderValid = false
@@ -37,7 +44,7 @@ method update*(this: Scene, deltaTime: float) {.base.} =
   this.forEachLayer(layer):
     layer.update(deltaTime)
 
-method render*(this: Scene, ctx: Context) {.base.} =
+method render*(this: Scene, ctx: Target) {.base.} =
   this.sortLayers()
   this.forEachLayer(layer):
     layer.render(ctx)

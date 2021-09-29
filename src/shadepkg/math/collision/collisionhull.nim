@@ -3,13 +3,13 @@
 ## The hull location is relative to its owner,
 ## so the hull should be centered around the origin (0, 0),
 ## if the goal is to center it on its owner for collisions.
-
-import pixie/contexts
+import sdl2_nim/sdl_gpu
 
 import
   ../circle,
   ../polygon,
-  ../mathutils
+  ../mathutils,
+  ../../render/color
 
 export
   circle,
@@ -158,17 +158,19 @@ proc rotate*(this: CollisionHull, deltaRotation: float) =
   of chkPolygon:
     this.polygon.rotate(deltaRotation)
 
-proc stroke*(this: CollisionHull, ctx: Context, offset: Vec2 = VEC2_ZERO) =
+proc stroke*(this: CollisionHull, ctx: Target, color: Color = RED) =
   case this.kind:
   of chkPolygon:
-    this.polygon.stroke(ctx, offset)
+    this.polygon.stroke(ctx, color)
+    discard
   of chkCirle:
-    this.circle.stroke(ctx, offset)
+    this.circle.stroke(ctx, color)
 
-proc fill*(this: CollisionHull, ctx: Context, offset: Vec2 = VEC2_ZERO) =
+proc fill*(this: CollisionHull, ctx: Target, color: Color) =
   case this.kind:
   of chkPolygon:
-    this.polygon.fill(ctx, offset)
+    this.polygon.fill(ctx, color)
+    discard
   of chkCirle:
-    this.circle.fill(ctx, offset)
+    this.circle.fill(ctx, color)
 

@@ -1,6 +1,5 @@
 import 
   sdl2_nim/sdl,
-  pixie,
   tables
 
 from sdl2_nim/sdl import Scancode, Keycode
@@ -26,17 +25,16 @@ type
     justReleased: bool
 
   InputHandler* = ref object
-    window: Window
     mouse: MouseInfo
     keys: Table[Keycode, KeyState]
 
 # InputHandler singleton
 var Input*: InputHandler
 
-proc initInputHandlerSingleton*(window: Window) =
+proc initInputHandlerSingleton*() =
   if Input != nil:
     raise newException(Exception, "InputHandler singleton already active!")
-  Input = InputHandler(window: window)
+  Input = InputHandler()
  
 proc processEvent*(this: InputHandler, event: Event): bool =
   ## Processes events.
@@ -149,37 +147,37 @@ proc update*(this: InputHandler, deltaTime: float) =
     key.justPressed = false
     key.justReleased = false
 
-when defined(inputdebug):
-  proc renderInputInfo*(ctx: Context) =
-    ## Render debug info
+# TODO: Add rendering just using sdl
+# when defined(inputdebug):
+#   var font = readFont("fonts/JetBrainsMono-Regular.ttf")
+#   font.size = 20
+#   font.paint.color = rgba(120, 120, 0, 255)
 
-    # TODO: This will be stupid slow if the library doesn't cache the font.
-    var font = readFont("fonts/JetBrainsMono-Regular.ttf")
-    font.size = 20
-    font.paint.color = rgba(120, 120, 0, 255)
+#   proc renderInputInfo*(ctx: Context) =
+#     ## Render debug info
 
-    let mouseLoc = Input.mouseLocation()
-    var mouseLocationText = "Mouse Location:"
-    mouseLocationText &= "(" & $mouseLoc.x & ", " & $mouseLoc.y & ")"
+#     let mouseLoc = Input.mouseLocation()
+#     var mouseLocationText = "Mouse Location:"
+#     mouseLocationText &= "(" & $mouseLoc.x & ", " & $mouseLoc.y & ")"
 
-    var leftButtonText  = "\n\nLeft Button:"
-    leftButtonText &= "\n  Pressed: " & $Input.isLeftMouseButtonPressed()
-    leftButtonText &= "\n  Just Pressed: " & $Input.wasLeftMouseButtonJustPressed()
-    leftButtonText &= "\n  Just Released: " & $Input.wasLeftMouseButtonJustReleased()
+#     var leftButtonText  = "\n\nLeft Button:"
+#     leftButtonText &= "\n  Pressed: " & $Input.isLeftMouseButtonPressed()
+#     leftButtonText &= "\n  Just Pressed: " & $Input.wasLeftMouseButtonJustPressed()
+#     leftButtonText &= "\n  Just Released: " & $Input.wasLeftMouseButtonJustReleased()
 
-    var rightButtonText = "\n\nRight Button:"
-    rightButtonText &= "\n  Pressed: " & $Input.isRightMouseButtonPressed()
-    rightButtonText &= "\n  Just Pressed: " & $Input.wasRightMouseButtonJustPressed()
-    rightButtonText &= "\n  Just Released: " & $Input.wasRightMouseButtonJustReleased()
+#     var rightButtonText = "\n\nRight Button:"
+#     rightButtonText &= "\n  Pressed: " & $Input.isRightMouseButtonPressed()
+#     rightButtonText &= "\n  Just Pressed: " & $Input.wasRightMouseButtonJustPressed()
+#     rightButtonText &= "\n  Just Released: " & $Input.wasRightMouseButtonJustReleased()
 
-    # Keyboard
+#     # Keyboard
     
-    var pressedKeys = "\n\n"
-    for key, state in Input.keys:
-      if state.pressed:
-        pressedKeys &= $key & " "
+#     var pressedKeys = "\n\n"
+#     for key, state in Input.keys:
+#       if state.pressed:
+#         pressedKeys &= $key & " "
 
-    let text = mouseLocationText & leftButtonText & rightButtonText & pressedKeys
+#     let text = mouseLocationText & leftButtonText & rightButtonText & pressedKeys
 
-    ctx.image.fillText(font.typeset(text, vec2(1920, 1080)), translate(vec2(10, 10)))
+#     ctx.image.fillText(font.typeset(text, vec2(1920, 1080)), translate(vec2(10, 10)))
 

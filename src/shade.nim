@@ -3,7 +3,6 @@ import shadepkg / [
   game/game,
   input/inputhandler,
   audio/audioplayer,
-  game/render,
   game/spritesheet,
   game/sprite,
   game/scene,
@@ -16,6 +15,9 @@ import shadepkg / [
   game/material,
   game/task,
   game/tween,
+  images/imageatlas,
+  render/render,
+  render/color,
   math/mathutils,
   math/polygon,
   math/rectangle,
@@ -28,7 +30,6 @@ import shadepkg / [
 export
   errors,
   game,
-  render,
   spritesheet,
   sprite,
   scene,
@@ -43,11 +44,14 @@ export
   material,
   inputhandler,
   audioplayer,
+  imageatlas,
+  render,
+  color,
+  mathutils,
   polygon,
   rectangle,
   circle,
   collisionhull,
   sat,
-  spatialgrid,
-  mathutils
+  spatialgrid
 

@@ -146,7 +146,6 @@ macro addNewAnimationTrack*[T: TrackType](
       when (`field` is not proc):
         var currIndex = -1
         for i in `frames`.low..<`frames`.high:
-          # echo repr `frames`[i]
           if currentTime >= `frames`[i].time and currentTime <= `frames`[i + 1].time:
             currIndex = i
             break
