@@ -32,7 +32,7 @@ animPlayer.playAnimation("run")
 king.addChild(animPlayer)
 
 king.center = vec2(200, 200)
-layer.add king
+layer.addChild king
 
 Game.start()
 
