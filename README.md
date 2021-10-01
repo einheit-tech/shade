@@ -6,6 +6,19 @@
 
 `nimble install -dy`
 
+### Setting up sdl_gpu
+
+- Install `sdl-gpu` from https://github.com/grimfang4/sdl-gpu
+    - `git clone git@github.com:grimfang4/sdl-gpu.git`
+    - `git checkout '6df9944ccb344b9b0725b344fdfb201958eec90c'`
+    - `cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr`
+    - `make`
+    - `sudo make install`
+
+## Examples
+
+Run the two example games to make sure everything works on your system
+
 ## Running examples
 
 `nimble example` or
