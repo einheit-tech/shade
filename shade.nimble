@@ -12,7 +12,7 @@ bin           = @["shade"]
 # Dependencies
 
 requires "nim >= 1.4.6"
-requires "sdl2_nim >= 2.0.14.2"
+requires "sdl2_nim >= 2.0.14.3"
 
 # Tasks
 task example, "Runs the basic example":
