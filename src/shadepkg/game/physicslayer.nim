@@ -19,9 +19,13 @@ type
     spatialGrid*: SpatialGrid
     collisionListeners: seq[CollisionListener[PhysicsLayer]]
 
+proc initPhysicsLayer*(layer: PhysicsLayer, grid: SpatialGrid, z: float = 1.0) =
+  initLayer(layer, z)
+  layer.spatialGrid = grid
+
 proc newPhysicsLayer*(grid: SpatialGrid, z: float = 1.0): PhysicsLayer =
-  result = PhysicsLayer(spatialGrid: grid)
-  result.z = z
+  result = PhysicsLayer()
+  initPhysicsLayer(result, grid, z)
 
 method addCollisionListener*(this: PhysicsLayer, listener: CollisionListener[PhysicsLayer]) {.base.} =
   this.collisionListeners.add(listener)
@@ -90,7 +94,7 @@ method update*(this: PhysicsLayer, deltaTime: float) =
   procCall Layer(this).update(deltaTime)
 
   # Add all entities to the spatial grid.
-  for entity in this:
+  for entity in this.children:
     if entity of PhysicsBody and loPhysics in entity.flags:
       this.spatialGrid.addBody(PhysicsBody entity)
 

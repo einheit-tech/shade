@@ -49,9 +49,14 @@ type
 template currentTime*(this: Animation): float = this.currentTime
 template duration*(this: Animation): float = this.duration
 
+proc initAnimation*(anim: Animation, duration: float) =
+  initNode(Node(anim), {loUpdate})
+  anim.duration = duration
+
 proc newAnimation*(duration: float): Animation =
   ## Creates a new Animation.
-  return Animation(duration: duration)
+  result = Animation()
+  initAnimation(result, duration)
 
 proc animateToTime*(this: Animation, currentTime, deltaTime: float) =
   for track in this.tracks:

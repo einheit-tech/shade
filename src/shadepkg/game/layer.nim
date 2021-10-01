@@ -11,15 +11,18 @@ type
   ## Layers have a `z` axis coordinate.
   ## All nodes on the layer are assumed to share this same coordinate.
   ##
-  Layer* = ref object of RootObj
-    nodes*: seq[Node]
+  Layer* = ref object of Node
     # Location of the layer on the `z` axis.
     z: float
     zChangeListeners: seq[ZChangeListener]
 
-proc newLayer*(z: float = 1.0): Layer = Layer(z: z)
+proc initLayer*(layer: Layer, z: float = 1.0) =
+  initNode(layer, {loUpdate, loRender})
+  layer.z = z
 
-template nodeCount*(this: Layer): int = this.nodes.len
+proc newLayer*(z: float = 1.0): Layer =
+  result = Layer()
+  initLayer(result, z)
 
 template z*(this: Layer): float = this.z
 
@@ -50,39 +53,4 @@ proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeLis
 
   this.zChangeListeners.add(onceListener)
   return onceListener
-
-iterator items*(this: Layer): Node =
-  for e in this.nodes:
-    yield e
-
-iterator pairs*(this: Layer): (int, Node) =
-  for i, e in this.nodes:
-    yield (i, e)
-
-template add*(this: Layer, obj: Node) =
-  this.nodes.add(obj)
-
-template remove*(this: Layer, i: Natural) =
-  ## Removes the entity at the given index, maintaining entity order.
-  this.nodes.delete(i)
-
-template remove*(this: Layer, obj: Node) =
-  ## Removes the entity, maintaining entity order.
-  for i, o in this:
-    if o == obj:
-      this.remove(i)
-      break
-
-method update*(this: Layer, deltaTime: float) {.base.} =
-  for e in this:
-    if loUpdate in e.flags:
-      e.update(deltaTime)
-
-method render*(this: Layer, ctx: Target, callback: proc() = nil) {.base.} =
-  for e in this:
-    if loRender in e.flags:
-      e.render(ctx)
-
-  if callback != nil:
-    callback()
 

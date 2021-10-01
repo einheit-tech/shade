@@ -8,11 +8,12 @@ export
   layer,
   entity
 
-type Scene* = ref object of RootObj
+type Scene* = ref object of Node
   layers: seq[Layer]
   isLayerOrderValid: bool
 
 proc initScene*(scene: Scene) =
+  initNode(Node(scene), {loUpdate, loRender})
   scene.isLayerOrderValid = true
 
 proc newScene*(): Scene = 
@@ -39,12 +40,13 @@ proc sortLayers(this: Scene) =
       SortOrder.Descending
     )
 
-method update*(this: Scene, deltaTime: float) {.base.} =
+method update*(this: Scene, deltaTime: float) =
+  procCall Node(this).update(deltaTime)
   this.sortLayers()
   this.forEachLayer(layer):
     layer.update(deltaTime)
 
-method render*(this: Scene, ctx: Target) {.base.} =
+render(Scene, Node):
   this.sortLayers()
   this.forEachLayer(layer):
     layer.render(ctx)

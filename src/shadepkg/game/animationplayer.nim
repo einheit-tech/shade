@@ -15,9 +15,16 @@ type
 
 proc addAnimations*(this: AnimationPlayer, animations: openArray[NamedAnimation])
 
+proc initAnimationPlayer*(
+  player: AnimationPlayer,
+  animations: varargs[NamedAnimation]
+) =
+  initNode(Node(player), {loUpdate})
+  player.addAnimations(animations)
+
 proc newAnimationPlayer*(animations: varargs[NamedAnimation]): AnimationPlayer =
   result = AnimationPlayer()
-  result.addAnimations(animations)
+  initAnimationPlayer(result, animations)
 
 proc addAnimation*(this: AnimationPlayer, animationName: string, animation: Animation) =
   this.animations[animationName] = animation
@@ -36,11 +43,4 @@ method update*(this: AnimationPlayer, deltaTime: float) =
 
   if this.currentAnimation != nil:
     this.currentAnimation.update(deltaTime)
-
-render(AnimationPlayer, Node):
-  if this.currentAnimation != nil:
-    this.currentAnimation.render(ctx)
-
-  if callback != nil:
-    callback()
 

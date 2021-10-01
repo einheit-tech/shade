@@ -231,7 +231,9 @@ func cubicBezierVector*(t: float, p0, p1, p2, p3: Vec2): Vec2 =
 
 # Vec2
 
-const VEC2_ZERO* = vec2()
+const
+  VEC2_ZERO* = vec2()
+  VEC2_ONE* = vec2(1.0, 1.0)
 
 func cross*(v1, v2: Vec2): float =
   return
@@ -297,7 +299,9 @@ proc lerp*(v1, v2: Vec2, completionRatio: float): Vec2 =
 
 # IVec2
 
-const IVEC2_ZERO* = ivec2()
+const
+  IVEC2_ZERO* = ivec2()
+  IVEC2_ONE* = ivec2(1, 1)
 
 proc ease*(v1, v2: IVec2, completionRatio: float, f: EasingFunction[int]): IVec2 =
   ## Applies an easing function
@@ -321,7 +325,9 @@ proc lerp*(v1, v2: IVec2, completionRatio: float): IVec2 =
 
 # Vec3
 
-const VEC3_ZERO* = vec3()
+const
+  VEC3_ZERO* = vec3()
+  VEC3_ONE* = vec3(1.0, 1.0, 1.0)
 
 proc ease*(v1, v2: Vec3, completionRatio: float, f: EasingFunction[float]): Vec3 =
   ## Applies an easing function

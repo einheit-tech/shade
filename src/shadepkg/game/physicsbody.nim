@@ -15,19 +15,37 @@ type
     material*: Material
     kind*: PhysicsBodyKind
 
+proc initPhysicsBody*(
+  body: PhysicsBody,
+  kind: PhysicsBodyKind,
+  hull: CollisionHull,
+  material: Material = NULL,
+  flags: set[LayerObjectFlags] = {loUpdate, loRender, loPhysics},
+  centerX: float = 0.0,
+  centerY: float = 0.0
+) =
+  initEntity(Entity(body), flags, centerX, centerY)
+  body.kind = kind
+  body.collisionHull = hull
+  body.material = material
+
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
   hull: CollisionHull,
-  center: Vec2 = VEC2_ZERO,
-  flags: set[LayerObjectFlags] = {loUpdate, loRender, loPhysics},
   material: Material = NULL,
+  flags: set[LayerObjectFlags] = {loUpdate, loRender, loPhysics},
+  centerX: float = 0.0,
+  centerY: float = 0.0
 ): PhysicsBody =
-  return PhysicsBody(
-    kind: kind,
-    collisionHull: hull,
-    center: center,
-    flags: flags,
-    material: material
+  result = PhysicsBody()
+  initPhysicsBody(
+    result,
+    kind,
+    hull,
+    material,
+    flags,
+    centerX,
+    centerY
   )
 
 template getMass*(this: Entity): float =
@@ -38,7 +56,7 @@ method bounds*(this: PhysicsBody): Rectangle {.base.} =
   ## The bounds are relative to the center of the object.
   return this.collisionHull.getBounds()
 
-method update*(this: PhysicsBody, deltaTime: float) {.locks: 0.} =
+method update*(this: PhysicsBody, deltaTime: float) =
   if this.kind != pbStatic:
     procCall Entity(this).update(deltaTime)
 

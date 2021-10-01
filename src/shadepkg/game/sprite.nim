@@ -14,9 +14,10 @@ proc initSprite*(
   image: Image,
   hframes,
   vframes: int,
+  flags: set[LayerObjectFlags] = {loUpdate, loRender},
   frameCoords: IVec2 = IVEC2_ZERO
 ) =
-  initEntity(Entity(sprite), {loRender, loUpdate})
+  initEntity(Entity(sprite), flags)
   sprite.spritesheet = newSpritesheet(image, hframes, vframes)
   sprite.frameCoords = frameCoords
 
@@ -24,25 +25,21 @@ proc newSprite*(
   image: Image,
   hframes,
   vframes: int,
+  flags: set[LayerObjectFlags] = {loUpdate, loRender},
   frameCoords: IVec2 = IVEC2_ZERO
 ): Sprite =
   result = Sprite()
-  initSprite(result, image, hframes, vframes, frameCoords)
+  initSprite(result, image, hframes, vframes, flags, frameCoords)
 
-render(Sprite, Node):
-  var spriteRect = this.spritesheet[this.frameCoords]
-
-  # TODO: Revise math now that we render from the center of images.
-  let 
-    translationX = cfloat -this.center.x
-    translationY = cfloat -this.center.y
-
-  translate(translationX, translationY, cfloat 0)
-
-  blit(this.spritesheet.image, spriteRect.addr, ctx, cfloat 0, cfloat 0)
+render(Sprite, Entity):
+  blit(
+    this.spritesheet.image,
+    this.spritesheet[this.frameCoords].addr,
+    ctx,
+    cfloat 0,
+    cfloat 0
+  )
 
   if callback != nil:
     callback()
-
-  translate(-translationX, -translationY, cfloat 0)
 
