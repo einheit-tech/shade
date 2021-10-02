@@ -27,6 +27,9 @@ func smootherStep*(x: float): float
 func smoothStep*(x: float): float
 func lerp*(startValue, endValue, completionRatio: float): float
 func lerp*(startValue, endValue: int, completionRatio: float): int
+func lerpDiscrete[T: SomeNumber](startValue, endValue: T, completionRatio: float): T
+func lerpDiscrete*(startValue, endValue: int, completionRatio: float): int
+func lerpDiscrete*(startValue, endValue: float, completionRatio: float): float
 func minUnsignedAngle*(a1, a2, halfRange: float): float
 func minUnsignedDegreeAngle*(d1, d2: float): float
 func minUnsignedRadianAngle*(r1, r2: float): float
@@ -128,6 +131,21 @@ func lerp*(startValue, endValue: int, completionRatio: float): int =
       int floor(f)
     else:
       int ceil(f)
+
+func lerpDiscrete[T: SomeNumber](startValue, endValue: T, completionRatio: float): T =
+  ## Returns the endValue when completionRatio reaches 1.0.
+  ## Otherwise, startValue is returned.
+  return 
+    if completionRatio == 1.0:
+      endValue
+    else:
+      startValue
+
+func lerpDiscrete*(startValue, endValue: int, completionRatio: float): int =
+  lerpDiscrete[int](startValue, endValue, completionRatio)
+
+func lerpDiscrete*(startValue, endValue: float, completionRatio: float): float =
+  lerpDiscrete[float](startValue, endValue, completionRatio)
 
 func smoothStep*(x: float): float =
   ## @param {float} x The value to process through the step equation.
@@ -314,14 +332,18 @@ proc ease*(v1, v2: IVec2, completionRatio: float, f: EasingFunction[int]): IVec2
     int32 f(v1.y, v2.y, completionRatio)
   )
 
+func lerpDiscrete*(v1, v2: IVec2, completionRatio: float): IVec2 =
+  ## Will return v2 when the completionRatio reaches 1.0.
+  ## Otherwise, v1 is returned.
+  return v1.ease(v2, completionRatio, lerpDiscrete)
+
 proc lerp*(v1, v2: IVec2, completionRatio: float): IVec2 =
   ## Lerps the values between two vector (from v1 to v2).
   ## @param {IVec2} v1 The starting vector values.
   ## @param {IVec2} v2 The ending vector values.
   ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation
   ## @returns {IVec2} A new vector with the lerped values.
-  return v1.ease(v2, completionRatio, mathutils.lerp)
-
+  return v1.ease(v2, completionRatio, lerp)
 
 # Vec3
 
