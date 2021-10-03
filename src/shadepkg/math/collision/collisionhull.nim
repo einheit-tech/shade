@@ -6,6 +6,7 @@
 import sdl2_nim/sdl_gpu
 
 import
+  ../../game/node,
   ../circle,
   ../polygon,
   ../mathutils,
@@ -17,53 +18,102 @@ export
 
 type
   CollisionHullKind* = enum
-    chkCirle
+    chkCircle
     chkPolygon
 
-  CollisionHull* = ref object
+  CollisionHull* = ref object of Node
     bounds: Rectangle
+    hullScale: Vec2
     case kind: CollisionHullKind
-    of chkCirle:
-      circle*: Circle
+    of chkCircle:
+      unscaledCircle: Circle
+      scaledCircle: Circle
     of chkPolygon:
-      polygon*: Polygon
+      unscaledPolygon: Polygon
+      scaledPolygon: Polygon
+
+proc getBounds*(this: CollisionHull): Rectangle
+
+proc initPolygonCollisionHull*(hull: CollisionHull, polygon: Polygon) =
+  initNode(
+    Node(hull),
+    when defined(collisionoutlines):
+      {loRender}
+    else:
+      {}
+  )
+  hull.hullScale = VEC2_ONE
+  hull.unscaledPolygon = polygon
 
 proc newPolygonCollisionHull*(polygon: Polygon): CollisionHull =
-  CollisionHull(kind: chkPolygon, polygon: polygon)
+  result = CollisionHull(kind: chkPolygon)
+  initPolygonCollisionHull(result, polygon)
+
+proc initCircleCollisionHull*(hull: CollisionHull, circle: Circle) =
+  initNode(
+    Node(hull),
+    when defined(collisionoutlines):
+      {loRender}
+    else:
+      {}
+  )
+  hull.hullScale = VEC2_ONE
+  hull.unscaledCircle = circle
 
 proc newCircleCollisionHull*(circle: Circle): CollisionHull =
-  CollisionHull(kind: chkCirle, circle: circle)
+  result = CollisionHull(kind: chkCircle)
+  initCircleCollisionHull(result, circle)
+
+template width*(this: CollisionHull): float = this.getBounds().width
+template height*(this: CollisionHull): float = this.getBounds().height
+
+template circle*(this: CollisionHull): Circle =
+  if this.scaledCircle == nil:
+    this.scaledCircle = this.unscaledCircle.getScaledInstance(this.hullScale)
+  this.scaledCircle
+
+template polygon*(this: CollisionHull): Polygon =
+  if this.scaledPolygon == nil:
+    this.scaledPolygon = this.unscaledPolygon.getScaledInstance(this.hullScale)
+  this.scaledPolygon
+
+method onParentScaled*(this: CollisionHull, parentScale: Vec2) =
+  this.hullScale = parentScale
+  # Invalidate the scaled shape when the hull is rescaled.
+  case this.kind:
+    of chkCircle:
+      this.scaledCircle = nil
+    of chkPolygon:
+      this.scaledPolygon = nil
 
 proc getBounds*(this: CollisionHull): Rectangle =
   if this.bounds == nil:
     case this.kind:
-    of chkCirle:
-      this.bounds = newRectangle(
-        this.circle.center.x - this.circle.radius,
-        this.circle.center.y - this.circle.radius,
-        this.circle.radius * 2,
-        this.circle.radius * 2
-      )
+    of chkCircle:
+      this.bounds = this.circle.calcBounds()
     of chkPolygon:
       this.bounds = this.polygon.getBounds()
-
   return this.bounds
+
+proc getUnscaledBounds*(this: CollisionHull): Rectangle =
+  case this.kind:
+  of chkCircle:
+    this.unscaledCircle.calcBounds()
+  of chkPolygon:
+    this.unscaledPolygon.getBounds()
 
 proc getArea*(this: CollisionHull): float =
   case this.kind:
   of chkPolygon:
     return this.polygon.getArea()
-  of chkCirle:
+  of chkCircle:
     return this.circle.getArea()
-
-template width*(this: CollisionHull): float = this.getBounds().width
-template height*(this: CollisionHull): float = this.getBounds().height
 
 template center*(this: CollisionHull): Vec2 =
   case this.kind:
   of chkPolygon:
     this.polygon.center
-  of chkCirle:
+  of chkCircle:
     this.circle.center
 
 proc getCircleToCircleProjectionAxes(circleA, circleB: Circle, aToB: Vec2): seq[Vec2] =
@@ -86,7 +136,7 @@ func getPolygonProjectionAxes(poly: Polygon): seq[Vec2] =
       currentPoint = poly[i]
       edge = nextPoint - currentPoint
     if edge.length() == 0f:
-        continue
+      continue
     let axis: Vec2 = edge.perpendicular().normalize()
     result.add(if clockwise: axis.negate() else: axis)
     i.inc
@@ -110,23 +160,23 @@ proc getProjectionAxes*(
   ## @param toOther A vector from this hull's reference frame to the other hull's reference frame.
   ## @return The array of axes.
   case this.kind:
-  of chkCirle:
+  of chkCircle:
     case otherHull.kind:
-    of chkCirle:
+    of chkCircle:
       return this.circle.getCircleToCircleProjectionAxes(otherHull.circle, toOther)
     of chkPolygon:
       return this.circle.getCircleToPolygonProjectionAxes(otherHull.polygon, toOther)
 
   of chkPolygon:
     case otherHull.kind:
-    of chkCirle, chkPolygon:
+    of chkCircle, chkPolygon:
       return this.polygon.getPolygonProjectionAxes()
 
 func project*(this: CollisionHull, relativeLoc, axis: Vec2): Vec2 =
   case this.kind:
   of chkPolygon:
     return this.polygon.project(relativeLoc, axis)
-  of chkCirle:
+  of chkCircle:
     return this.circle.project(relativeLoc, axis)
 
 func polygonGetFarthest(this: Polygon, direction: Vec2): seq[Vec2] =
@@ -146,14 +196,14 @@ func polygonGetFarthest(this: Polygon, direction: Vec2): seq[Vec2] =
 func getFarthest*(this: CollisionHull, direction: Vec2): seq[Vec2] =
   ## Gets the farthest point(s) of the CollisionHull in the direction of the vector.
   case this.kind:
-  of chkCirle:
+  of chkCircle:
     return @[this.circle.center + direction.normalize(this.circle.radius)]
   of chkPolygon:
     return this.polygon.polygonGetFarthest(direction)
 
 proc rotate*(this: CollisionHull, deltaRotation: float) =
   case this.kind:
-  of chkCirle:
+  of chkCircle:
     return
   of chkPolygon:
     this.polygon.rotate(deltaRotation)
@@ -161,16 +211,23 @@ proc rotate*(this: CollisionHull, deltaRotation: float) =
 proc stroke*(this: CollisionHull, ctx: Target, color: Color = RED) =
   case this.kind:
   of chkPolygon:
-    this.polygon.stroke(ctx, color)
+    this.unscaledPolygon.stroke(ctx, color)
     discard
-  of chkCirle:
-    this.circle.stroke(ctx, color)
+  of chkCircle:
+    this.unscaledCircle.stroke(ctx, color)
 
 proc fill*(this: CollisionHull, ctx: Target, color: Color) =
   case this.kind:
   of chkPolygon:
-    this.polygon.fill(ctx, color)
+    this.unscaledPolygon.fill(ctx, color)
     discard
-  of chkCirle:
-    this.circle.fill(ctx, color)
+  of chkCircle:
+    this.unscaledCircle.fill(ctx, color)
+
+render(CollisionHull, Node):
+  this.fill(ctx, GREEN)
+  this.getUnscaledBounds().stroke(ctx)
+
+  if callback != nil:
+    callback()
 

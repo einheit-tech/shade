@@ -15,16 +15,34 @@ let king = newSprite(image, 11, 8)
 king.scale = vec2(3.0, 3.0)
 
 # Set up the run animation
-let runAnim = newAnimation(1.1)
-let frames: seq[KeyFrame[IVec2]] =
+const
+  frameSpeed = 0.08
+  frameCount = 8
+  animDuration = frameCount * frameSpeed
+
+let runAnim = newAnimation(animDuration)
+
+# Change the spritesheet coordinate
+let animCoordFrames: seq[KeyFrame[IVec2]] =
   @[
     (ivec2(0, 7), 0.0),
-    (ivec2(7, 7), 1.0),
+    (ivec2(7, 7), animDuration - frameSpeed),
   ]
-
 runAnim.addNewAnimationTrack(
   king.frameCoords,
-  frames
+  animCoordFrames
+)
+
+# Change the scale
+let scaleFrames: seq[KeyFrame[Vec2]] =
+  @[
+    (vec2(2, 2), 0.0),
+    (vec2(2.2, 2.2), animDuration / 2),
+  ]
+runAnim.addNewAnimationTrack(
+  king.scale,
+  scaleFrames,
+  true
 )
 
 let animPlayer = newAnimationPlayer(("run", runAnim))

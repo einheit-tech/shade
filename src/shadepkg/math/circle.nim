@@ -5,6 +5,7 @@ import
 
 import
   mathutils,
+  rectangle,
   ../render/color
 
 type Circle* = ref object
@@ -31,6 +32,19 @@ proc getArea*(this: Circle): float =
   if this.area.isNone:
     this.area = (PI * this.radius * this.radius).option
   return this.area.get
+
+proc getScaledInstance*(this: Circle, scale: Vec2): Circle =
+  if scale.x == 0 or scale.y == 0:
+    raise newException(Exception, "Scaled size cannot be 0!")
+  return newCircle(this.center, this.radius * max(scale.x, scale.y))
+
+func calcBounds*(circ: Circle): Rectangle =
+  return newRectangle(
+    circ.center.x - circ.radius,
+    circ.center.y - circ.radius,
+    circ.radius * 2,
+    circ.radius * 2
+  )
 
 proc stroke*(this: Circle, ctx: Target, color: Color = RED) =
   ctx.circle(

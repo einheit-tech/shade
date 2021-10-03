@@ -118,9 +118,9 @@ func getAverage*(this: Polygon): Vec2 =
   return vec2(x * d, y * d)
 
 func getBounds*(this: Polygon): Rectangle =
-  ## Calculates the bounds of the polygon.
+  ## Gets the bounds of the polygon.
+  ## Bounds are lazy initialized.
   if this.bounds != nil:
-    # Bounds are lazy initialized.
     return this.bounds
   var
     minX = Inf
@@ -189,6 +189,18 @@ func getTranslatedInstance*(this: Polygon, delta: Vec2): Polygon =
   for v in this:
     verts.add(v + delta)
   return newPolygon(verts)
+
+func getScaledInstance*(this: Polygon, scale, anchorPoint: Vec2): Polygon =
+  if scale.x == 0 or scale.y == 0:
+    raise newException(Exception, "Scaled size cannot be 0!")
+
+  var verts: seq[Vec2]
+  for i, v in this:
+    verts.add(anchorPoint + (v - anchorPoint) * scale)
+  return newPolygon(verts)
+
+func getScaledInstance*(this: Polygon, scale: Vec2): Polygon =
+  return this.getScaledInstance(scale, center(this))
 
 proc createRandomConvex*(vertexCount: int, width, height: float): Polygon =
   ## Generates a random convex polygon.

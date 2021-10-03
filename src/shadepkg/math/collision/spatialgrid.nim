@@ -19,7 +19,7 @@ type
     cells: Table[CellID, SpatialCell]
     cellSize: Positive
     # Scalar from grid coords to game coords.
-    gridToPixelScalar: float
+    gridToPixelScalar: Vec2
 
 proc newSpatialCell(cellID: CellID): SpatialCell = SpatialCell(cellID: cellID)
 
@@ -34,10 +34,11 @@ proc newSpatialGrid*(cellSize: Positive): SpatialGrid =
   ## @param cellSize:
   ##  The size of each cell in the grid.
   ##  This should be approx. double the size of the average body.
+  let scalar = 1.0 / cellSize.float
   SpatialGrid(
     cells: initTable[CellID, SpatialCell](),
     cellSize: cellSize.int,
-    gridToPixelScalar: 1.0 / cellSize.float
+    gridToPixelScalar: vec2(scalar, scalar)
   )
 
 iterator items*(this: SpatialGrid): PhysicsBody =

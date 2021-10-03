@@ -93,10 +93,10 @@ proc detectCollisions(this: PhysicsLayer, deltaTime: float) =
 method update*(this: PhysicsLayer, deltaTime: float) =
   procCall Layer(this).update(deltaTime)
 
-  # Add all entities to the spatial grid.
-  for entity in this.children:
-    if entity of PhysicsBody and loPhysics in entity.flags:
-      this.spatialGrid.addBody(PhysicsBody entity)
+  # Add all node to the spatial grid.
+  for node in this.children:
+    if node of PhysicsBody and loPhysics in node.flags:
+      this.spatialGrid.addBody(PhysicsBody node)
 
   # Detect collisions using the data in the spatial grid.
   # All listeners are notified.

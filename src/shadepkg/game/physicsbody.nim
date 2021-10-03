@@ -28,6 +28,7 @@ proc initPhysicsBody*(
   body.kind = kind
   body.collisionHull = hull
   body.material = material
+  body.addChild(body.collisionHull)
 
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
@@ -59,12 +60,4 @@ method bounds*(this: PhysicsBody): Rectangle {.base.} =
 method update*(this: PhysicsBody, deltaTime: float) =
   if this.kind != pbStatic:
     procCall Entity(this).update(deltaTime)
-
-render(PhysicsBody, Entity):
-  if callback != nil:
-    callback()
-
-  # Render the collisionHull outlines.
-  when defined(collisionoutlines):
-    this.collisionHull.stroke(ctx, RED)
 

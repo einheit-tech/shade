@@ -38,7 +38,7 @@ func minSignedDegreeAngle*(d1, d2: float): float
 func minSignedRadianAngle*(r1, r2: float): float
 func clamp*(min, value, max: float): float
 
-func almostEquals*(x, y: float; unitsInLastPlace: Natural = 8): bool =
+func almostEquals*(x, y: float; unitsInLastPlace: Natural = MaxFloatPrecision): bool =
   # Can use https://github.com/nim-lang/Nim/blob/devel/lib/pure/math.nim#L262
   # once this is in Nim stable.
   runnableExamples:

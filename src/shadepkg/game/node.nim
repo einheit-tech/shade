@@ -23,9 +23,10 @@ type
     children: seq[Node]
     flags*: set[LayerObjectFlags]
 
-    scale*: Vec2
+    scale: Vec2
     center*: Vec2
     # TODO: Would be nice to have radians, but `rotate` takes degrees.
+    # TODO: Need to handle rotation in the same manner as scale.
     rotation*: float
 
 proc initNode*(node: Node, flags: set[LayerObjectFlags]) =
@@ -35,6 +36,19 @@ proc initNode*(node: Node, flags: set[LayerObjectFlags]) =
 proc newNode*(flags: set[LayerObjectFlags]): Node =
   result = Node()
   initNode(result, flags)
+
+template scale*(this: Node): Vec2 =
+  this.scale
+
+method onParentScaled*(this: Node, parentScale: Vec2) {.base.} =
+  ## Called when a parent of this node has been scaled.
+  discard
+
+method `scale=`*(this: Node, scale: Vec2) {.base.} =
+  ## Sets the scale of the node.
+  this.scale = scale
+  for child in this.children:
+    child.onParentScaled(this.scale)
 
 proc children*(this: Node): lent seq[Node] =
   return this.children
@@ -70,6 +84,10 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
 
   scale(this.scale.x, this.scale.y, 1.0)
 
+  for child in this.children:
+    if loRender in child.flags:
+      child.render(ctx)
+
   if callback != nil:
     callback()
 
@@ -80,8 +98,4 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
 
   if this.center != VEC2_ZERO:
     translate(cfloat -this.center.x, cfloat -this.center.y, cfloat 0)
-
-  for child in this.children:
-    if loRender in child.flags:
-      child.render(ctx)
 

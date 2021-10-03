@@ -12,10 +12,10 @@ Game.scene.addLayer layer
 let ball = newPhysicsBody(
   kind = pbKinematic,
   hull = newCircleCollisionHull(newCircle(VEC2_ZERO, 10)),
-  centerX = 1000,
+  centerX = 1150,
   centerY = 100,
 )
-ball.velocity.x = 128
+ball.velocity.x = 32
 
 let rect = newPhysicsBody(
   kind = pbStatic,
@@ -32,9 +32,11 @@ let rect = newPhysicsBody(
 layer.addChild(ball)
 layer.addChild(rect)
 
+var i = 0
 proc listener(layer: PhysicsLayer, collisionOwner, collided: PhysicsBody, result: CollisionResult) =
   if result != nil:
-    echo "collision: " & $result.contactNormal
+    echo "collision " & $i & ": " & $result.contactNormal
+    i.inc
 
 layer.addCollisionListener(listener)
 

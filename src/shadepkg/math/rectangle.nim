@@ -1,10 +1,17 @@
-import vmath
+import
+  mathutils,
+  ../render/render,
+  ../render/color
 
 type
-  Rectangle* = ref RectangleObj
-  RectangleObj* = object
-    x, y, width, height: float
-    topLeft, center, bottomRight: Vec2
+  Rectangle* = ref object
+    x: float
+    y: float
+    width: float
+    height: float
+    topLeft: Vec2
+    center: Vec2
+    bottomRight: Vec2
 
 proc newRectangle*(x, y, width, height: float): Rectangle =
   result = Rectangle(
@@ -33,15 +40,26 @@ template center*(this: Rectangle): Vec2 = this.center
 template bottomRight*(this: Rectangle): Vec2 = this.bottomRight
 template halfSize*(this: Rectangle): Vec2 = this.center - this.topLeft
 
-proc getScaledInstance*(this: Rectangle, scalar: float): Rectangle =
+proc getScaledInstance*(this: Rectangle, scale: Vec2): Rectangle =
+  if scale.x == 0 or scale.y == 0:
+    raise newException(Exception, "Scaled size cannot be 0!")
   newRectangle(
-    this.x * scalar,
-    this.y * scalar,
-    this.width * scalar,
-    this.height * scalar
+    this.x * scale.x,
+    this.y * scale.y,
+    this.width * scale.x,
+    this.height * scale.y
   )
 
 template `$`*(this: Rectangle): string =
   "x: " & $this.x & ", y: " & $this.y &
   ", width: " & $this.width & ", height: " & $this.height
+
+proc stroke*(this: Rectangle, ctx: Target, color: Color = RED) =
+  ctx.rectangle(
+    cfloat this.x,
+    cfloat this.y,
+    cfloat this.x + this.width,
+    cfloat this.y + this.height,
+    color
+  )
 
