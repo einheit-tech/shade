@@ -40,7 +40,7 @@ proc listener(layer: PhysicsLayer, collisionOwner, collided: PhysicsBody, result
 
 layer.addCollisionListener(listener)
 
-let (someSong, err) = capture loadMusic("./examples/basic/assets/music/night_prowler.ogg")
+let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")
 
 if err == nil:
   discard capture fadeInMusic(someSong, 2.0, 0.15)

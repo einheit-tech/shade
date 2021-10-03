@@ -4,7 +4,7 @@ const
   width = 1920
   height = 1080
 
-initEngineSingleton("Basic Example Game", width, height)
+initEngineSingleton("Animation Player Example", width, height)
 let layer = newLayer()
 Game.scene.addLayer layer
 

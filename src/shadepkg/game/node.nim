@@ -50,11 +50,21 @@ method onParentScaled*(this: Node, parentScale: Vec2) {.base.} =
   ## Called when a parent of this node has been scaled.
   discard
 
-method `scale=`*(this: Node, scale: Vec2) {.base.} =
+proc `scale=`*(this: Node, scale: Vec2) =
   ## Sets the scale of the node.
   this.scale = scale
   for child in this.children:
     child.onParentScaled(this.scale)
+
+method onParentRotated*(this: Node, parentRotation: float) {.base.} =
+  ## Called when a parent of this node has been rotated.
+  discard
+
+proc `rotation=`*(this: Node, rotation: float) =
+  ## Sets the rotation of the node.
+  this.rotation = rotation
+  for child in this.children:
+    child.onParentRotated(this.rotation)
 
 proc children*(this: Node): lent seq[Node] =
   return this.children
@@ -76,9 +86,7 @@ template removeChildFast*(this: Node, n: Node) =
 method hash*(this: Node): Hash {.base.} =
   return hash(this[].unsafeAddr)
 
-var time = 0.0
 method update*(this: Node, deltaTime: float) {.base.} =
-  time += deltaTime
   for child in this.children:
     if loUpdate in child.flags:
       child.update(deltaTime)
