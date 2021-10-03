@@ -7,6 +7,7 @@ import
 
 import
   scene,
+  gamestate,
   ../input/inputhandler,
   ../audio/audioplayer,
   ../render/color
@@ -23,8 +24,6 @@ type
     shouldExit: bool
     screen: Target
 
-    gameWidth: int
-    gameHeight: int
     scene: Scene
 
     # The color to fill the screen with to clear it every frame.
@@ -58,13 +57,15 @@ proc initEngineSingleton*(
   Game = Engine()
   Game.screen = target
   Game.scene = scene
-  Game.gameWidth = gameWidth
-  Game.gameHeight = gameHeight
   Game.clearColor = clearColor
+
+  gamestate.resolution = vec2(gameWidth.float, gameHeight.float)
 
   initInputHandlerSingleton()
   initAudioPlayerSingleton()
 
+template time*(this: Engine): float = this.time
+template resolution*(this: Engine): Vec2 = this.resolution
 template screen*(this: Engine): Target = this.screen
 template scene*(this: Engine): Scene = this.scene
 template `scene=`*(this: Engine, scene: Scene) = this.scene = scene
@@ -117,6 +118,7 @@ proc teardown(this: Engine) =
   logInfo(LogCategoryApplication, "SDL shutdown completed")
 
 proc update*(this: Engine, deltaTime: float) =
+  gamestate.time += deltaTime
   if this.scene != nil:
     this.scene.update(deltaTime)
 
@@ -128,12 +130,6 @@ proc render*(this: Engine, screen: Target) =
 
   this.scene.render(screen)
 
-  # when defined(inputdebug):
-  #   renderInputInfo(ctx)
-
+  activateShaderProgram(0, nil)
   flip(this.screen)
-
-when isMainModule:
-  initEngineSingleton("Test Game!", 1920, 1080)
-  Game.start()
 

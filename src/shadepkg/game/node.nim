@@ -3,7 +3,9 @@ import
   sequtils
 
 import
+  gamestate,
   ../render/render,
+  ../render/shader,
   ../math/mathutils
 
 export 
@@ -20,6 +22,7 @@ type
     loPhysics
 
   Node* = ref object of RootObj
+    shader: Shader
     children: seq[Node]
     flags*: set[LayerObjectFlags]
 
@@ -36,6 +39,9 @@ proc initNode*(node: Node, flags: set[LayerObjectFlags]) =
 proc newNode*(flags: set[LayerObjectFlags]): Node =
   result = Node()
   initNode(result, flags)
+
+proc `shader=`*(this: Node, shader: Shader) =
+  this.shader = shader
 
 template scale*(this: Node): Vec2 =
   this.scale
@@ -70,7 +76,9 @@ template removeChildFast*(this: Node, n: Node) =
 method hash*(this: Node): Hash {.base.} =
   return hash(this[].unsafeAddr)
 
+var time = 0.0
 method update*(this: Node, deltaTime: float) {.base.} =
+  time += deltaTime
   for child in this.children:
     if loUpdate in child.flags:
       child.update(deltaTime)
@@ -83,6 +91,9 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
     rotate(this.rotation, cfloat 0, cfloat 0, cfloat 0)
 
   scale(this.scale.x, this.scale.y, 1.0)
+
+  if this.shader != nil:
+    this.shader.render(time, resolution)
 
   for child in this.children:
     if loRender in child.flags:
