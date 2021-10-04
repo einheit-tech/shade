@@ -14,13 +14,13 @@ let (_, image) = Images.loadImage("./examples/assets/images/king.png")
 image.setImageFilter(FILTER_NEAREST)
 
 let king = newSprite(image, 11, 8)
-king.scale = vec2(3.0, 3.0)
+king.scale = vec2(10, 10)
 king.center = vec2(Game.screen.w.float / 2, Game.screen.h.float / 2)
 layer.addChild(king)
 
 # Load a shader
 const
-  fragShaderPath = "./examples/shaders/color.frag"
+  fragShaderPath = "./examples/shaders/water.frag"
   vertShaderPath = "./examples/shaders/common.vert"
 
 let shaderProgram = newShader(image, vertShaderPath, fragShaderPath)
