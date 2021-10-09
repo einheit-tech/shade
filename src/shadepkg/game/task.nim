@@ -3,9 +3,9 @@ import node
 export node
 
 type Task* = ref object of Node
-  checkCompletionCondition: proc(): bool
   onUpdate: proc(deltaTime: float)
-  onCompletion: proc()
+  checkCompletionCondition: proc(this: Task): bool
+  onCompletion: proc(this: Task)
 
   completed*: bool
   elapsedTime*: float
@@ -13,8 +13,8 @@ type Task* = ref object of Node
 proc initTask*(
   task: Task,
   onUpdate: proc(deltaTime: float),
-  checkCompletionCondition: proc(): bool,
-  onCompletion: proc()
+  checkCompletionCondition: proc(this: Task): bool,
+  onCompletion: proc(this: Task)
 ) =
   initNode(Node(task), {loUpdate})
   task.onUpdate = onUpdate
@@ -23,8 +23,8 @@ proc initTask*(
 
 proc newTask*(
   onUpdate: proc(deltaTime: float),
-  checkCompletionCondition: proc(): bool,
-  onCompletion: proc()
+  checkCompletionCondition: proc(this: Task): bool,
+  onCompletion: proc(this: Task)
 ): Task =
   result = Task()
   initTask(result, onUpdate, checkCompletionCondition, onCompletion)
@@ -39,7 +39,7 @@ method update*(this: Task, deltaTime: float) =
   this.elapsedTime += deltaTime
   this.onUpdate(deltaTime)
 
-  if this.checkCompletionCondition():
+  if this.checkCompletionCondition(this):
     this.completed = true
-    this.onCompletion()
+    this.onCompletion(this)
 

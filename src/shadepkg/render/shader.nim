@@ -3,7 +3,6 @@ import sdl2_nim/sdl_gpu
 import ../math/mathutils
 
 type Shader* = ref object
-  image: Image
   programID: uint32
   vertShaderID: uint32
   fragShaderID: uint32
@@ -13,8 +12,7 @@ type Shader* = ref object
   timeUniformID: cint
   resolutionUniformID: cint
 
-proc initShader*(shader: Shader, image: Image, vertShaderPath, fragShaderPath: string) =
-  shader.image = image
+proc initShader*(shader: Shader, vertShaderPath, fragShaderPath: string) =
   shader.vertShaderID = loadShader(VERTEX_SHADER, vertShaderPath)
   if shader.vertShaderID == 0:
     raise newException(Exception, $getShaderMessage())
@@ -39,17 +37,17 @@ proc initShader*(shader: Shader, image: Image, vertShaderPath, fragShaderPath: s
   shader.timeUniformID = getUniformLocation(shader.programID, "time")
   shader.resolutionUniformID = getUniformLocation(shader.programID, "resolution")
 
-proc newShader*(image: Image, vertShaderPath, fragShaderPath: string): Shader =
+proc newShader*(vertShaderPath, fragShaderPath: string): Shader =
   result = Shader()
-  initShader(result, image, vertShaderPath, fragShaderPath)
+  initShader(result, vertShaderPath, fragShaderPath)
 
 proc updateTimeUniform*(this: Shader, time: float) =
   setUniformf(this.timeUniformID, cfloat time)
 
-proc updateResolutionUniform*(this: Shader, screenResolution: var Vec2) =
+proc updateResolutionUniform*(this: Shader, screenResolution: var DVec2) =
   setUniformfv(this.resolutionUniformID, 2, 1, cast[ptr cfloat](screenResolution.addr))
 
-proc render*(this: Shader, time: float, screenResolution: var Vec2) =
+proc render*(this: Shader, time: float, screenResolution: var DVec2) =
   activateShaderProgram(this.programID, this.shaderBlock.addr)
   this.updateTimeUniform(time)
   this.updateResolutionUniform(screenResolution)

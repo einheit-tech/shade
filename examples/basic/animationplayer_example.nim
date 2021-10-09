@@ -12,7 +12,7 @@ let (_, image) = Images.loadImage("./examples/assets/images/king.png")
 image.setImageFilter(FILTER_NEAREST)
 
 let king = newSprite(image, 11, 8)
-king.scale = vec2(3.0, 3.0)
+king.scale = dvec2(3.0, 3.0)
 
 # Set up the run animation
 const
@@ -34,11 +34,12 @@ runAnim.addNewAnimationTrack(
 )
 
 # Change the scale
-let scaleFrames: seq[KeyFrame[Vec2]] =
+let scaleFrames: seq[KeyFrame[DVec2]] =
   @[
-    (vec2(2, 2), 0.0),
-    (vec2(2.2, 2.2), animDuration / 2 - frameSpeed),
+    (dvec2(2, 2), 0.0),
+    (dvec2(2.2, 2.2), animDuration / 2 - frameSpeed),
   ]
+
 runAnim.addNewAnimationTrack(
   king.scale,
   scaleFrames,
@@ -49,7 +50,7 @@ let animPlayer = newAnimationPlayer(("run", runAnim))
 animPlayer.playAnimation("run")
 king.addChild(animPlayer)
 
-king.center = vec2(200, 200)
+king.center = dvec2(200, 200)
 layer.addChild king
 
 Game.start()

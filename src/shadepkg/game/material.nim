@@ -1,23 +1,17 @@
 type Material* = object
-  density*: 0.0 .. Inf
-  restitution*: 0.0 .. Inf
+  density*: 0.0 .. 1.0
+  elasticity*: 0.0 .. 1.0
+  friction*: 0.0 .. 1.0
 
-proc initMaterial*(density, restitution: float): Material =
+proc initMaterial*(density, elasticity, friction: float): Material =
   Material(
     density: density,
-    restitution: restitution
+    elasticity: elasticity,
+    friction: friction
   )
 
 const
-  #  A material with the properties of a rock.
-  #  @returns {Material}
-  ROCK*: Material = initMaterial(0.6, 0.5)
-
-  #  A material with the properties of metal.
-  #  @returns {Material}
-  METAL*: Material = initMaterial(1.2, 0.5)
-
-    #  A material for objects with ghost-like physics.
-  #  @type {Material}
-  NULL*: Material = initMaterial(0, 0)
+  ROCK*: Material = initMaterial(0.8, 0.6, 0.1)
+  METAL*: Material = initMaterial(0.98, 0.8, 0.03)
+  PLATFORM*: Material = initMaterial(1, 1, 1)
 

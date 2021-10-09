@@ -1,7 +1,6 @@
 import 
   macros,
-  sdl2_nim/sdl_gpu,
-  ../math/mathutils
+  sdl2_nim/sdl_gpu
 
 export sdl_gpu
 

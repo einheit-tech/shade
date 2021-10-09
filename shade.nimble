@@ -16,5 +16,8 @@ requires "sdl2_nim >= 2.0.14.3"
 
 # Tasks
 task example, "Runs the basic example":
-  exec "nim -d:collisionoutlines -d:inputdebug r examples/basic/basic_game.nim"
+  exec "nim -d:collisionoutlines -d:checkSafeCollisionShapes -d:inputdebug r examples/basic/basic_game.nim"
+
+task physics, "Runs the physics example":
+  exec "nim -d:collisionoutlines -d:checkSafeCollisionShapes -d:inputdebug r examples/physics/physics_example.nim"
 

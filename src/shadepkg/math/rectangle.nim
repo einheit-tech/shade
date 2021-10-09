@@ -9,9 +9,9 @@ type
     y: float
     width: float
     height: float
-    topLeft: Vec2
-    center: Vec2
-    bottomRight: Vec2
+    topLeft: DVec2
+    center: DVec2
+    bottomRight: DVec2
 
 proc newRectangle*(x, y, width, height: float): Rectangle =
   result = Rectangle(
@@ -20,12 +20,12 @@ proc newRectangle*(x, y, width, height: float): Rectangle =
     width: width,
     height: height
   )
-  result.topLeft = vec2(result.x, result.y)
-  result.center = vec2(
+  result.topLeft = dvec2(result.x, result.y)
+  result.center = dvec2(
     result.x + result.width / 2,
     result.y + result.height / 2
   )
-  result.bottomRight = vec2(
+  result.bottomRight = dvec2(
     result.x + result.width,
     result.y + result.height
   )
@@ -35,12 +35,12 @@ template y*(this: Rectangle): float = this.y
 template width*(this: Rectangle): float = this.width
 template height*(this: Rectangle): float = this.height
 
-template topLeft*(this: Rectangle): Vec2 = this.topLeft
-template center*(this: Rectangle): Vec2 = this.center
-template bottomRight*(this: Rectangle): Vec2 = this.bottomRight
-template halfSize*(this: Rectangle): Vec2 = this.center - this.topLeft
+template topLeft*(this: Rectangle): DVec2 = this.topLeft
+template center*(this: Rectangle): DVec2 = this.center
+template bottomRight*(this: Rectangle): DVec2 = this.bottomRight
+template halfSize*(this: Rectangle): DVec2 = this.center - this.topLeft
 
-proc getScaledInstance*(this: Rectangle, scale: Vec2): Rectangle =
+proc getScaledInstance*(this: Rectangle, scale: DVec2): Rectangle =
   if scale.x == 0 or scale.y == 0:
     raise newException(Exception, "Scaled size cannot be 0!")
   newRectangle(

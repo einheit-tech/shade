@@ -2,11 +2,11 @@ import algorithm
 
 import
   layer,
-  entity
+  node
 
 export
   layer,
-  entity
+  node
 
 type Scene* = ref object of Node
   layers: seq[Layer]

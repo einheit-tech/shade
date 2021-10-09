@@ -1,20 +1,20 @@
 import animationplayer
 
-type FakeEntity* = ref object
+type FakeNode* = ref object
   animationPlayer: AnimationPlayer
   foo*: float
   bar*: int
   procVal*: proc() {.closure.}
 
-proc generateAnimations*(this: FakeEntity)
+proc generateAnimations*(this: FakeNode)
 
-proc newFakeEntity*(): FakeEntity =
-  result = FakeEntity(
+proc newFakeNode*(): FakeNode =
+  result = FakeNode(
     animationPlayer: newAnimationPlayer()
   )
   result.generateAnimations()
 
-proc generateAnimations*(this: FakeEntity) =
+proc generateAnimations*(this: FakeNode) =
   let testAnim = newAnimation(1.8)
 
   # const intFrames: seq[KeyFrame[int]] = @[
@@ -66,7 +66,7 @@ proc generateAnimations*(this: FakeEntity) =
   this.animationPlayer.playAnimation("test")
 
 when isMainModule:
-  let e = newFakeEntity()
+  let e = newFakeNode()
   e.generateAnimations()
 
   # assert e.foo == 0.0

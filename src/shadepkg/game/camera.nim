@@ -1,27 +1,27 @@
 {.experimental: "codeReordering".}
 
 import
-  entity,
+  node,
   ../input/inputhandler
 
-type Camera* = ref object of Entity
-  trackedEntity*: Entity
+type Camera* = ref object of Node
+  trackedNode*: Node
 
-proc newCamera*(trackedEntity: Entity): Camera =
-  let loc = calcRenderOffset(trackedEntity, Input.mouseLocation)
+proc newCamera*(trackedNode: Node): Camera =
+  # let loc = calcRenderOffset(trackedNode, Input.mouseLocation)
   return Camera(
     flags: {loUpdate},
-    center: loc,
-    trackedEntity: trackedEntity
+    trackedNode: trackedNode
   )
 
-template calcRenderOffset(trackedEntity: Entity, loc: Vec2): Vec2 =
-  let dist = loc - trackedEntity.center
-  trackedEntity.center + dist * 0.33
+template calcRenderOffset(trackedNode: Node, loc: DVec2): DVec2 =
+  let dist = loc - trackedNode.center
+  trackedNode.center + dist * 0.33
 
 proc update*(this: Camera, dt: float) =
-  procCall Entity(this).update(dt)
-  let loc = Input.mouseLocation
-  let preferredLoc = calcRenderOffset(this.trackedEntity, loc)
-  this.translate((preferredLoc - this.center) * (5 * dt))
+  procCall Node(this).update(dt)
+  # TODO
+  # let loc = Input.mouseLocation
+  # let preferredLoc = calcRenderOffset(this.trackedNode, loc)
+  # this.translate((preferredLoc - this.center) * (5 * dt))
 

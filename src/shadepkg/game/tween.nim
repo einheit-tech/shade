@@ -9,12 +9,12 @@ proc initTween*(
   tween: Tween,
   duration: float,
   interpolate: proc(deltaTime: float),
-  onCompletion: proc()
+  onCompletion: proc(this: Tween)
 ) =
   initTask(
     tween,
     interpolate,
-    proc(): bool = tween.elapsedTime >= tween.duration,
+    proc(this: Tween): bool = tween.elapsedTime >= tween.duration,
     onCompletion
   )
   tween.duration = duration
@@ -22,7 +22,7 @@ proc initTween*(
 proc newTween*(
   duration: float,
   interpolate: proc(deltaTime: float),
-  onCompletion: proc()
+  onCompletion: proc(this: Tween)
 ): Tween =
   result = Tween()
   initTween(result, duration, interpolate, onCompletion)

@@ -8,7 +8,7 @@ import shadepkg / [
   game/scene,
   game/layer,
   game/physicslayer,
-  game/entity,
+  game/node,
   game/camera,
   game/animation,
   game/animationplayer,
@@ -23,10 +23,9 @@ import shadepkg / [
   math/polygon,
   math/rectangle,
   math/circle,
-  math/collision/collisionhull,
-  math/collision/sat,
-  math/collision/spatialgrid
+  math/collision/collisionshape
 ]
+
 
 export
   errors,
@@ -36,7 +35,7 @@ export
   scene,
   layer,
   physicslayer,
-  entity,
+  node,
   camera,
   animation,
   animationplayer,
@@ -53,7 +52,5 @@ export
   polygon,
   rectangle,
   circle,
-  collisionhull,
-  sat,
-  spatialgrid
+  collisionshape
 

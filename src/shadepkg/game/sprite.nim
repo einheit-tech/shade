@@ -1,11 +1,11 @@
 import
-  entity,
+  node,
   spritesheet,
   ../math/mathutils
 
-export entity, spritesheet, mathutils
+export node, spritesheet, mathutils
 
-type Sprite* = ref object of Entity
+type Sprite* = ref object of Node
   spritesheet: Spritesheet
   frameCoords*: IVec2
 
@@ -17,21 +17,21 @@ proc initSprite*(
   flags: set[LayerObjectFlags] = {loUpdate, loRender},
   frameCoords: IVec2 = IVEC2_ZERO
 ) =
-  initEntity(Entity(sprite), flags)
+  initNode(Node(sprite), flags)
   sprite.spritesheet = newSpritesheet(image, hframes, vframes)
   sprite.frameCoords = frameCoords
 
 proc newSprite*(
   image: Image,
-  hframes,
-  vframes: int,
+  hframes: int = 1,
+  vframes: int = 1,
   flags: set[LayerObjectFlags] = {loUpdate, loRender},
   frameCoords: IVec2 = IVEC2_ZERO
 ): Sprite =
   result = Sprite()
   initSprite(result, image, hframes, vframes, flags, frameCoords)
 
-render(Sprite, Entity):
+render(Sprite, Node):
   blit(
     this.spritesheet.image,
     this.spritesheet[this.frameCoords].addr,

@@ -41,7 +41,7 @@ proc initEngineSingleton*(
   title: string,
   gameWidth, gameHeight: int,
   scene: Scene = newScene(),
-  windowFlags: int = WINDOW_FULLSCREEN_DESKTOP,
+  windowFlags: int = WINDOW_FULLSCREEN_DESKTOP or WINDOW_ALLOW_HIGHDPI,
   clearColor: Color = BLACK
 ) =
   if Game != nil:
@@ -59,13 +59,13 @@ proc initEngineSingleton*(
   Game.scene = scene
   Game.clearColor = clearColor
 
-  gamestate.resolution = vec2(gameWidth.float, gameHeight.float)
+  gamestate.resolution = dvec2(gameWidth.float, gameHeight.float)
 
   initInputHandlerSingleton()
   initAudioPlayerSingleton()
 
 template time*(this: Engine): float = this.time
-template resolution*(this: Engine): Vec2 = this.resolution
+template resolution*(this: Engine): DVec2 = this.resolution
 template screen*(this: Engine): Target = this.screen
 template scene*(this: Engine): Scene = this.scene
 template `scene=`*(this: Engine, scene: Scene) = this.scene = scene
@@ -86,7 +86,11 @@ proc loop(this: Engine) =
 
   while not this.shouldExit:
     # Determine elapsed time in seconds
-    let deltaTime: float = elapsedNanos.float64 / oneBillion.float64
+
+    # TODO: Chipmunk2D says:
+    # "It is *highly* recommended to use a fixed size time step."
+    # let deltaTime: float = elapsedNanos.float64 / oneBillion.float64
+    let deltaTime: float = 1 / 60
 
     this.shouldExit = this.handleEvents()
     this.update(deltaTime)
@@ -130,6 +134,5 @@ proc render*(this: Engine, screen: Target) =
 
   this.scene.render(screen)
 
-  activateShaderProgram(0, nil)
   flip(this.screen)
 

@@ -16,7 +16,7 @@ import
 
 type
   ClosureProc* = proc() {.closure.}
-  TrackType = int|float|Vec2|IVec2|Vec3|IVec3|ClosureProc
+  TrackType = int|float|DVec2|IVec2|DVec3|IVec3|ClosureProc
 makeEnum(TrackType, TrackKind, "tk")
 
 type
@@ -30,14 +30,14 @@ type
         framesInt: seq[Keyframe[int]]
       of tkFloat:
         framesFloat: seq[Keyframe[float]]
-      of tkVec2:
-        framesVec2: seq[Keyframe[Vec2]]
+      of tkDVec2:
+        framesDVec2: seq[Keyframe[DVec2]]
       of tkIVec2:
         framesIVec2: seq[Keyframe[IVec2]]
-      of tkVec3:
-        framesVec3: seq[Keyframe[Vec3]]
+      of tkDVec3:
+        framesDVec3: seq[Keyframe[DVec3]]
       of tkIVec3:
-        framesIVec3: seq[Keyframe[IVec3]]
+        IVec3: seq[Keyframe[IVec3]]
       of tkClosureProc:
         framesClosureProc: seq[Keyframe[ClosureProc]]
 
@@ -86,10 +86,10 @@ proc newAnimationTrack*[T: TrackType](
       framesFloat: frames,
       wrapInterpolation: wrapInterpolation
     )
-  elif field is Vec2:
+  elif field is DVec2:
     result = AnimationTrack(
-      kind: tkVec2,
-      framesVec2: frames,
+      kind: tkDVec2,
+      framesDVec2: frames,
       wrapInterpolation: wrapInterpolation
     )
   elif field is IVec2:
@@ -98,16 +98,16 @@ proc newAnimationTrack*[T: TrackType](
       framesIVec2: frames,
       wrapInterpolation: wrapInterpolation
     )
-  elif field is Vec3:
+  elif field is DVec3:
     result = AnimationTrack(
-      kind: tkVec3,
-      framesVec3: frames,
+      kind: tkDVec3,
+      framesDVec3: frames,
       wrapInterpolation: wrapInterpolation
     )
   elif field is IVec3:
     result = AnimationTrack(
-      kind: tkIVec3,
-      framesIVec3: frames,
+      kind: IVec3,
+      IVec3: frames,
       wrapInterpolation: wrapInterpolation
     )
   elif field is ClosureProc:
@@ -123,6 +123,25 @@ proc newAnimationTrack*[T: TrackType](
 
 proc lerp(startValue, endValue: proc(), completionRatio: float): proc() =
   return (proc() = discard)
+
+macro assignField[T: TrackType](field: typed, value: T): untyped =
+  ## Assigns `value` to `field`.
+  ## This also handles if `field` is a setter proc.
+  if field.kind == nnkCall and field[0].symKind in {nskMethod, nskProc, nskFunc}:
+    let
+      ident = nnkAccQuoted.newTree(ident($field[0] & "="))
+      setter = copyNimTree(field)
+
+    setter[0] = ident
+    setter.add value
+    result = quote do:
+      when compiles(`setter`):
+        `setter`
+      else:
+        `field` = `value`
+  else:
+    result = quote do:
+      `field` = `value`
 
 macro addNewAnimationTrack*[T: TrackType](
   this: Animation,
@@ -162,7 +181,7 @@ macro addNewAnimationTrack*[T: TrackType](
         let currentFrame = `frames`[currIndex]
         # Between last and first frame, and NOT interpolating between them.
         if currIndex == `frames`.high and not wrapInterpolation:
-          `field` = currentFrame.value
+          assignField(`field`, currentFrame.value)
           return
 
         # Ease between current and next frames
@@ -174,14 +193,16 @@ macro addNewAnimationTrack*[T: TrackType](
           else:
             nextFrame.time - currentFrame.time
 
-        let completionRatio = (currentTime - currentFrame.time) / timeBetweenFrames
+        let
+          completionRatio = (currentTime - currentFrame.time) / timeBetweenFrames
+          easedValue = `ease`(
+            currentFrame.value,
+            nextFrame.value,
+            completionRatio
+          )
 
-        `field` = `ease`(
-          currentFrame.value,
-          nextFrame.value,
-          completionRatio
-        )
-
+        assignField(`field`, easedValue)
+        
       else:
 
         # Find the start time

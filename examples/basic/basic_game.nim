@@ -6,39 +6,37 @@ const
 
 initEngineSingleton("Basic Example Game", width, height)
 
-let layer = newPhysicsLayer(newSpatialGrid(150))
+let layer = newPhysicsLayer()
 Game.scene.addLayer layer
 
 let ball = newPhysicsBody(
-  kind = pbKinematic,
-  hull = newCircleCollisionHull(newCircle(VEC2_ZERO, 10)),
-  centerX = 1150,
-  centerY = 100,
+  kind = pbDynamic,
+  material = initMaterial(1, 0.8, 1),
+  centerX = 960,
+  centerY = 400
 )
-ball.velocity.x = 32
+ball.velocity = dvec2(32, 0)
+
+let ballShape = newCircleCollisionShape(newCircle(VEC2_ZERO, 10))
+ball.addChild(ballShape)
 
 let rect = newPhysicsBody(
   kind = pbStatic,
-  hull = newPolygonCollisionHull(newPolygon([
-    vec2(0, 0),
-    vec2(0, -624),
-    vec2(-32, -624),
-    vec2(-32, 0),
-  ])),
-  centerX = 1232,
-  centerY = 672
+  material = METAL,
+  centerX = 960,
+  centerY = 540
 )
+
+let rectShape = newPolygonCollisionShape(newPolygon([
+  dvec2(160, 32),
+  dvec2(160, 0),
+  dvec2(-160, 0),
+  dvec2(-160, 32),
+]))
+rect.addChild(rectShape)
 
 layer.addChild(ball)
 layer.addChild(rect)
-
-var i = 0
-proc listener(layer: PhysicsLayer, collisionOwner, collided: PhysicsBody, result: CollisionResult) =
-  if result != nil:
-    echo "collision " & $i & ": " & $result.contactNormal
-    i.inc
-
-layer.addCollisionListener(listener)
 
 let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")
 

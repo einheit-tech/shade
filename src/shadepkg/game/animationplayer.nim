@@ -1,6 +1,6 @@
 import
   node,
-  entity,
+  node,
   animation,
   tables
 

@@ -1,107 +1,47 @@
-{.experimental: "codeReordering".}
+import
+  chipmunk7
 
 import
   layer,
   physicsbody,
-  ../math/collision/spatialgrid as sgrid,
-  ../math/collision/sat,
   ../math/mathutils
 
 export
   layer,
-  physicsbody,
-  sgrid,
-  sat
+  physicsbody
+
+# TODO: Tune
+const DEFAULT_GRAVITY* = dvec2(0, 1500)
 
 type
-  CollisionListener*[T] = proc(t: T, collisionOwner, collided: PhysicsBody, result: CollisionResult)
   PhysicsLayer* = ref object of Layer
-    spatialGrid*: SpatialGrid
-    collisionListeners: seq[CollisionListener[PhysicsLayer]]
+    space: Space
 
-proc initPhysicsLayer*(layer: PhysicsLayer, grid: SpatialGrid, z: float = 1.0) =
+proc initPhysicsLayer*(
+  layer: PhysicsLayer,
+  gravity: DVec2 = DEFAULT_GRAVITY,
+  z: float = 1.0
+) =
   initLayer(layer, z)
-  layer.spatialGrid = grid
+  layer.space = newSpace()
+  layer.space.gravity = cast[Vect](gravity)
 
-proc newPhysicsLayer*(grid: SpatialGrid, z: float = 1.0): PhysicsLayer =
+proc newPhysicsLayer*(gravity: DVec2 = DEFAULT_GRAVITY, z: float = 1.0): PhysicsLayer =
   result = PhysicsLayer()
-  initPhysicsLayer(result, grid, z)
+  initPhysicsLayer(result, gravity, z)
 
-method addCollisionListener*(this: PhysicsLayer, listener: CollisionListener[PhysicsLayer]) {.base.} =
-  this.collisionListeners.add(listener)
+proc destroy*(this: PhysicsLayer) =
+  # TODO: Should every node have a destroy proc?
+  if this.space != nil:
+    this.space.destroy()
+  this.removeAllChildren()
 
-method removeCollisionListener*(this: PhysicsLayer, listener: CollisionListener[PhysicsLayer]) {.base.} =
-  for i, l in this.collisionListeners:
-    if l == listener:
-      this.collisionListeners.delete(i)
-      break
-
-method removeAllCollisionListeners*(this: PhysicsLayer) {.base.} =
-  this.collisionListeners.setLen(0)
-
-proc detectCollisions(this: PhysicsLayer, deltaTime: float) =
-  ## Detects collisions between all objects in the spatial grid.
-  ## When a collision occurs, all CollisionListeners will be notified.
-  if this.collisionListeners.len == 0:
-    return
-
-  # Perform collision checks.
-  for objA in this.spatialGrid:
-    if objA.kind == pbStatic:
-      continue
-    # Active body information.
-    let
-      locA = objA.center
-      hullA = objA.collisionHull
-      boundsA = objA.bounds()
-      moveVectorA = objA.velocity * deltaTime
-
-    let (objectsInBounds, cells) = this.spatialGrid.query(boundsA)
-    # Iterate through collidable objects to check for collisions with the local object (objA).
-    for objB in objectsInBounds:
-      # Don't collide with yourself, dummy.
-      if objA == objB:
-        continue
-
-      # Passive entity information.
-      let
-        locB = objB.center
-        hullB = objB.collisionHull
-        moveVectorB = objB.velocity * deltaTime
-
-      # Get collision result.
-      let collisionResult =
-        sat.collides(
-          locA,
-          hullA,
-          moveVectorA,
-          locB,
-          hullB,
-          moveVectorB
-        )
-
-      if collisionResult == nil:
-        continue
-
-      # Notify collision listeners.
-      for listener in this.collisionListeners:
-        listener(this, objA, objB, collisionResult)
-
-    # Remove the object so we don't have duplicate collision checks.
-    this.spatialGrid.removeFromCells(objA, cells)
+method onChildAdded*(this: PhysicsLayer, child: Node) =
+  procCall Layer(this).onChildAdded(child)
+  if child of PhysicsBody:
+    PhysicsBody(child).addToSpace(this.space)
 
 method update*(this: PhysicsLayer, deltaTime: float) =
   procCall Layer(this).update(deltaTime)
-
-  # Add all node to the spatial grid.
-  for node in this.children:
-    if node of PhysicsBody and loPhysics in node.flags:
-      this.spatialGrid.addBody(PhysicsBody node)
-
-  # Detect collisions using the data in the spatial grid.
-  # All listeners are notified.
-  this.detectCollisions(deltaTime)
-
-  # Remove everything from the grid.
-  this.spatialGrid.clear()
+  this.space.step(deltaTime)
 

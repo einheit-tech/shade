@@ -45,7 +45,7 @@ proc removeZChangeListener*(this: Layer, listener: ZChangeListener) =
 proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeListener =
   ## Add a listener that is removed automatically after one invocation.
   ## Returns the listener that was directly added to the Layer.
-  ## Use this returned entity if you need to remove the listener early.
+  ## Use this returned node if you need to remove the listener early.
   let onceListener =
     proc(oldZ, newZ: float) =
       listener(oldZ, newZ)

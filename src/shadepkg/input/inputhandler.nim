@@ -16,7 +16,7 @@ type
     justReleased: bool
 
   MouseInfo = object
-    location: Vec2
+    location: DVec2
     buttons: Table[int, MouseButtonState]
 
   KeyState* = object
@@ -134,7 +134,7 @@ template wasRightMouseButtonJustPressed*(this: InputHandler): bool =
 template wasRightMouseButtonJustReleased*(this: InputHandler): bool =
   this.wasMouseButtonJustReleased(BUTTON_RIGHT)
 
-proc mouseLocation*(this: InputHandler): Vec2 =
+proc mouseLocation*(this: InputHandler): DVec2 =
   return this.mouse.location
 
 proc update*(this: InputHandler, deltaTime: float) =
@@ -179,5 +179,5 @@ proc update*(this: InputHandler, deltaTime: float) =
 
 #     let text = mouseLocationText & leftButtonText & rightButtonText & pressedKeys
 
-#     ctx.image.fillText(font.typeset(text, vec2(1920, 1080)), translate(vec2(10, 10)))
+#     ctx.image.fillText(font.typeset(text, dvec2(1920, 1080)), translate(dvec2(10, 10)))
 

@@ -35,3 +35,9 @@ macro capture*(procThatMayError: typed): untyped =
       except:
         (value: default(typeof(`procThatMayError`)), err: getCurrentException())
 
+template discardException*(body: typed) =
+  try:
+    body
+  except:
+    discard
+
