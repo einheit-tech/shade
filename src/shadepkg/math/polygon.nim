@@ -334,9 +334,13 @@ proc rotate*(this: var Polygon, deltaRotation: float) =
   this.center = none(DVec2)
 
 proc fill*(this: Polygon, ctx: Target, color: Color = RED) =
+  var verts: seq[Vec2] = @[]
+  for v in this.vertices:
+    verts.add vec2(v.x, v.y)
+
   ctx.polygonFilled(
     cuint this.vertices.len,
-    cast[ptr cfloat](addr this.vertices[0]),
+    cast[ptr cfloat](addr verts[0]),
     color
   )
 

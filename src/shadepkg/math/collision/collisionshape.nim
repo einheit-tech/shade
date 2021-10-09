@@ -173,6 +173,7 @@ proc fill*(this: CollisionShape, ctx: Target, color: Color) =
 
 render(CollisionShape, Node):
   this.stroke(ctx)
+  this.fill(ctx, GREEN)
 
   if callback != nil:
     callback()
