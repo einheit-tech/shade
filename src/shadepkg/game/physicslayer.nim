@@ -11,7 +11,7 @@ export
   physicsbody
 
 # TODO: Tune
-const DEFAULT_GRAVITY* = dvec2(0, 1500)
+const DEFAULT_GRAVITY* = dvec2(0, 2000)
 
 type
   PhysicsLayer* = ref object of Layer

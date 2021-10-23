@@ -18,7 +18,7 @@ Game.scene.addLayer layer
 # King
 let player = createNewKing()
 player.x = 200
-player.y = 800
+player.y = 400
 
 # Ground
 let groundShape = newPolygonCollisionShape(newPolygon([
@@ -79,7 +79,7 @@ layer.addChild(player)
 const
   maxSpeed = 500
   acceleration = 100
-  jumpForce = -1000
+  jumpForce = -700
 
 proc physicsProcess(gravity: DVec2, damping, deltaTime: float) =
   let
@@ -116,7 +116,7 @@ proc physicsProcess(gravity: DVec2, damping, deltaTime: float) =
   run(x, y)
   jump()
 
-  player.velocity = dvec2(x, y) + gravity * deltaTime
+  player.velocity = dvec2(x, y)
 
 player.onPhysicsUpdate = physicsProcess
 
