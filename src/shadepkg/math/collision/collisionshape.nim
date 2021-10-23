@@ -4,6 +4,8 @@
 ## so the shape should be centered around the origin (0, 0),
 ## if the goal is to center it on its owner for collisions.
 ##
+## The CollisionShape's `center` property is NOT TAKEN INTO ACCOUNT.
+##
 ## See: http://chipmunk-physics.net/release/ChipmunkLatest-Docs/#cpShape
 
 import
@@ -16,8 +18,7 @@ import
   ../circle,
   ../polygon,
   ../mathutils,
-  ../../render/color,
-  ../../errors
+  ../../render/color
 
 export
   circle,
@@ -41,6 +42,7 @@ type
       polygonCollisionShape*: PolyShape
 
 proc createScaledShape(this: CollisionShape, scale: DVec2)
+proc getBounds*(this: CollisionShape): Rectangle
 
 proc initPolygonCollisionShape*(shape: CollisionShape, polygon: Polygon) =
   # TODO: Document our compile time flags in our wiki/README.
@@ -84,6 +86,31 @@ template collisionShape(this: CollisionShape): Shape =
     of chkPolygon:
       this.polygonCollisionShape
 
+template elasticity*(this: CollisionShape): float =
+  this.collisionShape.elasticity
+
+proc `elasticity=`*(this: CollisionShape, elasticity: float) =
+  this.collisionShape.elasticity = elasticity
+
+template friction*(this: CollisionShape): float =
+  ## Gets the coefficient of friction.
+  this.collisionShape.friction
+
+proc `friction=`*(this: CollisionShape, friction: float) =
+  ## Sets the coefficient of friction.
+  this.collisionShape.friction = friction
+
+template mass*(this: CollisionShape): float =
+  ## Gets the mass of the shape.
+  this.collisionShape.mass
+
+proc `mass=`*(this: CollisionShape, mass: float) =
+  ## Sets the mass of the shape.
+  this.collisionShape.mass = mass
+
+proc `surfaceVelocity=`*(this: CollisionShape, velocity: DVec2) =
+  this.collisionShape.surfaceVelocity = cast[Vect](velocity)
+
 proc createScaledShape(this: CollisionShape, scale: DVec2) =
   case this.kind:
     of chkCircle:
@@ -103,20 +130,23 @@ proc attachToBody*(this: CollisionShape, body: Body, material: Material) =
   case this.kind:
     of chkCircle:
       this.circleCollisionShape = newCircleShape(body, this.scaledCircle.radius, vzero)
-      this.circleCollisionShape.mass = material.density * this.scaledCircle.getArea()
-      this.circleCollisionShape.friction = material.friction
-      this.circleCollisionShape.elasticity = material.elasticity
+      if body.mass == 0 and body.moment == 0:
+        this.mass = material.density * this.scaledCircle.getArea()
 
     of chkPolygon:
       this.polygonCollisionShape = newPolyShape(
         body,
         cint this.scaledPolygon.len,
         cast[ptr Vect](this.scaledPolygon.vertices[0].addr),
+        TransformIdentity,
         cfloat 0.0
       )
-      this.polygonCollisionShape.mass = material.density * this.scaledPolygon.getArea()
-      this.polygonCollisionShape.friction = material.friction
-      this.polygonCollisionShape.elasticity = material.elasticity
+
+      if body.mass == 0 and body.moment == 0:
+        this.mass = material.density * this.scaledPolygon.getArea()
+
+  this.elasticity = material.elasticity
+  this.friction = material.friction
 
 proc addToSpace*(this: CollisionShape, space: Space) =
   ## Adds this collision shape to the given space.
@@ -148,8 +178,6 @@ proc destroy*(this: CollisionShape) =
   this.collisionShape.destroy()
 
 proc stroke*(this: CollisionShape, ctx: Target, color: Color = RED) =
-  scale(1 / this.scale.x, 1 / this.scale.y, 1.0)
-
   case this.kind:
   of chkPolygon:
     this.unscaledPolygon.stroke(ctx, color)
@@ -157,11 +185,7 @@ proc stroke*(this: CollisionShape, ctx: Target, color: Color = RED) =
   of chkCircle:
     this.unscaledCircle.stroke(ctx, color)
 
-  scale(this.scale.x, this.scale.y, 1.0)
-
 proc fill*(this: CollisionShape, ctx: Target, color: Color) =
-  scale(1 / this.scale.x, 1 / this.scale.y, 1.0)
-
   case this.kind:
   of chkPolygon:
     this.unscaledPolygon.fill(ctx, color)
@@ -169,12 +193,13 @@ proc fill*(this: CollisionShape, ctx: Target, color: Color) =
   of chkCircle:
     this.unscaledCircle.fill(ctx, color)
 
-  scale(this.scale.x, this.scale.y, 1.0)
-
 render(CollisionShape, Node):
+  scale(1 / this.scale.x, 1 / this.scale.y, 1.0)
+
   this.stroke(ctx)
-  this.fill(ctx, GREEN)
 
   if callback != nil:
     callback()
+
+  scale(this.scale.x, this.scale.y, 1.0)
 

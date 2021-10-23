@@ -2,8 +2,6 @@ import
   sdl2_nim/sdl,
   tables
 
-from sdl2_nim/sdl import Scancode, Keycode
-
 import 
   ../math/mathutils
 
@@ -73,8 +71,8 @@ proc processEvent*(this: InputHandler, event: Event): bool =
       if not Input.keys.hasKey(keycode):
         Input.keys[keycode] = KeyState()
 
+      Input.keys[keycode].justPressed = pressed and not Input.keys[keycode].pressed
       Input.keys[keycode].pressed = pressed
-      Input.keys[keycode].justPressed = pressed
       Input.keys[keycode].justReleased = not pressed
 
     else:

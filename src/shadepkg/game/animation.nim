@@ -246,10 +246,12 @@ macro addNewAnimationTrack*[T: TrackType](
       `wrapInterpolation`
     )
 
-    when (`field` is not proc):
+    # TODO: Doing this when we add the track is _not_ the right idea.
+    # Should do this when we _play_ the animation
+    # when (`field` is not proc):
       # Set track state to correct starting point.
       # Don't do this for procs - we don't want to invoke them until the animation is played.
-      `trackName`.animateToTime(`this`.currentTime, 0)
+      # `trackName`.animateToTime(`this`.currentTime, 0)
 
     `this`.tracks.add(`trackName`)
 

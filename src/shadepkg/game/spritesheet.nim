@@ -1,7 +1,6 @@
 import
   ../render/render,
-  ../math/mathutils,
-  ../images/imageatlas
+  ../math/mathutils
 
 type Spritesheet* = ref object
   sheetImage: Image

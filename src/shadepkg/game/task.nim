@@ -3,7 +3,6 @@ import node
 export node
 
 type Task* = ref object of Node
-  onUpdate: proc(deltaTime: float)
   checkCompletionCondition: proc(this: Task): bool
   onCompletion: proc(this: Task)
 
@@ -12,17 +11,17 @@ type Task* = ref object of Node
 
 proc initTask*(
   task: Task,
-  onUpdate: proc(deltaTime: float),
+  onUpdate: proc(this: Task, deltaTime: float),
   checkCompletionCondition: proc(this: Task): bool,
   onCompletion: proc(this: Task)
 ) =
   initNode(Node(task), {loUpdate})
-  task.onUpdate = onUpdate
+  task.onUpdate = proc(this: Node, deltaTime: float) = onUpdate(task, deltaTime)
   task.checkCompletionCondition = checkCompletionCondition
   task.onCompletion = onCompletion
 
 proc newTask*(
-  onUpdate: proc(deltaTime: float),
+  onUpdate: proc(this: Task, deltaTime: float),
   checkCompletionCondition: proc(this: Task): bool,
   onCompletion: proc(this: Task)
 ): Task =
@@ -34,10 +33,8 @@ method update*(this: Task, deltaTime: float) =
   if this.completed:
     raise newException(Exception, "Task has already been completed - cannot update.")
 
-  procCall Node(this).update(deltaTime)
-
   this.elapsedTime += deltaTime
-  this.onUpdate(deltaTime)
+  procCall Node(this).update(deltaTime)
 
   if this.checkCompletionCondition(this):
     this.completed = true

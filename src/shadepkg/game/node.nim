@@ -7,7 +7,8 @@ import
   gamestate,
   ../render/render,
   ../render/shader,
-  ../math/mathutils
+  ../math/mathutils,
+  ../render/color
 
 export 
   hashes,
@@ -22,6 +23,8 @@ type
     loRender
 
   Node* = ref object of RootObj
+    onUpdate*: proc(this: Node, deltaTime: float)
+
     shader: Shader
     children: seq[Node]
     removeQueue: Deque[Node]
@@ -69,9 +72,15 @@ method `center=`*(this: Node, center: DVec2) {.base.} =
   this.center = center
   this.onCenterChanged()
 
+proc x*(this: Node): float =
+  return this.center.x
+
 method `x=`*(this: Node, x: float) {.base.} =
   this.center.x = x
   this.onCenterChanged()
+
+proc y*(this: Node): float =
+  return this.center.y
 
 method `y=`*(this: Node, y: float) {.base.} =
   this.center.y = y
@@ -94,10 +103,7 @@ method `scale=`*(this: Node, scale: DVec2) {.base.} =
 
 method onParentScaled*(this: Node, parentScale: DVec2) {.base.} =
   ## Called when the parent node has been scaled.
-  ## `parentScale` is the
-
-  # TODO: I think this is correct,
-  # check with runnable examples in a test.
+  ## `parentScale` is the multiplicative scale of all parents above this node.
   let scale =
     if this.scale == VEC2_ONE:
       parentScale
@@ -153,10 +159,16 @@ method removeAllChildren*(this: Node) {.base.} =
 method hash*(this: Node): Hash {.base.} =
   return hash(this[].unsafeAddr)
 
+# method `onUpdate=`*(this: Node, onUpdate: proc(this: Node, deltaTime: float)) {.base.} =
+#   this.onUpdate = onUpdate
+
 method update*(this: Node, deltaTime: float) {.base.} =
   while this.removeQueue.len > 0:
     let child = this.removeQueue.popFirst()
     this.removeChildNow(child)
+
+  if this.onUpdate != nil:
+    this.onUpdate(this, deltaTime)
 
   for child in this.children:
     if loUpdate in child.flags:
@@ -164,10 +176,10 @@ method update*(this: Node, deltaTime: float) {.base.} =
 
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   if this.center != VEC2_ZERO:
-    translate(cfloat this.center.x, cfloat this.center.y, cfloat 0)
+    translate(this.center.x, this.center.y, 0)
 
   if this.rotation != 0:
-    rotate(cfloat this.rotation, cfloat 0, cfloat 0, cfloat 1)
+    rotate(this.rotation, 0, 0, 1)
 
   if this.scale != VEC2_ONE:
     scale(this.scale.x, this.scale.y, 1.0)
@@ -175,12 +187,12 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   if this.shader != nil:
     this.shader.render(time, resolution)
 
+  if callback != nil:
+    callback()
+
   for child in this.children:
     if loRender in child.flags:
       child.render(ctx)
-
-  if callback != nil:
-    callback()
 
   if this.shader != nil:
     activateShaderProgram(0, nil)
@@ -189,8 +201,8 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
     scale(1 / this.scale.x, 1 / this.scale.y, 1.0)
 
   if this.rotation != 0:
-    rotate(cfloat this.rotation, cfloat 0, cfloat 0, cfloat -1)
+    rotate(this.rotation, 0, 0, -1)
 
   if this.center != VEC2_ZERO:
-    translate(cfloat -this.center.x, cfloat -this.center.y, cfloat 0)
+    translate(-this.center.x, -this.center.y, 0)
 

@@ -13,6 +13,8 @@ bin           = @["shade"]
 
 requires "nim >= 1.4.6"
 requires "sdl2_nim >= 2.0.14.3"
+requires "chipmunk7 >= 7.0.3"
+requires "vmath >= 1.1.0"
 
 # Tasks
 task example, "Runs the basic example":
@@ -20,4 +22,7 @@ task example, "Runs the basic example":
 
 task physics, "Runs the physics example":
   exec "nim -d:collisionoutlines -d:checkSafeCollisionShapes -d:inputdebug r examples/physics/physics_example.nim"
+
+task platformer, "Runs the platformer example":
+  exec "nim r examples/platformer/platformer_example.nim"
 

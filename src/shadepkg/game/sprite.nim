@@ -3,6 +3,8 @@ import
   spritesheet,
   ../math/mathutils
 
+import ../render/color
+
 export node, spritesheet, mathutils
 
 type Sprite* = ref object of Node
@@ -32,12 +34,15 @@ proc newSprite*(
   initSprite(result, image, hframes, vframes, flags, frameCoords)
 
 render(Sprite, Node):
+  # TODO: The king isn't centered in the rectangle.
+  # This makes weird things happen.
+  # `blit` renders the image centered at the given location.
   blit(
     this.spritesheet.image,
     this.spritesheet[this.frameCoords].addr,
     ctx,
-    cfloat 0,
-    cfloat 0
+    0,
+    0,
   )
 
   if callback != nil:

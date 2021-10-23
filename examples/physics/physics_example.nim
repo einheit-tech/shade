@@ -19,7 +19,7 @@ let
   )
   (_, ballImage) = Images.loadImage("./examples/assets/images/alienGreen_round.png")
   ballSprite = newSprite(ballImage)
-  
+
 ball.addChild(ballSprite)
 ball.addChild(newCircleCollisionShape(newCircle(VEC2_ZERO, ballImage.w.float / 2)))
 

@@ -12,7 +12,6 @@ let (_, image) = Images.loadImage("./examples/assets/images/king.png")
 image.setImageFilter(FILTER_NEAREST)
 
 let king = newSprite(image, 11, 8)
-king.scale = dvec2(3.0, 3.0)
 
 # Set up the run animation
 const
@@ -36,8 +35,8 @@ runAnim.addNewAnimationTrack(
 # Change the scale
 let scaleFrames: seq[KeyFrame[DVec2]] =
   @[
-    (dvec2(2, 2), 0.0),
-    (dvec2(2.2, 2.2), animDuration / 2 - frameSpeed),
+    (dvec2(3, 3), 0.0),
+    (dvec2(3.3, 3.3), animDuration / 2),
   ]
 
 runAnim.addNewAnimationTrack(

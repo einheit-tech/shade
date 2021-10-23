@@ -23,6 +23,9 @@ proc registerImage(this: ImageAtlas, image: Image): int =
 
 proc loadImage*(this: ImageAtlas, imagePath: string): tuple[id: int, image: Image] =
   result.image = loadImage(imagePath)
+  if result.image == nil:
+    raise newException(Exception, "Failed to load image: " & imagePath)
+
   result.id = this.registerImage(result.image)
 
 proc free*(this: ImageAtlas, imageID: int) =

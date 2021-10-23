@@ -286,6 +286,9 @@ func perpendicular*(v: DVec2): DVec2 =
   ## @return {DVec2}
   return dvec2(-v.y, v.x)
 
+func isPerpendicular*(v1, v2: DVec2): bool =
+  return perpendicular(v1.normalize().abs()) == v2.normalize().abs()
+
 func negate*(v: DVec2): DVec2 = -v
 
 func normalize*(v: DVec2, magnitude: float = 1.0): DVec2 =
