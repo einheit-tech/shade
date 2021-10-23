@@ -209,6 +209,8 @@ method `scale=`*(this: PhysicsBody, scale: DVec2) =
       cast[pointer](this.collisionShape),
       cast[pointer](this)
     )
+  else:
+    this.attachCollisionShapeToBody()
 
 method onParentScaled*(this: PhysicsBody, parentScale: DVec2) =
   procCall Node(this).onParentScaled(parentScale)

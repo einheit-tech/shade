@@ -47,7 +47,7 @@ layer.addChild(rect)
 
 # Test scaling AFTER the game has started.
 let scaleUpBallTask = newTask(
-  onUpdate = (proc(deltaTime: float) = discard),
+  onUpdate = (proc(this: Task, deltaTime: float) = discard),
   checkCompletionCondition = (proc(this: Task): bool = this.elapsedTime >= 1.0),
   onCompletion = (proc(this: Task) = 
     ball.scale = dvec2(5, 5)
@@ -57,7 +57,7 @@ let scaleUpBallTask = newTask(
 layer.addChild(scaleUpBallTask)
 
 let scaleDownBallTask = newTask(
-  onUpdate = (proc(deltaTime: float) = discard),
+  onUpdate = (proc(this: Task, deltaTime: float) = discard),
   checkCompletionCondition = (proc(this: Task): bool = this.elapsedTime >= 2.0),
   onCompletion = (proc(this: Task) = 
     ball.scale = dvec2(1, 1)
