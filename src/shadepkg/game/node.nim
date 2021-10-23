@@ -7,8 +7,7 @@ import
   gamestate,
   ../render/render,
   ../render/shader,
-  ../math/mathutils,
-  ../render/color
+  ../math/mathutils
 
 export 
   hashes,
