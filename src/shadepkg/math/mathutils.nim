@@ -12,24 +12,30 @@ type
         intVal: int
       of Float:
         floatVal: float
-  EasingFunction*[T] = proc(a, b: T, completionRatio: float): T
+  CompletionRatio* = 0.0 .. 1.0
+  EasingFunction*[T] = proc(a, b: T, completionRatio: CompletionRatio): T
 
 func cubicBezierVector*(t: float, p0, p1, p2, p3: DVec2): DVec2
 func cubicBezier*(t, p0, p1, p2, p3: float): float
 func quadraticBezierVector*(t: float, p0, p1, p2: DVec2): DVec2
 func quadraticBezier*(t, p0, p1, p2: float): float
 func linearBezierVector*(t: float, p0, p1: DVec2): DVec2
+func easeInExpo*(startValue, endValue: DVec2, completionRatio: CompletionRatio): DVec2
+func easeInQuadratic*(startValue, endValue: DVec2, completionRatio: CompletionRatio): DVec2
+func easeInAndOutQuadratic*(startValue, endValue: DVec2, completionRatio: CompletionRatio): DVec2
+
 func linearBezier*(t, p0, p1: float): float
-func easeInAndOutQuadratic*(startValue, endValue, completionRatio: float): float
-func easeOutQuadratic*(startValue, endValue, completionRatio: float): float
-func easeInQuadratic*(startValue, endValue, completionRatio: float): float
+func easeInExpo*(startValue, endValue: float, completionRatio: CompletionRatio): float
+func easeInQuadratic*(startValue, endValue: float, completionRatio: CompletionRatio): float
+func easeInAndOutQuadratic*(startValue, endValue: float, completionRatio: CompletionRatio): float
+func easeOutQuadratic*(startValue, endValue: float, completionRatio: CompletionRatio): float
 func smootherStep*(x: float): float
 func smoothStep*(x: float): float
-func lerp*(startValue, endValue, completionRatio: float): float
-func lerp*(startValue, endValue: int, completionRatio: float): int
-func lerpDiscrete[T: SomeNumber](startValue, endValue: T, completionRatio: float): T
-func lerpDiscrete*(startValue, endValue: int, completionRatio: float): int
-func lerpDiscrete*(startValue, endValue: float, completionRatio: float): float
+func lerp*(startValue, endValue: float, completionRatio: CompletionRatio): float
+func lerp*(startValue, endValue: int, completionRatio: CompletionRatio): int
+func lerpDiscrete[T: SomeNumber](startValue, endValue: T, completionRatio: CompletionRatio): T
+func lerpDiscrete*(startValue, endValue: int, completionRatio: CompletionRatio): int
+func lerpDiscrete*(startValue, endValue: float, completionRatio: CompletionRatio): float
 func minUnsignedAngle*(a1, a2, halfRange: float): float
 func minUnsignedDegreeAngle*(d1, d2: float): float
 func minUnsignedRadianAngle*(r1, r2: float): float
@@ -115,7 +121,7 @@ func minUnsignedAngle*(a1, a2, halfRange: float): float =
   ## @return {float}
   return halfRange - abs(halfRange - abs(a1 - a2))
 
-func lerp*(startValue, endValue, completionRatio: float): float =
+func lerp*(startValue, endValue: float, completionRatio: CompletionRatio): float =
   ## Returns a value linearly interpolated between two values based on a ration of completion.
   ## @param {float} startValue The starting value.
   ## @param {float} endValue The ending value.
@@ -124,7 +130,7 @@ func lerp*(startValue, endValue, completionRatio: float): float =
   ## @return {float}
   return startValue + (endValue - startValue) * completionRatio
 
-func lerp*(startValue, endValue: int, completionRatio: float): int =
+func lerp*(startValue, endValue: int, completionRatio: CompletionRatio): int =
   let f = lerp(startValue.float, endValue.float, completionRatio)
   return 
     if startValue < endValue:
@@ -132,7 +138,7 @@ func lerp*(startValue, endValue: int, completionRatio: float): int =
     else:
       int ceil(f)
 
-func lerpDiscrete[T: SomeNumber](startValue, endValue: T, completionRatio: float): T =
+func lerpDiscrete[T: SomeNumber](startValue, endValue: T, completionRatio: CompletionRatio): T =
   ## Returns the endValue when completionRatio reaches 1.0.
   ## Otherwise, startValue is returned.
   return 
@@ -141,10 +147,10 @@ func lerpDiscrete[T: SomeNumber](startValue, endValue: T, completionRatio: float
     else:
       startValue
 
-func lerpDiscrete*(startValue, endValue: int, completionRatio: float): int =
+func lerpDiscrete*(startValue, endValue: int, completionRatio: CompletionRatio): int =
   lerpDiscrete[int](startValue, endValue, completionRatio)
 
-func lerpDiscrete*(startValue, endValue: float, completionRatio: float): float =
+func lerpDiscrete*(startValue, endValue: float, completionRatio: CompletionRatio): float =
   lerpDiscrete[float](startValue, endValue, completionRatio)
 
 func smoothStep*(x: float): float =
@@ -157,23 +163,39 @@ func smootherStep*(x: float): float =
   ## @return {float}
   return x * x * x * (x * (x * 6 - 15) + 10)
 
-func easeInQuadratic*(startValue, endValue, completionRatio: float): float =
+func easeInExpo*(startValue, endValue: float, completionRatio: CompletionRatio): float =
+  ## Returns a value exponentially accelerating from the start value until reaching the end value.
+  ##
+  ## @param {float} startValue The starting value.
+  ## @param {float} endValue The ending value.
+  ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation.
+  # return startValue + (completionRatio * 2 * (endValue - startValue))
+  let eased =  
+    if completionRatio == 0:
+      0.0
+    else:
+      pow(2, 10 * completionRatio - 10)
+  return lerp(startValue, endValue, eased)
+
+func easeInQuadratic*(startValue, endValue: float, completionRatio: CompletionRatio): float =
   ## Returns a value quadratically accelerating from the start value until reaching the end value.
   ##
   ## @param {float} startValue The starting value.
   ## @param {float} endValue The ending value.
   ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation.
-  return startValue + (completionRatio * 2 * (endValue - startValue))
+  return lerp(startValue, endValue, completionRatio * completionRatio)
 
-func easeOutQuadratic*(startValue, endValue, completionRatio: float): float =
+func easeOutQuadratic*(startValue, endValue: float, completionRatio: CompletionRatio): float =
   ## Returns a value quadratically decelerating from the start value until reaching the end value.
   ##
   ## @param {float} startValue The starting value.
   ## @param {float} endValue The ending value.
   ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation.
-  return startValue + (-(endValue - startValue) * completionRatio * (completionRatio - 2))
+  # return startValue + (-(endValue - startValue) * completionRatio * (completionRatio - 2))
+  let eased = 1 - (1 - completionRatio) * (1 - completionRatio)
+  return lerp(startValue, endValue, eased)
 
-func easeInAndOutQuadratic*(startValue, endValue, completionRatio: float): float =
+func easeInAndOutQuadratic*(startValue, endValue: float, completionRatio: CompletionRatio): float =
   ## Returns a value quadratically accelerating from the start value
   ## until reaching average of startValue and endValue,
   ## then quadratically decreases until reaching the end value.
@@ -181,13 +203,13 @@ func easeInAndOutQuadratic*(startValue, endValue, completionRatio: float): float
   ## @param {float} startValue The starting value.
   ## @param {float} endValue The ending value.
   ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation.
-  var ratio = completionRatio
-  ratio *= 2f
-  let totalChange = endValue - startValue
-  if ratio < 1:
-    return startValue + totalChange / 2 * pow(ratio, 2)
-  ratio -= 1
-  return startValue + (-totalChange / 2 * (ratio * (ratio - 2) - 1))
+  let eased =
+    if completionRatio < 0.5:
+      2 * completionRatio * completionRatio
+    else:
+      1 - pow(-2 * completionRatio + 2, 2) / 2
+
+  return lerp(startValue, endValue, eased)
 
 func linearBezier*(t, p0, p1: float): float =
   ## Calculates the position between the two values at a given ratio.
@@ -204,6 +226,24 @@ func linearBezierVector*(t: float, p0, p1: DVec2): DVec2 =
   ## @param {DVec2} p0 The starting point.
   ## @param {DVec2} p1 The ending point.
   return dvec2(linearBezier(t, p0.x, p1.x), linearBezier(t, p0.y, p1.y))
+
+func easeInExpo*(startValue, endValue: DVec2, completionRatio: CompletionRatio): DVec2 =
+  return dvec2(
+    easeInExpo(startValue.x, endValue.x, completionRatio),
+    easeInExpo(startValue.y, endValue.y, completionRatio)
+  )
+
+func easeInQuadratic*(startValue, endValue: DVec2, completionRatio: CompletionRatio): DVec2 =
+  return dvec2(
+    easeInQuadratic(startValue.x, endValue.x, completionRatio),
+    easeInQuadratic(startValue.y, endValue.y, completionRatio)
+  )
+
+func easeInAndOutQuadratic*(startValue, endValue: DVec2, completionRatio: CompletionRatio): DVec2 =
+  return dvec2(
+    easeInAndOutQuadratic(startValue.x, endValue.x, completionRatio),
+    easeInAndOutQuadratic(startValue.y, endValue.y, completionRatio)
+  )
 
 func quadraticBezier*(t, p0, p1, p2: float): float =
   ## Calculates the quadratic Bezier curve of three values.
@@ -299,7 +339,7 @@ func reflect*(this, normal: DVec2): DVec2 =
   let scalar = 2 * this.dot(normal)
   return this - normal * scalar
 
-proc ease*(v1, v2: DVec2, completionRatio: float, f: EasingFunction[float]): DVec2 =
+proc ease*(v1, v2: DVec2, completionRatio: CompletionRatio, f: EasingFunction[float]): DVec2 =
   ## Applies an easing function
   ## @param {DVec2} v1 The starting vector values.
   ## @param {DVec2} v2 The ending vector values.
@@ -310,7 +350,7 @@ proc ease*(v1, v2: DVec2, completionRatio: float, f: EasingFunction[float]): DVe
     f(v1.y, v2.y, completionRatio)
   )
 
-proc lerp*(v1, v2: DVec2, completionRatio: float): DVec2 =
+proc lerp*(v1, v2: DVec2, completionRatio: CompletionRatio): DVec2 =
   ## Lerps the values between two vector (from v1 to v2).
   ## @param {DVec2} v1 The starting vector values.
   ## @param {DVec2} v2 The ending vector values.
@@ -324,7 +364,7 @@ const
   IVEC2_ZERO* = ivec2()
   IVEC2_ONE* = ivec2(1, 1)
 
-proc ease*(v1, v2: IVec2, completionRatio: float, f: EasingFunction[int]): IVec2 =
+proc ease*(v1, v2: IVec2, completionRatio: CompletionRatio, f: EasingFunction[int]): IVec2 =
   ## Applies an easing function
   ## @param {IVec2} v1 The starting vector values.
   ## @param {IVec2} v2 The ending vector values.
@@ -335,12 +375,12 @@ proc ease*(v1, v2: IVec2, completionRatio: float, f: EasingFunction[int]): IVec2
     int32 f(v1.y, v2.y, completionRatio)
   )
 
-func lerpDiscrete*(v1, v2: IVec2, completionRatio: float): IVec2 =
+func lerpDiscrete*(v1, v2: IVec2, completionRatio: CompletionRatio): IVec2 =
   ## Will return v2 when the completionRatio reaches 1.0.
   ## Otherwise, v1 is returned.
   return v1.ease(v2, completionRatio, lerpDiscrete)
 
-proc lerp*(v1, v2: IVec2, completionRatio: float): IVec2 =
+proc lerp*(v1, v2: IVec2, completionRatio: CompletionRatio): IVec2 =
   ## Lerps the values between two vector (from v1 to v2).
   ## @param {IVec2} v1 The starting vector values.
   ## @param {IVec2} v2 The ending vector values.
@@ -354,7 +394,7 @@ const
   VEC3_ZERO* = dvec3()
   VEC3_ONE* = dvec3(1.0, 1.0, 1.0)
 
-proc ease*(v1, v2: DVec3, completionRatio: float, f: EasingFunction[float]): DVec3 =
+proc ease*(v1, v2: DVec3, completionRatio: CompletionRatio, f: EasingFunction[float]): DVec3 =
   ## Applies an easing function
   ## @param {DVec3} v1 The starting vector values.
   ## @param {DVec3} v2 The ending vector values.
@@ -366,7 +406,7 @@ proc ease*(v1, v2: DVec3, completionRatio: float, f: EasingFunction[float]): DVe
     f(v1.z, v2.z, completionRatio)
   )
 
-proc lerp*(v1, v2: DVec3, completionRatio: float): DVec3 =
+proc lerp*(v1, v2: DVec3, completionRatio: CompletionRatio): DVec3 =
   ## Lerps the values between two vector (from v1 to v2).
   ## @param {DVec3} v1 The starting vector values.
   ## @param {DVec3} v2 The ending vector values.

@@ -2,7 +2,7 @@ import
   macros,
   sdl2_nim/sdl_gpu
 
-export sdl_gpu
+export sdl_gpu except Camera
 
 macro render*(ChildType: typedesc, ParentType: typedesc, body: untyped): untyped =
   ## Macro as a helper for the render method.

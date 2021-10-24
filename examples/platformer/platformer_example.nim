@@ -20,6 +20,10 @@ let player = createNewKing()
 player.x = 200
 player.y = 400
 
+# Track the player with the camera.
+let camera = newCamera(player, 0.2, easeInAndOutQuadratic)
+Game.scene.camera = camera
+
 # Ground
 let groundShape = newPolygonCollisionShape(newPolygon([
   dvec2(width / 2, 80),
@@ -98,10 +102,14 @@ proc physicsProcess(gravity: DVec2, damping, deltaTime: float) =
 
     if rightPressed:
       x = min(player.velocityX + acceleration, maxSpeed)
-      player.scale = dvec2(abs(player.scale.x), player.scale.y)
+      if Input.wasKeyJustPressed(K_RIGHT):
+        player.scale = dvec2(abs(player.scale.x), player.scale.y)
+        camera.offset = dvec2(100, 0)
     else:
       x = max(player.velocityX - acceleration, -maxSpeed)
-      player.scale = dvec2(-1 * abs(player.scale.x), player.scale.y)
+      if Input.wasKeyJustPressed(K_LEFT):
+        player.scale = dvec2(-1 * abs(player.scale.x), player.scale.y)
+        camera.offset = dvec2(-100, 0)
 
     player.playAnimation("run")
 
