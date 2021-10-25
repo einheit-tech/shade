@@ -19,24 +19,31 @@ type
   PhysicsUpdateFunc* = proc(gravity: DVec2, damping: float, deltaTime: float)
   PhysicsBody* = ref object of Node
     collisionShape*: CollisionShape
-    material: Material
+    material*: Material
     body: Body
-    kind: BodyType
 
     space: Space
     physicsUpdateFunc: PhysicsUpdateFunc
 
-    # lastContactNormal*: DVec2
-    isOnGround: bool
-    isOnWall: bool
+    case kind: PhysicsBodyKind:
+      of pbDynamic, pbKinematic:
+        isOnGround*: bool
+        isOnWall*: bool
+      of pbStatic:
+        discard
 
 proc setLastContactNormal(this: PhysicsBody, gravity: DVec2)
-proc defaultVelocityUpdateFunc(this: PhysicsBody, body: Body, gravity: Vect, damping: Float, dt: Float) {.cdecl.}
+proc defaultVelocityUpdateFunc(
+  this: PhysicsBody,
+  body: Body,
+  gravity: Vect,
+  damping: Float,
+  dt: Float
+) {.cdecl.}
 method `onPhysicsUpdate=`*(this: PhysicsBody, onPhysicsUpdate: PhysicsUpdateFunc) {.base.}
 
 proc initPhysicsBody*(
   physicsBody: var PhysicsBody,
-  kind: PhysicsBodyKind,
   material: Material = ROCK,
   flags: set[LayerObjectFlags] = {loUpdate, loRender},
   centerX: float = 0.0,
@@ -46,18 +53,9 @@ proc initPhysicsBody*(
 ) =
   ## Leave mass and momentOfInertia as 0.0, unless you have a reason.
   initNode(Node(physicsBody), flags, centerX, centerY)
-  physicsBody.kind = 
-    case kind:
-      of pbDynamic:
-        BODY_TYPE_DYNAMIC
-      of pbStatic:
-        BODY_TYPE_STATIC
-      of pbKinematic:
-        BODY_TYPE_KINEMATIC
-
   physicsBody.material = material
 
-  case kind:
+  case physicsBody.kind:
     of pbDynamic:
       # NOTE: http://chipmunk-physics.net/release/ChipmunkLatest-Docs/#cpBody-DynamicBodies
       # There are two ways to set up a dynamic body.
@@ -100,10 +98,9 @@ proc newPhysicsBody*(
 ): PhysicsBody =
   ## Creates a new PhysicsBody.
   ## Leave mass and momentOfInertia as 0.0, unless you have a reason.
-  result = PhysicsBody()
+  result = PhysicsBody(kind: kind)
   initPhysicsBody(
     result,
-    kind,
     material,
     flags,
     centerX,
@@ -125,7 +122,6 @@ proc initPlayerBody*(
   ## and is commonly used for the player in 2d platformers.
   initPhysicsBody(
     playerBody,
-    kind = pbDynamic,
     material = material,
     flags = flags,
     centerX = centerX,
@@ -146,20 +142,11 @@ proc newPlayerBody*(
   ## and is commonly used for the player in 2d platformers.
 
   # Infinity inertia prevents the body from rotating due to physics.
-  result = PhysicsBody()
+  result = PhysicsBody(kind: pbDynamic)
   initPlayerBody(result, mass, material, flags, centerX, centerY)
 
 proc `surfaceVelocity=`*(this: PhysicsBody, velocity: DVec2) =
   this.collisionShape.surfaceVelocity = velocity
-
-template isOnGround*(this: PhysicsBody): bool =
-  this.isOnGround
-
-template isOnWall*(this: PhysicsBody): bool =
-  this.isOnWall
-
-template material*(this: PhysicsBody): Material =
-  this.material
 
 template `parent`(body: Body): PhysicsBody =
   cast[PhysicsBody](body.userData)

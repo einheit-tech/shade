@@ -1,13 +1,39 @@
 import
   node,
-  ../input/inputhandler
+  ../input/inputhandler,
+  ../math/rectangle,
+  ../game/gamestate
 
-type Camera* = ref object of Node
-  # TODO: Maybe give camera a DVec3 for z order?
-  offset*: DVec2
-  trackedNode*: Node
-  completionRatioPerFrame*: CompletionRatio
-  easingFunction*: EasingFunction[DVec2]
+type
+  Bounds* = ref object
+    left*: float
+    right*: float
+    top*: float
+    bottom*: float
+  Camera* = ref object of Node
+    # TODO: Maybe give camera a DVec3 for z order?
+    offset*: DVec2
+    trackedNode*: Node
+    completionRatioPerFrame*: CompletionRatio
+    easingFunction*: EasingFunction[DVec2]
+    bounds*: Bounds
+
+proc initBounds*(
+  bounds: Bounds,
+  top, left: float = float.low,
+  bottom, right: float = float.high
+) =
+  bounds.left = left
+  bounds.right = right
+  bounds.top = top
+  bounds.bottom = bottom
+
+proc newBounds*(
+  top, left: float = float.low,
+  bottom, right: float = float.high
+): Bounds =
+  result = Bounds()
+  initBounds(result, top, left, bottom, right)
 
 proc initCamera*(camera: Camera) =
   initNode(Node(camera), {loUpdate})
@@ -52,4 +78,23 @@ method update*(this: Camera, deltaTime: float) =
     this.center = targetPosition
   else:
     this.center = this.easingFunction(this.center, targetPosition, this.completionRatioPerFrame)
+
+proc calcTranslation(this: Camera): DVec2 =
+  result = this.center - gamestate.resolution * 0.5
+  if this.bounds != nil:
+    if result.x < this.bounds.left:
+      result.x = this.bounds.left
+    elif (result.x + gamestate.resolution.x) > this.bounds.right:
+      result.x = this.bounds.right - gamestate.resolution.x
+
+    if result.y < this.bounds.top:
+      result.y = this.bounds.top
+    elif (result.y + gamestate.resolution.y) > this.bounds.bottom:
+      result.y = this.bounds.bottom - gamestate.resolution.y
+
+template renderInViewportSpace*(this: Camera, body: untyped): untyped =
+  let translation = calcTranslation(this)
+  translate(-translation.x, -translation.y, 0)
+  body
+  translate(translation.x, translation.y, 0)
 

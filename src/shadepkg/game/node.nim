@@ -158,9 +158,6 @@ method removeAllChildren*(this: Node) {.base.} =
 method hash*(this: Node): Hash {.base.} =
   return hash(this[].unsafeAddr)
 
-# method `onUpdate=`*(this: Node, onUpdate: proc(this: Node, deltaTime: float)) {.base.} =
-#   this.onUpdate = onUpdate
-
 method update*(this: Node, deltaTime: float) {.base.} =
   while this.removeQueue.len > 0:
     let child = this.removeQueue.popFirst()

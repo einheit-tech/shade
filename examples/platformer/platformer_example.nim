@@ -21,7 +21,8 @@ player.x = 200
 player.y = 400
 
 # Track the player with the camera.
-let camera = newCamera(player, 0.2, easeInAndOutQuadratic)
+let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
+camera.bounds = newBounds(right = 1920.0, bottom = 1160.0)
 Game.scene.camera = camera
 
 # Ground
@@ -104,12 +105,10 @@ proc physicsProcess(gravity: DVec2, damping, deltaTime: float) =
       x = min(player.velocityX + acceleration, maxSpeed)
       if Input.wasKeyJustPressed(K_RIGHT):
         player.scale = dvec2(abs(player.scale.x), player.scale.y)
-        camera.offset = dvec2(100, 0)
     else:
       x = max(player.velocityX - acceleration, -maxSpeed)
       if Input.wasKeyJustPressed(K_LEFT):
         player.scale = dvec2(-1 * abs(player.scale.x), player.scale.y)
-        camera.offset = dvec2(-100, 0)
 
     player.playAnimation("run")
 
