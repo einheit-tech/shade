@@ -5,11 +5,11 @@ import
   ../game/gamestate
 
 type
-  Bounds* = ref object
-    left*: float
-    right*: float
+  Bounds* = object
     top*: float
+    left*: float
     bottom*: float
+    right*: float
   Camera* = ref object of Node
     # TODO: Maybe give camera a DVec3 for z order?
     offset*: DVec2
@@ -18,25 +18,20 @@ type
     easingFunction*: EasingFunction[DVec2]
     bounds*: Bounds
 
-proc initBounds*(
-  bounds: Bounds,
-  top, left: float = float.low,
-  bottom, right: float = float.high
-) =
-  bounds.left = left
-  bounds.right = right
-  bounds.top = top
-  bounds.bottom = bottom
-
 proc newBounds*(
   top, left: float = float.low,
   bottom, right: float = float.high
 ): Bounds =
-  result = Bounds()
-  initBounds(result, top, left, bottom, right)
+  return Bounds(
+    top: top,
+    left: left,
+    bottom: bottom,
+    right: right
+  )
 
 proc initCamera*(camera: Camera) =
   initNode(Node(camera), {loUpdate})
+  camera.bounds = newBounds()
 
 proc newCamera*(): Camera =
   result = Camera()
@@ -81,16 +76,16 @@ method update*(this: Camera, deltaTime: float) =
 
 proc calcTranslation(this: Camera): DVec2 =
   result = this.center - gamestate.resolution * 0.5
-  if this.bounds != nil:
-    if result.x < this.bounds.left:
-      result.x = this.bounds.left
-    elif (result.x + gamestate.resolution.x) > this.bounds.right:
-      result.x = this.bounds.right - gamestate.resolution.x
 
-    if result.y < this.bounds.top:
-      result.y = this.bounds.top
-    elif (result.y + gamestate.resolution.y) > this.bounds.bottom:
-      result.y = this.bounds.bottom - gamestate.resolution.y
+  if result.x < this.bounds.left:
+    result.x = this.bounds.left
+  elif (result.x + gamestate.resolution.x) > this.bounds.right:
+    result.x = this.bounds.right - gamestate.resolution.x
+
+  if result.y < this.bounds.top:
+    result.y = this.bounds.top
+  elif (result.y + gamestate.resolution.y) > this.bounds.bottom:
+    result.y = this.bounds.bottom - gamestate.resolution.y
 
 template renderInViewportSpace*(this: Camera, body: untyped): untyped =
   let translation = calcTranslation(this)

@@ -22,7 +22,8 @@ player.y = 400
 
 # Track the player with the camera.
 let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
-camera.bounds = newBounds(right = 1920.0, bottom = 1160.0)
+camera.bounds.right = 1920.0
+camera.bounds.bottom = 1160.0
 Game.scene.camera = camera
 
 # Ground
