@@ -11,7 +11,7 @@ type
     bottom*: float
     right*: float
   Camera* = ref object of Node
-    # TODO: Maybe give camera a DVec3 for z order?
+    z*: float
     offset*: DVec2
     trackedNode*: Node
     completionRatioPerFrame*: CompletionRatio

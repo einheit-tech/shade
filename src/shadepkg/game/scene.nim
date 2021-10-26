@@ -3,8 +3,7 @@ import algorithm
 import
   layer,
   node,
-  camera,
-  gamestate
+  camera
 
 export
   layer,
@@ -53,8 +52,24 @@ method update*(this: Scene, deltaTime: float) =
     layer.update(deltaTime)
 
 proc renderLayers(this: Scene, ctx: Target, callback: proc = nil) =
+  var
+    relativeZ = 1.0
+    needsScaling = false
+    inversedScalar: float
+
   this.forEachLayer(l):
-    l.render(ctx)
+    relativeZ = l.z - this.camera.z
+    if relativeZ > 0:
+      needsScaling = relativeZ != 1.0
+
+      if needsScaling:
+        inversedScalar = 1.0 / relativeZ
+        scale(inversedScalar, inversedScalar, 1.0)
+
+      l.render(ctx)
+
+      if needsScaling:
+        scale(relativeZ, relativeZ, 1.0)
 
   if callback != nil:
     callback()
