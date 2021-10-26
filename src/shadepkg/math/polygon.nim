@@ -123,22 +123,24 @@ func getBounds*(this: Polygon): Rectangle =
   if this.bounds != nil:
     return this.bounds
   var
-    minX = Inf
-    minY = Inf
-    maxX = NegInf
-    maxY = NegInf
+    minX = float.high
+    minY = float.high
+    maxX = float.low
+    maxY = float.low
   for i, v in this:
     minX = min(minX, v.x)
     minY = min(minY, v.y)
     maxX = max(maxX, v.x)
     maxY = max(maxY, v.y)
+
   this.bounds =
     newRectangle(
       minX,
       minY,
-      maxX - minX,
-      maxY - minY
+      maxX,
+      maxY
     )
+
   return this.bounds
 
 func getArea*(this: Polygon): float =
@@ -355,10 +357,10 @@ proc stroke*(this: Polygon, ctx: Target, color: Color = RED) =
           this[i + 1]
 
     ctx.line(
-      cfloat start.x,
-      cfloat start.y,
-      cfloat finish.x,
-      cfloat finish.y,
+      start.x,
+      start.y,
+      finish.x,
+      finish.y,
       color
     )
 

@@ -23,6 +23,7 @@ type
 
   Node* = ref object of RootObj
     onUpdate*: proc(this: Node, deltaTime: float)
+    onRender*: proc(this: Node, ctx: Target)
 
     shader: Shader
     children: seq[Node]
@@ -49,6 +50,7 @@ method onChildAdded*(this: Node, child: Node) {.base.}
 method onChildRemoved*(this: Node, child: Node) {.base.}
 method hash*(this: Node): Hash {.base.}
 method update*(this: Node, deltaTime: float) {.base.}
+method renderChildren*(this: Node, ctx: Target) {.base.}
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.}
 
 proc initNode*(node: Node, flags: set[LayerObjectFlags], centerX, centerY: float = 0.0) =
@@ -170,7 +172,17 @@ method update*(this: Node, deltaTime: float) {.base.} =
     if loUpdate in child.flags:
       child.update(deltaTime)
 
+method renderChildren*(this: Node, ctx: Target) {.base.} =
+  for child in this.children:
+    if loRender in child.flags:
+      child.render(ctx)
+
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
+  ## Renders the node with its given position, rotation, and scale.
+  ## It will render its children relative to its center.
+  ##
+  ## If a callback is given, the caller is responsible for rendering the children.
+  ## Use Node.renderChildren(ctx).
   if this.center != VEC2_ZERO:
     translate(this.center.x, this.center.y, 0)
 
@@ -186,9 +198,7 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   if callback != nil:
     callback()
 
-  for child in this.children:
-    if loRender in child.flags:
-      child.render(ctx)
+  this.renderChildren(ctx)
 
   if this.shader != nil:
     activateShaderProgram(0, nil)

@@ -47,6 +47,9 @@ template rows*(this: Spritesheet): int =
 template cols*(this: Spritesheet): int =
   this.cols
 
+template `[]`*(this: Spritesheet, index: int): Rect =
+  this.spriteRects[index]
+
 template `[]`*(this: Spritesheet, x, y: int): Rect =
   ## Gets the sprite image at (x, y).
   this.spriteRects[x + y * this.cols]

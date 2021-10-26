@@ -5,33 +5,27 @@ import
   ../game/gamestate
 
 type
-  Bounds* = object
-    top*: float
-    left*: float
-    bottom*: float
-    right*: float
   Camera* = ref object of Node
     z*: float
+    bounds*: Rectangle
+    viewport: Rectangle
+
+    # For node tracking
     offset*: DVec2
     trackedNode*: Node
     completionRatioPerFrame*: CompletionRatio
     easingFunction*: EasingFunction[DVec2]
-    bounds*: Bounds
-
-proc newBounds*(
-  top, left: float = float.low,
-  bottom, right: float = float.high
-): Bounds =
-  return Bounds(
-    top: top,
-    left: left,
-    bottom: bottom,
-    right: right
-  )
 
 proc initCamera*(camera: Camera) =
   initNode(Node(camera), {loUpdate})
-  camera.bounds = newBounds()
+  camera.bounds = newRectangle(float.low, float.low, float.high, float.high)
+  camera.viewport =
+    newRectangle(
+      camera.x - gamestate.resolution.x * 0.5,
+      camera.y - gamestate.resolution.y * 0.5,
+      camera.x + gamestate.resolution.x * 0.5,
+      camera.y + gamestate.resolution.y * 0.5
+    )
 
 proc newCamera*(): Camera =
   result = Camera()
@@ -67,12 +61,14 @@ method update*(this: Camera, deltaTime: float) =
     # Don't need to track a node
     return
 
-  let targetPosition = this.trackedNode.center + this.offset
-
   if this.easingFunction == nil:
-    this.center = targetPosition
+    this.center = this.trackedNode.center
   else:
-    this.center = this.easingFunction(this.center, targetPosition, this.completionRatioPerFrame)
+    this.center = this.easingFunction(
+      this.center,
+      this.trackedNode.center + this.offset,
+      this.completionRatioPerFrame
+    )
 
 proc calcTranslation(this: Camera): DVec2 =
   result = this.center - gamestate.resolution * 0.5
