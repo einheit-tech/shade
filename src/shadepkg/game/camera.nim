@@ -1,6 +1,5 @@
 import
   node,
-  ../input/inputhandler,
   ../math/rectangle,
   ../game/gamestate
 

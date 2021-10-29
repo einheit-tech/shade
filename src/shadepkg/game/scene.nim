@@ -51,40 +51,36 @@ method update*(this: Scene, deltaTime: float) =
   this.forEachLayer(layer):
     layer.update(deltaTime)
 
-proc renderLayers(this: Scene, ctx: Target, callback: proc = nil) =
+proc renderWithCamera(this: Scene, ctx: Target) =
+  # Subtract half the screen resolution to center the camera.
   var
-    relativeZ = 1.0
+    relativeZ: float
     needsScaling = false
     inversedScalar: float
 
-  this.forEachLayer(l):
-    relativeZ = l.z - this.camera.z
-    if relativeZ > 0:
-      needsScaling = relativeZ != 1.0
-
-      if needsScaling:
-        inversedScalar = 1.0 / relativeZ
-        scale(inversedScalar, inversedScalar, 1.0)
-
-      l.render(ctx)
-
-      if needsScaling:
-        scale(relativeZ, relativeZ, 1.0)
-
-  if callback != nil:
-    callback()
-
-proc renderWithCamera(this: Scene, ctx: Target, callback: proc = nil) =
-  # Subtract half the screen resolution to center the camera.
   this.camera.renderInViewportSpace:
-    this.renderLayers(ctx, callback)
-    if callback != nil:
-      callback()
+    this.forEachLayer(l):
+      relativeZ = l.z - this.camera.z
+      if relativeZ > 0:
+        needsScaling = relativeZ != 1.0
+
+        if needsScaling:
+          inversedScalar = 1.0 / relativeZ
+          scale(inversedScalar, inversedScalar, 1.0)
+
+        l.render(ctx)
+
+        if needsScaling:
+          scale(relativeZ, relativeZ, 1.0)
 
 render(Scene, Node):
   this.sortLayers()
   if this.camera != nil:
-    this.renderWithCamera(ctx, callback)
+    this.renderWithCamera(ctx)
   else:
-    this.renderLayers(ctx, callback)
+    this.forEachLayer(l):
+      l.render(ctx)
+
+  if callback != nil:
+    callback()
 
