@@ -32,13 +32,13 @@ proc newSprite*(
   initSprite(result, image, hframes, vframes, flags, frameCoords)
 
 render(Sprite, Node):
-    # `blit` renders the image centered at the given location.
+  # `blit` renders the image centered at the given location.
   blit(
     this.spritesheet.image,
     this.spritesheet[this.frameCoords].addr,
     ctx,
     0,
-    0,
+    0
   )
 
   if callback != nil:

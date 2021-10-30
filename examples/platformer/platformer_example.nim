@@ -17,10 +17,10 @@ player.x = resolutionMeters.x / 2
 player.y = 20
 
 # Track the player with the camera.
-# let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
-# camera.bounds.right = resolutionMeters.x
-# camera.bounds.bottom = resolutionMeters.y
-# Game.scene.camera = camera
+let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
+camera.bounds.right = resolutionMeters.x
+camera.bounds.bottom = resolutionMeters.y
+Game.scene.camera = camera
 
 let (_, groundImage) = Images.loadImage("./examples/assets/images/ground.png")
 groundImage.setImageFilter(FILTER_NEAREST)
@@ -41,11 +41,6 @@ let groundShape = newPolygonCollisionShape(
   ])
 )
 
-# TODO: Rendered in the right position,
-# collision box is lower than it should be.
-# ONLY the y (maybe height) is incorrect.
-# The values passed in are correct.
-# center.y is at 1000, with 1080 being the bottom and 920 being the top.
 let ground = newPhysicsBody(
   kind = pbStatic,
   material = PLATFORM,
@@ -66,26 +61,24 @@ let wallShapePolygon = newPolygon([
 proc createWall(): PhysicsBody =
   # Left wall
   let wallShape = newPolygonCollisionShape(wallShapePolygon)
-
   result = newPhysicsBody(
     kind = pbStatic,
-    material = PLATFORM,
+    material = PLATFORM
   )
-
-  result.addChild(wallShape)
   result.addChild(newSprite(wallImage))
+  result.addChild(wallShape)
 
 let leftWall = createWall()
-leftWall.x = wallShapePolygon.getBounds().width
-leftWall.y = (resolutionMeters.y - groundShape.getBounds().height) / 2
+leftWall.x = ground.x - ground.width / 2 + leftWall.width / 2
+leftWall.y = ground.y - ground.height / 2 - leftWall.height / 2
 
 let rightWall = createWall()
-rightWall.x = resolutionMeters.x - wallShapePolygon.getBounds().width / 2
+rightWall.x = ground.x + ground.width / 2 - rightWall.width / 2
 rightWall.y = leftWall.y
 
-# layer.addChild(leftWall)
-# layer.addChild(rightWall)
 layer.addChild(ground)
+layer.addChild(leftWall)
+layer.addChild(rightWall)
 layer.addChild(player)
 
 # Custom physics handling for the player
@@ -133,14 +126,15 @@ proc physicsProcess(gravity: DVec2, damping, deltaTime: float) =
 
   player.velocity = dvec2(x, y)
 
+  if Input.wasRightMouseButtonJustPressed():
+    camera.z -= 0.1
+  elif Input.wasLeftMouseButtonJustPressed():
+    camera.z += 0.1
+
 player.onPhysicsUpdate = physicsProcess
 
-# Scale everything up for visibility
-# player.scale = dvec2(2, 2)
-# ground.scale = dvec2(2, 2)
-# leftWall.scale = dvec2(2, 2)
 # Use a negative x scale to flip the image
-# rightWall.scale = dvec2(-2, 2)
+rightWall.scale = dvec2(-1, 1)
 
 # Play some music
 let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")

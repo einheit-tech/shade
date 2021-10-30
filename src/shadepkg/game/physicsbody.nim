@@ -145,6 +145,18 @@ proc newPlayerBody*(
   result = PhysicsBody(kind: pbDynamic)
   initPlayerBody(result, mass, material, flags, centerX, centerY)
 
+template width*(this: PhysicsBody): float =
+  if this.collisionShape != nil:
+    this.collisionShape.width()
+  else:
+    0
+
+template height*(this: PhysicsBody): float =
+  if this.collisionShape != nil:
+    this.collisionShape.height()
+  else:
+    0
+
 proc `surfaceVelocity=`*(this: PhysicsBody, velocity: DVec2) =
   this.collisionShape.surfaceVelocity = velocity
 
@@ -164,8 +176,7 @@ proc defaultVelocityUpdateFunc(
 ) {.cdecl.} =
   body.updateVelocity(gravity, damping, dt)
   this.setLastContactNormal(cast[DVec2](gravity))
-  this.x = body.position.x
-  this.y = body.position.y
+  this.center = cast[DVec2](body.position)
   this.rotation = body.angle.radToDeg()
 
 method `onPhysicsUpdate=`*(this: PhysicsBody, onPhysicsUpdate: PhysicsUpdateFunc) {.base.} =
@@ -178,6 +189,10 @@ method `onPhysicsUpdate=`*(this: PhysicsBody, onPhysicsUpdate: PhysicsUpdateFunc
       parent.defaultVelocityUpdateFunc(body, gravity, damping, dt)
       if parent.physicsUpdateFunc != nil:
         parent.physicsUpdateFunc(cast[DVec2](gravity), damping, dt)
+
+method `center=`*(this: PhysicsBody, center: DVec2) =
+  procCall `center=`(Node(this), center)
+  this.body.position = cast[Vect](center)
 
 method `scale=`*(this: PhysicsBody, scale: DVec2) =
   procCall `scale=`(Node(this), scale)
@@ -258,7 +273,6 @@ proc addToSpace*(this: PhysicsBody, space: Space) =
   this.collisionShape.addToSpace(this.space)
   discard this.space.addBody(this.body)
   this.body.position = cast[Vect](this.center)
-  echo "this.body.position.y: " & $this.body.position.y
 
 proc destroy*(this: PhysicsBody) =
   if this.collisionShape != nil:

@@ -57,10 +57,10 @@ proc createAnimPlayer(sprite: Sprite): AnimationPlayer =
 proc createCollisionShape(): CollisionShape =
   result = newPolygonCollisionShape(
     newPolygon([
-      dvec2(8, 11),
-      dvec2(8, -15),
-      dvec2(-8, -15),
-      dvec2(-8, 11),
+      dvec2(8, 13),
+      dvec2(8, -13),
+      dvec2(-8, -13),
+      dvec2(-8, 13),
     ]).getScaledInstance(VEC2_PIXELS_TO_METERS)
   )
 
@@ -74,11 +74,14 @@ proc createNewKing*(): King =
     material = NULL
   )
 
-  result.addChild(createCollisionShape())
   let sprite = createKingSprite()
   sprite.x = 8.0 * pixelToMeterScalar
   result.addChild(sprite)
   result.animationPlayer = createAnimPlayer(sprite)
+
+  let collisionShape = createCollisionShape()
+  collisionShape.y = -2 * pixelToMeterScalar
+  result.addChild(collisionShape)
 
 proc playAnimation*(king: King, name: string) =
   king.animationPlayer.playAnimation(name)

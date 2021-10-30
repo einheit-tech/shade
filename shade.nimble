@@ -24,5 +24,5 @@ task physics, "Runs the physics example":
   exec "nim -d:collisionoutlines -d:checkSafeCollisionShapes -d:inputdebug r examples/physics/physics_example.nim"
 
 task platformer, "Runs the platformer example":
-  exec "nim -d:collisionoutlines r examples/platformer/platformer_example.nim"
+  exec "nim r examples/platformer/platformer_example.nim"
 

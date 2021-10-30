@@ -175,6 +175,12 @@ proc getBounds*(this: CollisionShape): Rectangle =
         this.bounds = this.scaledCircle.calcBounds()
   return this.bounds
 
+template width*(this: CollisionShape): float =
+  this.getBounds().width
+
+template height*(this: CollisionShape): float =
+  this.getBounds().height
+
 proc destroy*(this: CollisionShape) =
   this.collisionShape.destroy()
 
