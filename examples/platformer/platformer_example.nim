@@ -18,6 +18,7 @@ player.y = 20
 
 # Track the player with the camera.
 let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
+camera.bounds.bottom = resolutionMeters.y
 Game.scene.camera = camera
 
 let (_, groundImage) = Images.loadImage("./examples/assets/images/ground.png")
@@ -124,10 +125,10 @@ proc physicsProcess(gravity: DVec2, damping, deltaTime: float) =
 
   player.velocity = dvec2(x, y)
 
-  if Input.wasRightMouseButtonJustPressed():
-    camera.z -= 0.1
-  elif Input.wasLeftMouseButtonJustPressed():
-    camera.z += 0.1
+  if Input.isRightMouseButtonPressed:
+    camera.z -= 0.05
+  elif Input.isLeftMouseButtonPressed:
+    camera.z += 0.05
 
 player.onPhysicsUpdate = physicsProcess
 
@@ -135,11 +136,11 @@ player.onPhysicsUpdate = physicsProcess
 rightWall.scale = dvec2(-1, 1)
 
 # Play some music
-# let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")
-# if err == nil:
-#   discard capture fadeInMusic(someSong, 2.0, 0.15)
-# else:
-#   echo "Error playing music: " & repr err
+let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")
+if err == nil:
+  discard capture fadeInMusic(someSong, 2.0, 0.15)
+else:
+  echo "Error playing music: " & repr err
 
 Game.start()
 

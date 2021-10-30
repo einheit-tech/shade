@@ -4,11 +4,13 @@ import
   ../math/rectangle,
   ../game/gamestate
 
+export rectangle
+
 type
   Camera* = ref object of Node
     z*: float
     bounds*: Rectangle
-    viewport: Rectangle
+    viewport*: Rectangle
 
     # For node tracking
     offset*: DVec2
@@ -54,6 +56,20 @@ proc setTrackingEasingFunction*(this: Camera, easingFunction: EasingFunction[DVe
 proc setTrackedNode*(this: Camera, n: Node) =
   this.trackedNode = n
 
+proc confineToBounds(this: Camera) =
+  let halfResSize = resolutionMeters * 0.5
+  this.x = clamp(
+    this.bounds.left + halfResSize.x,
+    this.center.x,
+    this.bounds.right - halfResSize.x
+  )
+
+  this.y = clamp(
+    this.bounds.top + halfResSize.y,
+    this.center.y,
+    this.bounds.bottom - halfResSize.y
+  )
+
 method update*(this: Camera, deltaTime: float) =
   procCall Node(this).update(deltaTime)
 
@@ -70,24 +86,5 @@ method update*(this: Camera, deltaTime: float) =
       this.completionRatioPerFrame
     )
 
-# proc calcTranslation(this: Camera): DVec2 =
-#   result = this.center - gamestate.resolutionMeters * 0.5
-
-#   if result.x < this.bounds.left:
-#     result.x = this.bounds.left
-#   elif (result.x + gamestate.resolutionMeters.x) > this.bounds.right:
-#     result.x = this.bounds.right - gamestate.resolutionMeters.x
-
-#   if result.y < this.bounds.top:
-#     result.y = this.bounds.top
-#   elif (result.y + gamestate.resolutionMeters.y) > this.bounds.bottom:
-#     result.y = this.bounds.bottom - gamestate.resolutionMeters.y
-
-# template renderInViewportSpace*(this: Camera, body: untyped): untyped =
-#   # TODO: This doesn't work when relative z isn't == 1.
-#   # Need to scale to (0, 0) and also track a node correctly.
-#   let translation = calcTranslation(this) * meterToPixelScalar
-#   translate(-translation.x, -translation.y, 0)
-#   body
-#   translate(translation.x, translation.y, 0)
+  this.confineToBounds()
 

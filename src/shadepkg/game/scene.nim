@@ -64,7 +64,8 @@ proc renderWithCamera(this: Scene, ctx: Target) =
     if relativeZ > 0:
 
       inversedScalar = 1.0 / relativeZ
-      let trans = (this.camera.center * meterToPixelScalar) * (inversedScalar) - (resolutionPixels * 0.5)
+      let halfViewportSize = dvec2(this.camera.viewport.width, this.camera.viewport.height) * meterToPixelScalar * 0.5
+      let trans = (this.camera.center * meterToPixelScalar) * inversedScalar - halfViewportSize
       translate(
         -trans.x,
         -trans.y,
