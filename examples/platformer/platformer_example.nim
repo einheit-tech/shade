@@ -1,14 +1,10 @@
 import ../../src/shade
 import king
 
-const
-  width = 1920
-  height = 1080
-
 initEngineSingleton(
   "Physics Example",
-  width,
-  height,
+  1920,
+  1080,
   clearColor = newColor(91, 188, 228)
 )
 
@@ -17,44 +13,55 @@ Game.scene.addLayer layer
 
 # King
 let player = createNewKing()
-player.x = 200
-player.y = 400
+player.x = resolutionMeters.x / 2
+player.y = 20
 
 # Track the player with the camera.
-let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
-camera.bounds.right = 1920.0
-camera.bounds.bottom = 1160.0
-Game.scene.camera = camera
-
-# Ground
-let groundShape = newPolygonCollisionShape(newPolygon([
-  dvec2(width / 2, 80),
-  dvec2(width / 2, -80),
-  dvec2(-width / 2, -80),
-  dvec2(-width / 2, 80),
-]))
-
-let ground = newPhysicsBody(
-  kind = pbStatic,
-  material = PLATFORM,
-  centerX = 960,
-  centerY = height - groundShape.getBounds().height / 2
-)
-
-ground.addChild(groundShape)
+# let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
+# camera.bounds.right = resolutionMeters.x
+# camera.bounds.bottom = resolutionMeters.y
+# Game.scene.camera = camera
 
 let (_, groundImage) = Images.loadImage("./examples/assets/images/ground.png")
 groundImage.setImageFilter(FILTER_NEAREST)
-ground.addChild(newSprite(groundImage))
 
 let (_, wallImage) = Images.loadImage("./examples/assets/images/wall.png")
 wallImage.setImageFilter(FILTER_NEAREST)
+
+# Ground
+let
+  halfGroundWidth = groundImage.w.float / 2 * pixelToMeterScalar
+  halfGroundHeight = groundImage.h.float / 2 * pixelToMeterScalar
+let groundShape = newPolygonCollisionShape(
+  newPolygon([
+    dvec2(halfGroundWidth, halfGroundHeight),
+    dvec2(halfGroundWidth, -halfGroundHeight),
+    dvec2(-halfGroundWidth, -halfGroundHeight),
+    dvec2(-halfGroundWidth, halfGroundHeight)
+  ])
+)
+
+# TODO: Rendered in the right position,
+# collision box is lower than it should be.
+# ONLY the y (maybe height) is incorrect.
+# The values passed in are correct.
+# center.y is at 1000, with 1080 being the bottom and 920 being the top.
+let ground = newPhysicsBody(
+  kind = pbStatic,
+  material = PLATFORM,
+  centerX = resolutionMeters.x / 2,
+  centerY = resolutionMeters.y - groundShape.getBounds().height / 2
+)
+
+ground.addChild(newSprite(groundImage))
+ground.addChild(groundShape)
+
 let wallShapePolygon = newPolygon([
-  dvec2(16, 192),
-  dvec2(16, -192),
-  dvec2(-16, -192),
-  dvec2(-16, 192),
-])
+  dvec2(wallImage.w.float / 2, wallImage.h.float / 2),
+  dvec2(wallImage.w.float / 2, -wallImage.h.float / 2),
+  dvec2(-wallImage.w.float / 2, -wallImage.h.float / 2),
+  dvec2(-wallImage.w.float / 2, wallImage.h.float / 2),
+]).getScaledInstance(VEC2_PIXELS_TO_METERS)
 
 proc createWall(): PhysicsBody =
   # Left wall
@@ -70,22 +77,22 @@ proc createWall(): PhysicsBody =
 
 let leftWall = createWall()
 leftWall.x = wallShapePolygon.getBounds().width
-leftWall.y = (height - groundShape.getBounds().height) / 2 - 32
+leftWall.y = (resolutionMeters.y - groundShape.getBounds().height) / 2
 
 let rightWall = createWall()
-rightWall.x = width - wallShapePolygon.getBounds().width
-rightWall.y = (height - groundShape.getBounds().height) / 2 - 32
+rightWall.x = resolutionMeters.x - wallShapePolygon.getBounds().width / 2
+rightWall.y = leftWall.y
 
-layer.addChild(leftWall)
-layer.addChild(rightWall)
+# layer.addChild(leftWall)
+# layer.addChild(rightWall)
 layer.addChild(ground)
 layer.addChild(player)
 
 # Custom physics handling for the player
 const
-  maxSpeed = 500
-  acceleration = 100
-  jumpForce = -700
+  maxSpeed = 500 * pixelToMeterScalar
+  acceleration = 100 * pixelToMeterScalar
+  jumpForce = -700 * pixelToMeterScalar
 
 proc physicsProcess(gravity: DVec2, damping, deltaTime: float) =
   let
@@ -129,11 +136,11 @@ proc physicsProcess(gravity: DVec2, damping, deltaTime: float) =
 player.onPhysicsUpdate = physicsProcess
 
 # Scale everything up for visibility
-player.scale = dvec2(2, 2)
-ground.scale = dvec2(2, 2)
-leftWall.scale = dvec2(2, 2)
+# player.scale = dvec2(2, 2)
+# ground.scale = dvec2(2, 2)
+# leftWall.scale = dvec2(2, 2)
 # Use a negative x scale to flip the image
-rightWall.scale = dvec2(-2, 2)
+# rightWall.scale = dvec2(-2, 2)
 
 # Play some music
 let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")

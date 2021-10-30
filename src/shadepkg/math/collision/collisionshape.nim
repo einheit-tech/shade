@@ -13,6 +13,7 @@ import
   chipmunk7
 
 import
+  ../../game/constants,
   ../../game/node,
   ../../game/material,
   ../circle,
@@ -180,18 +181,17 @@ proc destroy*(this: CollisionShape) =
 proc stroke*(this: CollisionShape, ctx: Target, color: Color = RED) =
   case this.kind:
   of chkPolygon:
-    this.unscaledPolygon.stroke(ctx, color)
+    this.unscaledPolygon.getScaledInstance(VEC2_METERS_TO_PIXELS).stroke(ctx, color)
     discard
   of chkCircle:
-    this.unscaledCircle.stroke(ctx, color)
+    this.unscaledCircle.getScaledInstance(VEC2_METERS_TO_PIXELS).stroke(ctx, color)
 
 proc fill*(this: CollisionShape, ctx: Target, color: Color) =
   case this.kind:
   of chkPolygon:
-    this.unscaledPolygon.fill(ctx, color)
-    discard
+    this.unscaledPolygon.getScaledInstance(VEC2_METERS_TO_PIXELS).fill(ctx, color)
   of chkCircle:
-    this.unscaledCircle.fill(ctx, color)
+    this.unscaledCircle.getScaledInstance(VEC2_METERS_TO_PIXELS).fill(ctx, color)
 
 render(CollisionShape, Node):
   scale(1 / this.scale.x, 1 / this.scale.y, 1.0)

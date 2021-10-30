@@ -49,7 +49,7 @@ let animPlayer = newAnimationPlayer(("run", runAnim))
 animPlayer.playAnimation("run")
 king.addChild(animPlayer)
 
-king.center = dvec2(200, 200)
+king.center = dvec2(200, 200) * pixelToMeterScalar
 layer.addChild king
 
 Game.start()

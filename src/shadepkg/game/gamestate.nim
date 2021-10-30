@@ -2,5 +2,6 @@ import ../math/mathutils
 
 var
   time*: float
-  resolution*: DVec2
+  resolutionPixels*: DVec2
+  resolutionMeters*: DVec2
 

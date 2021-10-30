@@ -23,7 +23,7 @@ template width*(this: Rectangle): float =
   this.right - this.left
 
 template height*(this: Rectangle): float =
-  this.top - this.bottom
+  this.bottom - this.top
 
 proc getScaledInstance*(this: Rectangle, scale: DVec2): Rectangle =
   if scale.x == 0 or scale.y == 0:

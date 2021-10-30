@@ -5,6 +5,7 @@ import
 
 import
   gamestate,
+  constants,
   ../render/render,
   ../render/shader,
   ../math/mathutils
@@ -55,6 +56,7 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.}
 
 proc initNode*(node: Node, flags: set[LayerObjectFlags], centerX, centerY: float = 0.0) =
   node.flags = flags
+  # node.scale = VEC2_ONE
   node.scale = VEC2_ONE
   node.center = dvec2(centerX, centerY)
 
@@ -77,14 +79,14 @@ proc x*(this: Node): float =
   return this.center.x
 
 method `x=`*(this: Node, x: float) {.base.} =
-  this.center.x = x
+  `center=`(this, dvec2(x, this.center.y))
   this.onCenterChanged()
 
 proc y*(this: Node): float =
   return this.center.y
 
 method `y=`*(this: Node, y: float) {.base.} =
-  this.center.y = y
+  `center=`(this, dvec2(this.center.x, y))
   this.onCenterChanged()
 
 method shader*(this: Node): Shader {.base.} =
@@ -184,7 +186,7 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   ## If a callback is given, the caller is responsible for rendering the children.
   ## Use Node.renderChildren(ctx).
   if this.center != VEC2_ZERO:
-    translate(this.center.x, this.center.y, 0)
+    translate(this.center.x * meterToPixelScalar, this.center.y * meterToPixelScalar, 0)
 
   if this.rotation != 0:
     rotate(this.rotation, 0, 0, 1)
@@ -193,7 +195,7 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
     scale(this.scale.x, this.scale.y, 1.0)
 
   if this.shader != nil:
-    this.shader.render(time, resolution)
+    this.shader.render(time, resolutionPixels)
 
   if callback != nil:
     callback()
@@ -210,5 +212,5 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
     rotate(this.rotation, 0, 0, -1)
 
   if this.center != VEC2_ZERO:
-    translate(-this.center.x, -this.center.y, 0)
+    translate(-this.center.x * meterToPixelScalar, -this.center.y * meterToPixelScalar, 0)
 

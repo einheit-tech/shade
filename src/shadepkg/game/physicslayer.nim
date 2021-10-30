@@ -2,6 +2,7 @@ import
   chipmunk7
 
 import
+  constants,
   layer,
   physicsbody,
   ../math/mathutils
@@ -11,7 +12,7 @@ export
   physicsbody
 
 # TODO: Tune
-const DEFAULT_GRAVITY* = dvec2(0, 2000)
+const DEFAULT_GRAVITY* = dvec2(0, 2000 * pixelToMeterScalar)
 
 type
   PhysicsLayer* = ref object of Layer

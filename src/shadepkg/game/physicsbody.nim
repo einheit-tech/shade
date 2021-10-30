@@ -258,6 +258,7 @@ proc addToSpace*(this: PhysicsBody, space: Space) =
   this.collisionShape.addToSpace(this.space)
   discard this.space.addBody(this.body)
   this.body.position = cast[Vect](this.center)
+  echo "this.body.position.y: " & $this.body.position.y
 
 proc destroy*(this: PhysicsBody) =
   if this.collisionShape != nil:

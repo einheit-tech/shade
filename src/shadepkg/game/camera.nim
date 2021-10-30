@@ -1,5 +1,6 @@
 import
   node,
+  constants,
   ../math/rectangle,
   ../game/gamestate
 
@@ -20,10 +21,10 @@ proc initCamera*(camera: Camera) =
   camera.bounds = newRectangle(float.low, float.low, float.high, float.high)
   camera.viewport =
     newRectangle(
-      camera.x - gamestate.resolution.x * 0.5,
-      camera.y - gamestate.resolution.y * 0.5,
-      camera.x + gamestate.resolution.x * 0.5,
-      camera.y + gamestate.resolution.y * 0.5
+      camera.x - gamestate.resolutionMeters.x * 0.5,
+      camera.y - gamestate.resolutionMeters.y * 0.5,
+      camera.x + gamestate.resolutionMeters.x * 0.5,
+      camera.y + gamestate.resolutionMeters.y * 0.5
     )
 
 proc newCamera*(): Camera =
@@ -70,20 +71,20 @@ method update*(this: Camera, deltaTime: float) =
     )
 
 proc calcTranslation(this: Camera): DVec2 =
-  result = this.center - gamestate.resolution * 0.5
+  result = this.center - gamestate.resolutionMeters * 0.5
 
   if result.x < this.bounds.left:
     result.x = this.bounds.left
-  elif (result.x + gamestate.resolution.x) > this.bounds.right:
-    result.x = this.bounds.right - gamestate.resolution.x
+  elif (result.x + gamestate.resolutionMeters.x) > this.bounds.right:
+    result.x = this.bounds.right - gamestate.resolutionMeters.x
 
   if result.y < this.bounds.top:
     result.y = this.bounds.top
-  elif (result.y + gamestate.resolution.y) > this.bounds.bottom:
-    result.y = this.bounds.bottom - gamestate.resolution.y
+  elif (result.y + gamestate.resolutionMeters.y) > this.bounds.bottom:
+    result.y = this.bounds.bottom - gamestate.resolutionMeters.y
 
 template renderInViewportSpace*(this: Camera, body: untyped): untyped =
-  let translation = calcTranslation(this)
+  let translation = calcTranslation(this) * meterToPixelScalar
   translate(-translation.x, -translation.y, 0)
   body
   translate(translation.x, translation.y, 0)

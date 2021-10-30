@@ -7,6 +7,7 @@ import
 
 import
   scene,
+  constants,
   gamestate,
   ../input/inputhandler,
   ../audio/audioplayer,
@@ -59,13 +60,13 @@ proc initEngineSingleton*(
   Game.scene = scene
   Game.clearColor = clearColor
 
-  gamestate.resolution = dvec2(gameWidth.float, gameHeight.float)
+  gamestate.resolutionPixels = dvec2(gameWidth.float, gameHeight.float)
+  gamestate.resolutionMeters = gamestate.resolutionPixels * pixelToMeterScalar
 
   initInputHandlerSingleton()
   initAudioPlayerSingleton()
 
 template time*(this: Engine): float = this.time
-template resolution*(this: Engine): DVec2 = this.resolution
 template screen*(this: Engine): Target = this.screen
 template scene*(this: Engine): Scene = this.scene
 template `scene=`*(this: Engine, scene: Scene) = this.scene = scene
