@@ -3,6 +3,8 @@ import algorithm
 import
   layer,
   node,
+  constants,
+  gamestate,
   camera
 
 export
@@ -55,23 +57,30 @@ proc renderWithCamera(this: Scene, ctx: Target) =
   # Subtract half the screen resolution to center the camera.
   var
     relativeZ: float
-    needsScaling = false
     inversedScalar: float
 
-  this.camera.renderInViewportSpace:
-    this.forEachLayer(l):
-      relativeZ = l.z - this.camera.z
-      if relativeZ > 0:
-        needsScaling = relativeZ != 1.0
+  this.forEachLayer(l):
+    relativeZ = l.z - this.camera.z
+    if relativeZ > 0:
 
-        if needsScaling:
-          inversedScalar = 1.0 / relativeZ
-          scale(inversedScalar, inversedScalar, 1.0)
+      inversedScalar = 1.0 / relativeZ
+      let trans = (this.camera.center * meterToPixelScalar) * (inversedScalar) - (resolutionPixels * 0.5)
+      translate(
+        -trans.x,
+        -trans.y,
+        0
+      )
 
-        l.render(ctx)
+      scale(inversedScalar, inversedScalar, 1.0)
 
-        if needsScaling:
-          scale(relativeZ, relativeZ, 1.0)
+      l.render(ctx)
+
+      scale(relativeZ, relativeZ, 1.0)
+      translate(
+        trans.x,
+        trans.y,
+        0
+      )
 
 render(Scene, Node):
   this.sortLayers()

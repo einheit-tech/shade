@@ -18,8 +18,6 @@ player.y = 20
 
 # Track the player with the camera.
 let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
-camera.bounds.right = resolutionMeters.x
-camera.bounds.bottom = resolutionMeters.y
 Game.scene.camera = camera
 
 let (_, groundImage) = Images.loadImage("./examples/assets/images/ground.png")
@@ -137,11 +135,11 @@ player.onPhysicsUpdate = physicsProcess
 rightWall.scale = dvec2(-1, 1)
 
 # Play some music
-let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")
-if err == nil:
-  discard capture fadeInMusic(someSong, 2.0, 0.15)
-else:
-  echo "Error playing music: " & repr err
+# let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")
+# if err == nil:
+#   discard capture fadeInMusic(someSong, 2.0, 0.15)
+# else:
+#   echo "Error playing music: " & repr err
 
 Game.start()
 

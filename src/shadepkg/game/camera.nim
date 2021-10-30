@@ -70,22 +70,24 @@ method update*(this: Camera, deltaTime: float) =
       this.completionRatioPerFrame
     )
 
-proc calcTranslation(this: Camera): DVec2 =
-  result = this.center - gamestate.resolutionMeters * 0.5
+# proc calcTranslation(this: Camera): DVec2 =
+#   result = this.center - gamestate.resolutionMeters * 0.5
 
-  if result.x < this.bounds.left:
-    result.x = this.bounds.left
-  elif (result.x + gamestate.resolutionMeters.x) > this.bounds.right:
-    result.x = this.bounds.right - gamestate.resolutionMeters.x
+#   if result.x < this.bounds.left:
+#     result.x = this.bounds.left
+#   elif (result.x + gamestate.resolutionMeters.x) > this.bounds.right:
+#     result.x = this.bounds.right - gamestate.resolutionMeters.x
 
-  if result.y < this.bounds.top:
-    result.y = this.bounds.top
-  elif (result.y + gamestate.resolutionMeters.y) > this.bounds.bottom:
-    result.y = this.bounds.bottom - gamestate.resolutionMeters.y
+#   if result.y < this.bounds.top:
+#     result.y = this.bounds.top
+#   elif (result.y + gamestate.resolutionMeters.y) > this.bounds.bottom:
+#     result.y = this.bounds.bottom - gamestate.resolutionMeters.y
 
-template renderInViewportSpace*(this: Camera, body: untyped): untyped =
-  let translation = calcTranslation(this) * meterToPixelScalar
-  translate(-translation.x, -translation.y, 0)
-  body
-  translate(translation.x, translation.y, 0)
+# template renderInViewportSpace*(this: Camera, body: untyped): untyped =
+#   # TODO: This doesn't work when relative z isn't == 1.
+#   # Need to scale to (0, 0) and also track a node correctly.
+#   let translation = calcTranslation(this) * meterToPixelScalar
+#   translate(-translation.x, -translation.y, 0)
+#   body
+#   translate(translation.x, translation.y, 0)
 
