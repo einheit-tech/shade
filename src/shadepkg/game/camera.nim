@@ -1,6 +1,5 @@
 import
   node,
-  constants,
   ../math/rectangle,
   ../game/gamestate
 

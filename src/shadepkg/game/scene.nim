@@ -4,7 +4,6 @@ import
   layer,
   node,
   constants,
-  gamestate,
   camera
 
 export
