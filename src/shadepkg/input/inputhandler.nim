@@ -16,6 +16,7 @@ type
   MouseInfo = object
     location: DVec2
     buttons: Table[int, MouseButtonState]
+    vScrolled: int
 
   KeyState* = object
     pressed: bool
@@ -61,6 +62,9 @@ proc processEvent*(this: InputHandler, event: Event): bool =
         Input.mouse.buttons[button] = MouseButtonState()
       Input.mouse.buttons[button].pressed = true
       Input.mouse.buttons[button].justPressed = true
+
+    of MOUSEWHEEL:
+      Input.mouse.vScrolled = event.wheel.y
 
     # Keyboard
     of KEYDOWN, KEYUP:
@@ -132,6 +136,11 @@ template wasRightMouseButtonJustPressed*(this: InputHandler): bool =
 template wasRightMouseButtonJustReleased*(this: InputHandler): bool =
   this.wasMouseButtonJustReleased(BUTTON_RIGHT)
 
+# Wheel
+
+template wheelScrolledLastFrame*(this: InputHandler): int =
+  this.mouse.vScrolled
+
 proc mouseLocation*(this: InputHandler): DVec2 =
   return this.mouse.location
 
@@ -144,6 +153,8 @@ proc update*(this: InputHandler, deltaTime: float) =
   for key in this.keys.mvalues:
     key.justPressed = false
     key.justReleased = false
+
+  this.mouse.vScrolled = 0
 
 # TODO: Add rendering just using sdl
 # when defined(inputdebug):

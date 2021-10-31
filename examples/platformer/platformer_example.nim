@@ -124,10 +124,7 @@ proc physicsProcess(gravity: DVec2, damping, deltaTime: float) =
 
   player.velocity = dvec2(x, y)
 
-  if Input.isRightMouseButtonPressed:
-    camera.z -= 0.005
-  elif Input.isLeftMouseButtonPressed:
-    camera.z += 0.005
+  camera.z += Input.wheelScrolledLastFrame.float * 0.01
 
 player.onPhysicsUpdate = physicsProcess
 
