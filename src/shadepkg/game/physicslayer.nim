@@ -44,5 +44,10 @@ method onChildAdded*(this: PhysicsLayer, child: Node) =
 
 method update*(this: PhysicsLayer, deltaTime: float) =
   procCall Layer(this).update(deltaTime)
-  this.space.step(deltaTime)
+
+  # TODO: I hope there's a better way to do this.
+  # Found the solution at:
+  # https://www.reddit.com/r/ebiten/comments/mghl4k/using_the_go_port_of_chipmunk2d_in_a_tile_based/gstvdhi/
+  for i in 0..<6:
+    this.space.step(deltaTime / 6)
 

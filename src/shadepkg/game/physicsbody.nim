@@ -10,6 +10,9 @@ export
   material,
   collisionshape
 
+converter vectToDVec2(v: Vect): DVec2 = cast[DVec2](v)
+converter dvec2ToVect(v: DVec2): Vect = cast[Vect](v)
+
 type
   PhysicsBodyKind* = enum
     pbDynamic,
@@ -25,7 +28,7 @@ type
     space: Space
     physicsUpdateFunc: PhysicsUpdateFunc
 
-    case kind: PhysicsBodyKind:
+    case kind*: PhysicsBodyKind:
       of pbDynamic, pbKinematic:
         isOnGround*: bool
         isOnWall*: bool
@@ -81,7 +84,7 @@ proc initPhysicsBody*(
     of pbKinematic:
       physicsBody.body = newKinematicBody()
 
-  physicsBody.body.position = cast[Vect](physicsBody.center)
+  physicsBody.body.position = physicsBody.center
   physicsBody.body.userData = cast[pointer](physicsBody)
 
   # This initializes the default function.
@@ -175,8 +178,8 @@ proc defaultVelocityUpdateFunc(
   dt: Float
 ) {.cdecl.} =
   body.updateVelocity(gravity, damping, dt)
-  this.setLastContactNormal(cast[DVec2](gravity))
-  this.center = cast[DVec2](body.position)
+  this.setLastContactNormal(gravity)
+  this.center = body.position
   this.rotation = body.angle.radToDeg()
 
 method `onPhysicsUpdate=`*(this: PhysicsBody, onPhysicsUpdate: PhysicsUpdateFunc) {.base.} =
@@ -188,11 +191,11 @@ method `onPhysicsUpdate=`*(this: PhysicsBody, onPhysicsUpdate: PhysicsUpdateFunc
       let parent: PhysicsBody = body.parent
       parent.defaultVelocityUpdateFunc(body, gravity, damping, dt)
       if parent.physicsUpdateFunc != nil:
-        parent.physicsUpdateFunc(cast[DVec2](gravity), damping, dt)
+        parent.physicsUpdateFunc(gravity, damping, dt)
 
 method `center=`*(this: PhysicsBody, center: DVec2) =
   procCall `center=`(Node(this), center)
-  this.body.position = cast[Vect](center)
+  this.body.position = center
 
 method `scale=`*(this: PhysicsBody, scale: DVec2) =
   procCall `scale=`(Node(this), scale)
@@ -227,25 +230,28 @@ method onParentScaled*(this: PhysicsBody, parentScale: DVec2) =
     this.collisionShape.addToSpace(this.space)
 
 method velocity*(this: PhysicsBody): DVec2 {.base.} =
-  return cast[DVec2](this.body.velocity)
+  return this.body.velocity
 
 method `velocity=`*(this: PhysicsBody, velocity: DVec2) {.base.} =
-  this.body.velocity = cast[Vect](velocity)
+  this.body.velocity = velocity
 
 method velocityX*(this: PhysicsBody): float {.base.} =
   this.body.velocity.x
 
 method `velocityX=`*(this: PhysicsBody, x: float) {.base.} =
-  this.body.velocity = cast[Vect](dvec2(x, this.velocity.y))
+  this.body.velocity = dvec2(x, this.velocity.y)
 
 method velocityY*(this: PhysicsBody): float {.base.} =
   this.body.velocity.y
 
 method `velocityY=`*(this: PhysicsBody, y: float) {.base.} =
-  this.body.velocity = cast[Vect](dvec2(this.velocity.x, y))
+  this.body.velocity = dvec2(this.velocity.x, y)
 
 method `angularVelocity=`*(this: PhysicsBody, velocity: float) {.base.} =
   this.body.angularVelocity = cfloat velocity
+
+method `force=`*(this: PhysicsBody, force: DVec2) {.base.} =
+  this.body.force = force
 
 method `rotation=`*(this: PhysicsBody, rotation: float) =
   procCall `rotation=`(Node(this), rotation)
@@ -272,7 +278,7 @@ proc addToSpace*(this: PhysicsBody, space: Space) =
   this.space = space
   this.collisionShape.addToSpace(this.space)
   discard this.space.addBody(this.body)
-  this.body.position = cast[Vect](this.center)
+  this.body.position = this.center
 
 proc destroy*(this: PhysicsBody) =
   if this.collisionShape != nil:
@@ -283,7 +289,7 @@ proc destroy*(this: PhysicsBody) =
 proc selectPlayerGroundNormal(body: Body; arbiter: Arbiter; data: pointer) {.cdecl.} =
   var normals = cast[ptr seq[DVec2]](data)
   let collisionNormal = arbiter.normal()
-  normals[].add(cast[DVec2](collisionNormal))
+  normals[].add(collisionNormal)
 
 proc setLastContactNormal(this: PhysicsBody, gravity: DVec2) =
   if this.body != nil:
