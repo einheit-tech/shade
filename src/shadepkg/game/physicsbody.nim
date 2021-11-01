@@ -309,7 +309,6 @@ proc setLastContactNormal(this: PhysicsBody, gravity: DVec2) =
     for normal in normals:
       if normal.dot(gravity) > 0:
         this.isOnGround = true
-        this.velocityY = 0
       elif normal.isPerpendicular(gravity):
         this.isOnWall = true
 

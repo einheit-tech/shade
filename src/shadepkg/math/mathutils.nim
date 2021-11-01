@@ -33,9 +33,7 @@ func smootherStep*(x: float): float
 func smoothStep*(x: float): float
 func lerp*(startValue, endValue: float, completionRatio: CompletionRatio): float
 func lerp*(startValue, endValue: int, completionRatio: CompletionRatio): int
-func lerpDiscrete[T: SomeNumber](startValue, endValue: T, completionRatio: CompletionRatio): T
-func lerpDiscrete*(startValue, endValue: int, completionRatio: CompletionRatio): int
-func lerpDiscrete*(startValue, endValue: float, completionRatio: CompletionRatio): float
+func lerpDiscrete[T](startValue, endValue: T, completionRatio: CompletionRatio): T
 func minUnsignedAngle*(a1, a2, halfRange: float): float
 func minUnsignedDegreeAngle*(d1, d2: float): float
 func minUnsignedRadianAngle*(r1, r2: float): float
@@ -138,7 +136,7 @@ func lerp*(startValue, endValue: int, completionRatio: CompletionRatio): int =
     else:
       int ceil(f)
 
-func lerpDiscrete[T: SomeNumber](startValue, endValue: T, completionRatio: CompletionRatio): T =
+func lerpDiscrete[T](startValue, endValue: T, completionRatio: CompletionRatio): T =
   ## Returns the endValue when completionRatio reaches 1.0.
   ## Otherwise, startValue is returned.
   return 
@@ -146,12 +144,6 @@ func lerpDiscrete[T: SomeNumber](startValue, endValue: T, completionRatio: Compl
       endValue
     else:
       startValue
-
-func lerpDiscrete*(startValue, endValue: int, completionRatio: CompletionRatio): int =
-  lerpDiscrete[int](startValue, endValue, completionRatio)
-
-func lerpDiscrete*(startValue, endValue: float, completionRatio: CompletionRatio): float =
-  lerpDiscrete[float](startValue, endValue, completionRatio)
 
 func smoothStep*(x: float): float =
   ## @param {float} x The value to process through the step equation.

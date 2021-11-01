@@ -19,7 +19,7 @@ const
   frameCount = 8
   animDuration = frameCount * frameSpeed
 
-let runAnim = newAnimation(animDuration)
+let runAnim = newAnimation(animDuration, true)
 
 # Change the spritesheet coordinate
 let animCoordFrames: seq[KeyFrame[IVec2]] =

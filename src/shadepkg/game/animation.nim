@@ -69,12 +69,15 @@ proc resetTime*(this: Animation) =
 
 method update*(this: Animation, deltaTime: float) =
   procCall Node(this).update(deltaTime)
-  let newCurrentTime = this.currentTime + deltaTime
-  if not this.looping and newCurrentTime > this.duration:
-    return
-  this.currentTime = newCurrentTime mod this.duration
-  this.animateToTime(this.currentTime, deltaTime)
 
+  if this.looping:
+    this.currentTime = (this.currentTime + deltaTime) mod this.duration
+    this.animateToTime(this.currentTime, deltaTime)
+  else:
+    this.currentTime += deltaTime
+    if this.currentTime <= this.duration:
+      this.animateToTime(this.currentTime, deltaTime)
+  
 proc newAnimationTrack*[T: TrackType](
   field: T,
   frames: seq[Keyframe[T]],

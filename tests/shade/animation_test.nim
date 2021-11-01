@@ -19,7 +19,9 @@ describe "Animation":
       startingDVec2Val: DVec2 = dvec2(2.9, 32.7)
       startingDVec3Val: DVec3 = dvec3(48.2, 831.0, 12.8)
 
-    let
+    var this = FakeNode()
+
+    proc resetThis() =
       this = FakeNode(
         intVal: startingIntVal,
         floatVal: startingFloatVal,
@@ -28,7 +30,8 @@ describe "Animation":
       )
 
     it "without wrap interpolation":
-      let testAnim = newAnimation(1.8)
+      resetThis()
+      let testAnim = newAnimation(1.8, true)
 
       # int
       const intFrames: seq[KeyFrame[int]] = @[
@@ -101,10 +104,10 @@ describe "Animation":
 
       ### INITIAL STATE ###
 
-      assertEquals(this.intVal, intFrames[0][0])
-      assertEquals(this.floatVal, floatFrames[0][0])
-      assertEquals(this.vec2Val, vec2Frames[0][0])
-      assertEquals(this.vec3Val, vec3Frames[0][0])
+      assertEquals(this.intVal, startingIntVal)
+      assertEquals(this.floatVal, startingFloatVal)
+      assertEquals(this.vec2Val, startingDVec2Val)
+      assertEquals(this.vec3Val, startingDVec3Val)
       assertEquals(proc1CallCount, 0)
       assertEquals(proc2CallCount, 0)
       assertEquals(proc3CallCount, 0)
@@ -233,7 +236,8 @@ describe "Animation":
       assertEquals(proc3CallCount, 1)
 
     it "with wrap interpolation":
-      let testAnim = newAnimation(1.8)
+      resetThis()
+      let testAnim = newAnimation(1.8, true)
 
       # int
       const intFrames: seq[KeyFrame[int]] = @[
@@ -311,10 +315,10 @@ describe "Animation":
 
       ### INITIAL STATE ###
 
-      assertEquals(this.intVal, intFrames[0].value)
-      assertEquals(this.floatVal, floatFrames[0].value)
-      assertEquals(this.vec2Val, vec2Frames[0].value)
-      assertEquals(this.vec3Val, vec3Frames[0].value)
+      assertEquals(this.intVal, startingIntVal)
+      assertEquals(this.floatVal, startingFloatVal)
+      assertEquals(this.vec2Val, startingDVec2Val)
+      assertEquals(this.vec3Val, startingDVec3Val)
       assertEquals(proc1CallCount, 0)
       assertEquals(proc2CallCount, 0)
       assertEquals(proc3CallCount, 0)

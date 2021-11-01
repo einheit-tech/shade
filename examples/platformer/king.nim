@@ -7,7 +7,7 @@ proc createIdleAnimation(king: Sprite): Animation =
     animDuration = frameCount * frameSpeed
 
   # Set up the idle animation
-  let idleAnim = newAnimation(animDuration)
+  let idleAnim = newAnimation(animDuration, true)
 
   # Change the spritesheet coordinate
   let animCoordFrames: seq[KeyFrame[IVec2]] =
@@ -28,7 +28,7 @@ proc createRunAnimation(king: Sprite): Animation =
     animDuration = frameCount * frameSpeed
 
   # Set up the run animation
-  var runAnim = newAnimation(animDuration)
+  var runAnim = newAnimation(animDuration, true)
 
   # Change the spritesheet coordinate
   let animCoordFrames: seq[KeyFrame[IVec2]] =
