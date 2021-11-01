@@ -44,27 +44,35 @@ type
   Animation* = ref object of Node
     currentTime: float
     duration: float
+    looping: bool
     tracks: seq[AnimationTrack]
 
 template currentTime*(this: Animation): float = this.currentTime
 template duration*(this: Animation): float = this.duration
 
-proc initAnimation*(anim: Animation, duration: float) =
+proc initAnimation*(anim: Animation, duration: float, looping: bool) =
   initNode(Node(anim), {loUpdate})
   anim.duration = duration
+  anim.looping = looping
 
-proc newAnimation*(duration: float): Animation =
+proc newAnimation*(duration: float, looping: bool): Animation =
   ## Creates a new Animation.
   result = Animation()
-  initAnimation(result, duration)
+  initAnimation(result, duration, looping)
 
 proc animateToTime*(this: Animation, currentTime, deltaTime: float) =
   for track in this.tracks:
     track.animateToTime(currentTime, deltaTime, track.wrapInterpolation)
 
+proc resetTime*(this: Animation) =
+  this.currentTime = 0
+
 method update*(this: Animation, deltaTime: float) =
   procCall Node(this).update(deltaTime)
-  this.currentTime = (this.currentTime + deltaTime) mod this.duration
+  let newCurrentTime = this.currentTime + deltaTime
+  if not this.looping and newCurrentTime > this.duration:
+    return
+  this.currentTime = newCurrentTime mod this.duration
   this.animateToTime(this.currentTime, deltaTime)
 
 proc newAnimationTrack*[T: TrackType](

@@ -87,6 +87,9 @@ template collisionShape(this: CollisionShape): Shape =
     of chkPolygon:
       this.polygonCollisionShape
 
+template `filter=`*(filter: ShapeFilter) =
+  this.collisionShape.filter = filter
+
 template elasticity*(this: CollisionShape): float =
   this.collisionShape.elasticity
 

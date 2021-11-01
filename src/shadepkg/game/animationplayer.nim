@@ -11,6 +11,7 @@ type
     # Table[animationName, Animation]
     animations: Table[string, Animation]
     currentAnimation: Animation
+    currentAnimationName: string
 
 proc addAnimations*(this: AnimationPlayer, animations: openArray[NamedAnimation])
 
@@ -33,7 +34,16 @@ proc addAnimations*(this: AnimationPlayer, animations: openArray[NamedAnimation]
     this.addAnimation(name, anim)
 
 proc playAnimation*(this: AnimationPlayer, animationName: string) =
+  if this.currentAnimation != nil:
+    this.currentAnimation.resetTime()
   this.currentAnimation = this.animations[animationName]
+  this.currentAnimationName = animationName
+
+template currentAnimation*(this: AnimationPlayer): Animation =
+  this.currentAnimation
+
+template currentAnimationName*(this: AnimationPlayer): string =
+  this.currentAnimationName
 
 # TODO: etc...
 

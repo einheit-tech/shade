@@ -3,7 +3,8 @@ import chipmunk7
 import 
   ../math/collision/collisionshape,
   material,
-  node
+  node,
+  shapefilters
 
 export
   node,
@@ -160,6 +161,9 @@ template height*(this: PhysicsBody): float =
   else:
     0
 
+template `filter=`*(this: PhysicsBody, filter: ShapeFilter) =
+  this.collisionShape.filter = filter
+
 proc `surfaceVelocity=`*(this: PhysicsBody, velocity: DVec2) =
   this.collisionShape.surfaceVelocity = velocity
 
@@ -305,6 +309,7 @@ proc setLastContactNormal(this: PhysicsBody, gravity: DVec2) =
     for normal in normals:
       if normal.dot(gravity) > 0:
         this.isOnGround = true
+        this.velocityY = 0
       elif normal.isPerpendicular(gravity):
         this.isOnWall = true
 
