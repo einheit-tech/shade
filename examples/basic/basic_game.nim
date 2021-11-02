@@ -10,11 +10,10 @@ let layer = newPhysicsLayer()
 Game.scene.addLayer layer
 
 let ball = newPhysicsBody(
-  # kind = pbDynamic,
-  kind = pbStatic,
+  kind = pbDynamic,
   material = initMaterial(1, 0.8, 1),
   centerX = width / 2 * pixelToMeterScalar,
-  centerY = height / 2 * pixelToMeterScalar
+  centerY = height / 2 * pixelToMeterScalar - 5
 )
 ball.velocity = dvec2(1, 0)
 
@@ -30,10 +29,10 @@ let rect = newPhysicsBody(
 
 let rectShape = newPolygonCollisionShape(
   newPolygon([
-    dvec2(160, 32),
-    dvec2(160, 0),
-    dvec2(-160, 0),
-    dvec2(-160, 32),
+    dvec2(160, 16),
+    dvec2(160, -16),
+    dvec2(-160, -16),
+    dvec2(-160, 16),
   ]).getScaledInstance(VEC2_PIXELS_TO_METERS)
 )
 rect.addChild(rectShape)
