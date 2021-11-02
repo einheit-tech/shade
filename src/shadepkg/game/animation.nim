@@ -224,8 +224,6 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
   ##        from the last frame back to the first frame.
   ## @param {EasingFunction[T]} ease The function used to interpolate the given field.
 
-  # TODO: There's an infinite loop bug when there's only one Keyframe.
-
   let
     procName = gensym(nskProc, "sample")
     trackName = gensym(nskLet, "track")
@@ -241,7 +239,7 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
 
       var currIndex = -1
       for i in `frames`.low..<`frames`.high:
-        if timeInAnim == `frames`[i].time:
+        if almostEqual(timeInAnim, `frames`[i].time):
           currIndex = i
           break
         elif timeInAnim > `frames`[i].time and timeInAnim <= `frames`[i + 1].time:
@@ -266,7 +264,8 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
 
         if remainingTime >= 0 and lastFiredProcIndex != currIndex:
           nextFrame.value()
-          lastFiredProcIndex = currIndex
+          if `frames`.len > 1:
+            lastFiredProcIndex = currIndex
 
         # Special case if there's only one frame.
         if timeInAnim == 0 and `frames`.len == 1:

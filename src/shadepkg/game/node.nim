@@ -1,7 +1,8 @@
 import
   hashes,
   sequtils,
-  deques
+  deques,
+  locks
 
 import
   gamestate,
@@ -28,8 +29,11 @@ type
 
     shader: Shader
     children: seq[Node]
-    removeQueue: Deque[Node]
     flags*: set[LayerObjectFlags]
+
+    childLock: Lock
+    additionQueue: Deque[Node]
+    removeQueue: Deque[Node]
 
     scale: DVec2
     center: DVec2
@@ -56,9 +60,9 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.}
 
 proc initNode*(node: Node, flags: set[LayerObjectFlags], centerX, centerY: float = 0.0) =
   node.flags = flags
-  # node.scale = VEC2_ONE
   node.scale = VEC2_ONE
   node.center = dvec2(centerX, centerY)
+  initLock(node.childLock)
 
 proc newNode*(flags: set[LayerObjectFlags]): Node =
   result = Node()
@@ -101,8 +105,10 @@ method scale*(this: Node): DVec2 {.base.} =
 method `scale=`*(this: Node, scale: DVec2) {.base.} =
   ## Sets the scale of the node.
   this.scale = scale
-  for child in this.children:
-    child.onParentScaled(scale)
+
+  withLock(this.childLock):
+    for child in this.children:
+      child.onParentScaled(scale)
 
 method onParentScaled*(this: Node, parentScale: DVec2) {.base.} =
   ## Called when the parent node has been scaled.
@@ -112,10 +118,11 @@ method onParentScaled*(this: Node, parentScale: DVec2) {.base.} =
       parentScale
     else:
       parentScale * this.scale
-
-  # The whole tree needs to be notified of scaling.
-  for child in this.children:
-    child.onParentScaled(scale)
+  
+  withLock(this.childLock):
+    # The whole tree needs to be notified of scaling.
+    for child in this.children:
+      child.onParentScaled(scale)
 
 method `rotation=`*(this: Node, rotation: float) {.base.} =
   ## Sets the rotation of the node.
@@ -128,10 +135,20 @@ method onChildAdded*(this: Node, child: Node) {.base.} =
   ## Invoked when a child has been added to this node.
   discard
 
-method addChild*(this: Node, n: Node) {.base.} =
-  ## Appends a child to the list of children.
-  this.children.add(n)
-  this.onChildAdded(n)
+proc addChildNow(this, child: Node) =
+  ## Adds the child IMMEDIATELY.
+  this.children.add(child)
+  this.onChildAdded(child)
+
+method addChild*(this: Node, child: Node) {.base.} =
+  ## Adds the child to this Node.
+  ## If the children are being iterated over at the time of this call,
+  ## the child will be added at the start of the next update.
+  if tryAcquire(this.childLock):
+    this.addChildNow(child)
+    this.childLock.release()
+  else:
+    this.additionQueue.addFirst(child)
 
 method onChildRemoved*(this: Node, child: Node) {.base.} =
   ## Invoked when a child has been removed from this node.
@@ -139,6 +156,7 @@ method onChildRemoved*(this: Node, child: Node) {.base.} =
 
 proc removeChildNow(this, child: Node) =
   ## Removes the child IMMEDIATELY.
+  ## This is an "unsafe" operation.
   var index: int = -1
   for i, n in this.children:
     if n == child:
@@ -150,34 +168,48 @@ proc removeChildNow(this, child: Node) =
     this.onChildRemoved(child)
 
 method removeChild*(this, child: Node) {.base.} =
-  ## Adds the child to the removal queue.
-  ## It will be removed at the start of the next update.
-  this.removeQueue.addFirst(child)
+  ## Removes the child from this Node.
+  ## If the children are being iterated over at the time of this call,
+  ## the child will be removed at the start of the next update.
+  if tryAcquire(this.childLock):
+    this.removeChildNow(child)
+    this.childLock.release()
+  else:
+    this.removeQueue.addFirst(child)
 
 method removeAllChildren*(this: Node) {.base.} =
   ## Removes all children from the node.
-  for child in this.children:
-    this.removeQueue.addFirst(child)
+  withLock(this.childLock):
+    for child in this.children:
+      this.removeQueue.addFirst(child)
 
 method hash*(this: Node): Hash {.base.} =
   return hash(this[].unsafeAddr)
 
 method update*(this: Node, deltaTime: float) {.base.} =
-  while this.removeQueue.len > 0:
-    let child = this.removeQueue.popFirst()
-    this.removeChildNow(child)
+  withLock(this.childLock):
+    while this.additionQueue.len > 0:
+      let child = this.additionQueue.popFirst()
+      this.addChildNow(child)
+
+  withLock(this.childLock):
+    while this.removeQueue.len > 0:
+      let child = this.removeQueue.popFirst()
+      this.removeChildNow(child)
 
   if this.onUpdate != nil:
     this.onUpdate(this, deltaTime)
 
-  for child in this.children:
-    if loUpdate in child.flags:
-      child.update(deltaTime)
+  withLock(this.childLock):
+    for child in this.children:
+      if loUpdate in child.flags:
+        child.update(deltaTime)
 
 method renderChildren*(this: Node, ctx: Target) {.base.} =
-  for child in this.children:
-    if loRender in child.flags:
-      child.render(ctx)
+  withLock(this.childLock):
+   for child in this.children:
+      if loRender in child.flags:
+        child.render(ctx)
 
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   ## Renders the node with its given position, rotation, and scale.
