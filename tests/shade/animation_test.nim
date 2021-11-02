@@ -77,11 +77,6 @@ describe "Animation":
         vec3Frames
       )
 
-      # ClosureProc
-      var someProc: ClosureProc = proc() {.closure.} =
-        echo "someProc called"
-        callCount.inc
-
       var
         proc1CallCount = 0
         proc2CallCount = 0
@@ -97,10 +92,7 @@ describe "Animation":
         (foo3, 1.1)
       ]
 
-      testAnim.addNewAnimationTrack(
-        someProc,
-        procFrames
-      )
+      testAnim.addProcTrack(procFrames)
 
       ### INITIAL STATE ###
 
@@ -287,11 +279,6 @@ describe "Animation":
         true
       )
 
-      # ClosureProc
-      var someProc: ClosureProc = proc() {.closure.} =
-        echo "someProc called"
-        callCount.inc
-
       var
         proc1CallCount = 0
         proc2CallCount = 0
@@ -307,11 +294,7 @@ describe "Animation":
         (foo3, 1.1)
       ]
 
-      testAnim.addNewAnimationTrack(
-        someProc,
-        procFrames,
-        true
-      )
+      testAnim.addProcTrack(procFrames)
 
       ### INITIAL STATE ###
 
@@ -350,4 +333,42 @@ describe "Animation":
       assertEquals(proc1CallCount, 1)
       assertEquals(proc2CallCount, 1)
       assertEquals(proc3CallCount, 1)
+
+    it "works with single proc frame at 0.0 seconds":
+      resetThis()
+      let testAnim = newAnimation(1.8, true)
+
+      var proc1CallCount = 0
+      proc foo1() {.closure.} = proc1CallCount.inc
+
+      let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 0.0)]
+
+      testAnim.addProcTrack(procFrames)
+
+      # Initial state
+      assertEquals(proc1CallCount, 0)
+
+      testAnim.update(0.01)
+
+      assertEquals(proc1CallCount, 1)
+
+    it "works with single non-proc frame at 0.0 seconds":
+      resetThis()
+      let testAnim = newAnimation(1.8, true)
+
+      # int
+      const intFrames: seq[KeyFrame[int]] = @[(1, 0.0)]
+      testAnim.addNewAnimationTrack(
+        this.intVal,
+        intFrames
+      )
+
+      # Initial state
+      assertEquals(this.intVal, startingIntVal)
+
+      testAnim.update(0.0)
+      assertEquals(this.intVal, intFrames[0][0])
+
+      testAnim.update(0.0)
+      assertEquals(this.intVal, intFrames[0][0])
 

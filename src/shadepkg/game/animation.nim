@@ -132,9 +132,6 @@ proc newAnimationTrack*[T: TrackType](
 
   result.animateToTime = animateToTime
 
-proc lerp(startValue, endValue: proc(), completionRatio: float): proc() =
-  return (proc() = discard)
-
 macro assignField[T: TrackType](field: typed, value: T): untyped =
   ## Assigns `value` to `field`.
   ## This also handles if `field` is a setter proc.
@@ -173,82 +170,41 @@ macro addNewAnimationTrack*[T: TrackType](
     trackName = gensym(nskLet, "track")
 
   result = quote do:
-    when (`field` is proc):
-      var lastFiredProcIndex: int = -1
-
-    # TODO: Figure out how to extract this into separate functions.
     proc `procName`(currentTime, deltaTime: float, wrapInterpolation: bool = false) =
-      when (`field` is not proc):
-        var currIndex = -1
-        for i in `frames`.low..<`frames`.high:
-          if currentTime >= `frames`[i].time and currentTime <= `frames`[i + 1].time:
-            currIndex = i
-            break
+      var currIndex = -1
+      for i in `frames`.low..<`frames`.high:
+        if currentTime >= `frames`[i].time and currentTime <= `frames`[i + 1].time:
+          currIndex = i
+          break
 
-        # Between last and first frames
-        if currIndex == -1:
-          currIndex = `frames`.high
+      # Between last and first frames
+      if currIndex == -1:
+        currIndex = `frames`.high
 
-        let currentFrame = `frames`[currIndex]
-        # Between last and first frame, and NOT interpolating between them.
-        if currIndex == `frames`.high and not wrapInterpolation:
-          assignField(`field`, currentFrame.value)
-          return
+      let currentFrame = `frames`[currIndex]
+      # Between last and first frame, and NOT interpolating between them.
+      if currIndex == `frames`.high and not wrapInterpolation:
+        assignField(`field`, currentFrame.value)
+        return
 
-        # Ease between current and next frames
-        let nextFrame = `frames`[(currIndex + 1) mod `frames`.len]
+      # Ease between current and next frames
+      let nextFrame = `frames`[(currIndex + 1) mod `frames`.len]
 
-        let timeBetweenFrames =
-          if currIndex == `frames`.high:
-            `this`.duration - currentFrame.time + nextFrame.time
-          else:
-            nextFrame.time - currentFrame.time
+      let timeBetweenFrames =
+        if currIndex == `frames`.high:
+          `this`.duration - currentFrame.time + nextFrame.time
+        else:
+          nextFrame.time - currentFrame.time
 
-        let
-          completionRatio = (currentTime - currentFrame.time) / timeBetweenFrames
-          easedValue = `ease`(
-            currentFrame.value,
-            nextFrame.value,
-            completionRatio
-          )
+      let
+        completionRatio = (currentTime - currentFrame.time) / timeBetweenFrames
+        easedValue = `ease`(
+          currentFrame.value,
+          nextFrame.value,
+          completionRatio
+        )
 
-        assignField(`field`, easedValue)
-        
-      else:
-
-        # Find the start time
-        var timeInAnim = currentTime - deltaTime
-        if timeInAnim < 0:
-          timeInAnim += `this`.duration
-
-        var currIndex = -1
-        for i in `frames`.low..<`frames`.high:
-          if timeInAnim == `frames`[i].time:
-            currIndex = i
-            break
-          elif timeInAnim > `frames`[i].time and timeInAnim <= `frames`[i + 1].time:
-            currIndex = i + 1
-            break
-
-        # Between last and 1st frames
-        if currIndex == -1:
-          currIndex = `frames`.low
-
-        var remainingTime = deltaTime
-        while remainingTime > 0:
-          let nextFrame = `frames`[currIndex]
-          remainingTime =
-            if timeInAnim != 0 and currIndex == `frames`.low:
-              remainingTime - (`this`.duration - timeInAnim) + nextFrame.time
-            else:
-              remainingTime - (nextFrame.time - timeInAnim)
-
-          timeInAnim = nextFrame.time
-          currIndex = (currIndex + 1) mod `frames`.len
-
-          if remainingTime >= 0 and lastFiredProcIndex != currIndex:
-            nextFrame.value()
-            lastFiredProcIndex = currIndex
+      assignField(`field`, easedValue)
 
     let `trackName` = newAnimationTrack(
       `field`,
@@ -257,12 +213,70 @@ macro addNewAnimationTrack*[T: TrackType](
       `wrapInterpolation`
     )
 
-    # TODO: Doing this when we add the track is _not_ the right idea.
-    # Should do this when we _play_ the animation
-    # when (`field` is not proc):
-      # Set track state to correct starting point.
-      # Don't do this for procs - we don't want to invoke them until the animation is played.
-      # `trackName`.animateToTime(`this`.currentTime, 0)
+    `this`.tracks.add(`trackName`)
+
+macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
+  ## Adds a new "track" to the animation.
+  ## This is a value that's updated at set intervals as the animation is updated.
+  ## @param {T} field The variable to update.
+  ## @param {openArray[Keyframe[T]]} frames The frames used to animate the track. 
+  ## @param {bool} wrapInterpolation If the track should interpolate
+  ##        from the last frame back to the first frame.
+  ## @param {EasingFunction[T]} ease The function used to interpolate the given field.
+
+  # TODO: There's an infinite loop bug when there's only one Keyframe.
+
+  let
+    procName = gensym(nskProc, "sample")
+    trackName = gensym(nskLet, "track")
+
+  result = quote do:
+    var lastFiredProcIndex: int = -1
+
+    proc `procName`(currentTime, deltaTime: float, wrapInterpolation: bool = false) =
+      # Find the start time
+      var timeInAnim = currentTime - deltaTime
+      if timeInAnim < 0:
+        timeInAnim += `this`.duration
+
+      var currIndex = -1
+      for i in `frames`.low..<`frames`.high:
+        if timeInAnim == `frames`[i].time:
+          currIndex = i
+          break
+        elif timeInAnim > `frames`[i].time and timeInAnim <= `frames`[i + 1].time:
+          currIndex = i + 1
+          break
+
+      # Between last and 1st frames
+      if currIndex == -1:
+        currIndex = `frames`.low
+
+      var remainingTime = deltaTime
+      while remainingTime > 0:
+        let nextFrame = `frames`[currIndex]
+        remainingTime =
+          if timeInAnim != 0 and currIndex == `frames`.low:
+            remainingTime - (`this`.duration - timeInAnim) + nextFrame.time
+          else:
+            remainingTime - (nextFrame.time - timeInAnim)
+
+        timeInAnim = nextFrame.time
+        currIndex = (currIndex + 1) mod `frames`.len
+
+        if remainingTime >= 0 and lastFiredProcIndex != currIndex:
+          nextFrame.value()
+          lastFiredProcIndex = currIndex
+
+        # Special case if there's only one frame.
+        if timeInAnim == 0 and `frames`.len == 1:
+          break
+
+    let `trackName` = newAnimationTrack[ClosureProc](
+      nil,
+      `frames`,
+      `procName`
+    )
 
     `this`.tracks.add(`trackName`)
 
