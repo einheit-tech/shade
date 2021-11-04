@@ -25,7 +25,7 @@ type
   AnimationTrack* = object
     animateToTime*: AnimateProc
     wrapInterpolation: bool
-    case kind: TrackKind:
+    case kind*: TrackKind:
       of tkInt:
         framesInt: seq[Keyframe[int]]
       of tkFloat:
@@ -64,7 +64,7 @@ proc animateToTime*(this: Animation, currentTime, deltaTime: float) =
   for track in this.tracks:
     track.animateToTime(currentTime, deltaTime, track.wrapInterpolation)
 
-proc resetTime*(this: Animation) =
+proc reset*(this: Animation) =
   this.currentTime = 0
 
 method update*(this: Animation, deltaTime: float) =
@@ -74,9 +74,9 @@ method update*(this: Animation, deltaTime: float) =
     this.currentTime = (this.currentTime + deltaTime) mod this.duration
     this.animateToTime(this.currentTime, deltaTime)
   else:
+    # TODO: way to signal all tracks have "finished"?
     this.currentTime += deltaTime
-    if this.currentTime <= this.duration:
-      this.animateToTime(this.currentTime, deltaTime)
+    this.animateToTime(this.currentTime, deltaTime)
   
 proc newAnimationTrack*[T: TrackType](
   field: T,
@@ -229,8 +229,9 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
     trackName = gensym(nskLet, "track")
 
   result = quote do:
-    var lastFiredProcIndex: int = -1
-
+    # TODO: This doesn't get reset between animation changes.
+    # Need a better solution thet doesn't require state to be added
+    # to the AnimationTrack.
     proc `procName`(currentTime, deltaTime: float, wrapInterpolation: bool = false) =
       # Find the start time
       var timeInAnim = currentTime - deltaTime
@@ -250,26 +251,23 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
       if currIndex == -1:
         currIndex = `frames`.low
 
-      var remainingTime = deltaTime
-      while remainingTime > 0:
-        let nextFrame = `frames`[currIndex]
-        remainingTime =
-          if timeInAnim != 0 and currIndex == `frames`.low:
-            remainingTime - (`this`.duration - timeInAnim) + nextFrame.time
-          else:
-            remainingTime - (nextFrame.time - timeInAnim)
+      # NON-LOOPING ONLY
+      var
+        nextFrame = `frames`[currIndex]
+        collectiveFrameTime = nextFrame.time - timeInAnim
 
-        timeInAnim = nextFrame.time
-        currIndex = (currIndex + 1) mod `frames`.len
-
-        if remainingTime >= 0 and lastFiredProcIndex != currIndex:
+      if timeInAnim <= `frames`[`frames`.high].time:
+        while deltaTime - collectiveFrameTime >= 0:
           nextFrame.value()
-          if `frames`.len > 1:
-            lastFiredProcIndex = currIndex
+          if currIndex == `frames`.high:
+            break
 
-        # Special case if there's only one frame.
-        if timeInAnim == 0 and `frames`.len == 1:
-          break
+          collectiveFrameTime += nextFrame.time - `frames`[currIndex + 1].time
+          currIndex += 1
+
+          if currIndex > `frames`.high:
+            break
+          nextFrame = `frames`[currIndex]
 
     let `trackName` = newAnimationTrack[ClosureProc](
       nil,
