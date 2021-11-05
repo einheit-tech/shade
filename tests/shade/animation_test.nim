@@ -483,11 +483,3 @@ describe "Animation":
         assertEquals(proc2CallCount, 0)
         assertEquals(proc3CallCount, 0)
 
-
-    # TODO: Add test where animation duration is 0.0 with a single proc?
-
-    # TODO: Also check if we call animateToTime(0.0) twice
-    # on a non-looping ClosureProc Track.
-    # Since we now have lastFiredProcIndex,
-    # we can avoid double firing.
-

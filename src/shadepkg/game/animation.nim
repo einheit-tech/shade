@@ -72,6 +72,9 @@ proc animateToTime*(this: Animation, currentTime, deltaTime: float) =
 
 proc reset*(this: Animation) =
   this.currentTime = 0
+  for track in this.tracks.mitems:
+    if track.kind == tkClosureProc:
+      track.lastFiredProcIndex = -1
 
 method update*(this: Animation, deltaTime: float) =
   procCall Node(this).update(deltaTime)
@@ -272,7 +275,11 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
 
         if timeInAnim <= `frames`[`frames`.high].time:
           while deltaTime - collectiveFrameTime >= 0:
+            if currIndex == track.lastFiredProcIndex:
+              break
+
             nextFrame.value()
+            track.lastFiredProcIndex = currIndex
             if currIndex == `frames`.high:
               break
 
@@ -288,11 +295,6 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
           nextFrame: Keyframe[ClosureProc]
           # TODO: This is basically timeInAnim, can optimize later.
           frameStartTime = currentTime - deltaTime
-
-        echo "frameStartTime: ", frameStartTime
-        echo "remainingTime: ", remainingTime
-        echo "currIndex: ", currIndex
-        echo ""
 
         while true:
           if currIndex == track.lastFiredProcIndex:
@@ -312,12 +314,6 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
               `this`.duration - modFrameStartTime + nextFrame.time
             else:
               nextFrame.time - modFrameStartTime
-
-          # TODO: These are all 0 in an inf. loop
-          echo "frameStartTime: ", frameStartTime
-          echo "nextFrameTime: ", nextFrame.time
-          echo "timeTillNextFrame: ", timeTillNextFrame
-          echo ""
 
           remainingTime -= timeTillNextFrame
           if remainingTime < 0:
