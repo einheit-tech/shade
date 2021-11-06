@@ -22,7 +22,7 @@ jobs:
           command: "apt-get -y install chipmunk-dev"
       - run:
           name: "Install sdl"
-          command: "DEBIAN_FRONTEND='noninteractive' apt-get -y install sdlbasic"
+          command: "DEBIAN_FRONTEND='noninteractive' apt-get -y install libsdl2-dev"
       - run:
           name: "Install cmake"
           command: "apt-get -y install cmake"
