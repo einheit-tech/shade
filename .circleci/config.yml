@@ -22,7 +22,7 @@ jobs:
           command: "apt-get -y install chipmunk-dev"
       - run:
           name: "Install sdl"
-          command: "apt-get -y install sdl"
+          command: "apt-get -y install sdlbasic"
       - run:
           name: "Clone sdl_gpu"
           command: "git clone git@github.com:grimfang4/sdl-gpu.git && git checkout '6df9944ccb344b9b0725b344fdfb201958eec90c'"
