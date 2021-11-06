@@ -253,7 +253,7 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
       # Find the start time
       var timeInAnim = currentTime - deltaTime
       if timeInAnim < 0:
-        timeInAnim += `this`.duration
+        timeInAnim = euclMod(timeInAnim, `this`.duration)
 
       # Finds the next frame we will "play"
       var currIndex = -1
@@ -293,7 +293,6 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
         var
           remainingTime = deltaTime
           nextFrame: Keyframe[ClosureProc]
-          # TODO: This is basically timeInAnim, can optimize later.
           frameStartTime = currentTime - deltaTime
 
         while true:
@@ -308,6 +307,9 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
           # we'll sutract it from remainingTime
           # then play the proc if remainingTime >= 0
           let modFrameStartTime = frameStartTime mod `this`.duration
+
+          # TODO: Add a special case when frame.time == this.duration
+
           let timeTillNextFrame =
             # Time in animation is between the last frame and duration of the anim.
             if currIndex == `frames`.low and modFrameStartTime > nextFrame.time:
