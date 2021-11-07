@@ -23,6 +23,7 @@ func linearBezierVector*(t: float, p0, p1: DVec2): DVec2
 func easeInExpo*(startValue, endValue: DVec2, completionRatio: CompletionRatio): DVec2
 func easeInQuadratic*(startValue, endValue: DVec2, completionRatio: CompletionRatio): DVec2
 func easeInAndOutQuadratic*(startValue, endValue: DVec2, completionRatio: CompletionRatio): DVec2
+func easeOutQuadratic*(startValue, endValue: DVec2, completionRatio: CompletionRatio): DVec2
 
 func linearBezier*(t, p0, p1: float): float
 func easeInExpo*(startValue, endValue: float, completionRatio: CompletionRatio): float
@@ -235,6 +236,12 @@ func easeInAndOutQuadratic*(startValue, endValue: DVec2, completionRatio: Comple
   return dvec2(
     easeInAndOutQuadratic(startValue.x, endValue.x, completionRatio),
     easeInAndOutQuadratic(startValue.y, endValue.y, completionRatio)
+  )
+
+func easeOutQuadratic*(startValue, endValue: DVec2, completionRatio: CompletionRatio): DVec2 =
+  return dvec2(
+    easeOutQuadratic(startValue.x, endValue.x, completionRatio),
+    easeOutQuadratic(startValue.y, endValue.y, completionRatio)
   )
 
 func quadraticBezier*(t, p0, p1, p2: float): float =

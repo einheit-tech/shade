@@ -26,6 +26,9 @@ task physics, "Runs the physics example":
 task platformer, "Runs the platformer example":
   exec "nim r examples/platformer/platformer_example.nim"
 
+task runtests, "Runs all tests":
+  exec "cd tests && nim r --hints:off testrunner.nim"
+
 task release, "Builds a release shade executable":
   exec "nim c -d:release --opt:speed --multimethods:on src/shade.nim"
 

@@ -38,7 +38,7 @@ proc playAnimation*(this: AnimationPlayer, animationName: string) =
     if this.currentAnimationName == animationName:
       return
     else:
-      this.currentAnimation.resetTime()
+      this.currentAnimation.reset()
 
   this.currentAnimation = this.animations[animationName]
   this.currentAnimationName = animationName

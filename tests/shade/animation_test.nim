@@ -1,4 +1,5 @@
 import
+  ../testutils,
   shade,
   math
 
@@ -11,8 +12,6 @@ describe "Animation":
     vec3Val*: DVec3
 
   describe "Animates all possible field types":
-    var callCount = 0
-
     let
       startingIntVal: int = 8
       startingFloatVal: float = 2.0
@@ -223,6 +222,7 @@ describe "Animation":
       # DVec3
       assertEquals(this.vec3Val, vec3Frames[0].value)
 
+      # TODO: Wrapping proc tracks.
       assertEquals(proc1CallCount, 2)
       assertEquals(proc2CallCount, 1)
       assertEquals(proc3CallCount, 1)
@@ -371,4 +371,223 @@ describe "Animation":
 
       testAnim.update(0.0)
       assertEquals(this.intVal, intFrames[0][0])
+
+  describe "AnimationTrack[ClosureProc]":
+    describe "Non-looping":
+      it "Calls a single proc at 0.0":
+        let testAnim = newAnimation(1.8, false)
+        var procCallCount = 0
+
+        proc foo1() {.closure.} = procCallCount.inc
+        let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 0.0)]
+
+        testAnim.addProcTrack(procFrames)
+
+        # Initial state
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(0.01)
+        assertEquals(procCallCount, 1)
+
+      it "Calls a single proc at 0.0 only once":
+        let testAnim = newAnimation(1.8, false)
+        var procCallCount = 0
+
+        proc foo1() {.closure.} = procCallCount.inc
+        let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 0.0)]
+
+        testAnim.addProcTrack(procFrames)
+
+        # Initial state
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(0.0)
+        assertEquals(procCallCount, 1)
+
+        testAnim.update(0.0)
+        assertEquals(procCallCount, 1)
+
+      it "Calls a single proc at the end of a track and animation":
+        let testAnim = newAnimation(1.8, false)
+        var procCallCount = 0
+
+        proc foo1() {.closure.} = procCallCount.inc
+        let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, testAnim.duration)]
+
+        testAnim.addProcTrack(procFrames)
+
+        # Initial state
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(0.01)
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(testAnim.duration - 0.01)
+        assertEquals(procCallCount, 1)
+
+      it "Calls a single proc at the end of a track, before the animation has ended":
+        let testAnim = newAnimation(1.8, false)
+        var procCallCount = 0
+
+        proc foo1() {.closure.} = procCallCount.inc
+        let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 1.1)]
+
+        testAnim.addProcTrack(procFrames)
+
+        # Initial state
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(0.1)
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(1.0)
+        assertEquals(procCallCount, 1)
+
+      it "Calls multiple procs at the right times":
+        let testAnim = newAnimation(1.8, false)
+        var
+          proc1CallCount = 0
+          proc2CallCount = 0
+          proc3CallCount = 0
+
+        proc foo1() {.closure.} = proc1CallCount.inc
+        proc foo2() {.closure.} = proc2CallCount.inc
+        proc foo3() {.closure.} = proc3CallCount.inc
+
+        let procFrames: seq[KeyFrame[ClosureProc]] = @[
+          (foo1, 0.1),
+          (foo2, 0.5),
+          (foo3, 1.6)
+        ]
+
+        testAnim.addProcTrack(procFrames)
+
+        # Initial state
+        assertEquals(proc1CallCount, 0)
+        assertEquals(proc2CallCount, 0)
+        assertEquals(proc3CallCount, 0)
+
+        testAnim.update(0)
+        assertEquals(proc1CallCount, 0)
+        assertEquals(proc2CallCount, 0)
+        assertEquals(proc3CallCount, 0)
+
+        testAnim.update(0.01)
+        assertEquals(proc1CallCount, 0)
+        assertEquals(proc2CallCount, 0)
+        assertEquals(proc3CallCount, 0)
+
+        testAnim.update(0.1)
+        assertEquals(proc1CallCount, 1)
+        assertEquals(proc2CallCount, 0)
+        assertEquals(proc3CallCount, 0)
+
+    describe "Looping":
+      it "Calls a single proc at 0.0":
+        let testAnim = newAnimation(1.8, true)
+        var procCallCount = 0
+
+        proc foo1() {.closure.} = procCallCount.inc
+        let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 0.0)]
+
+        testAnim.addProcTrack(procFrames)
+
+        # Initial state
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(0.01)
+        assertEquals(procCallCount, 1)
+
+      it "Calls a single proc at 0.0 only once":
+        let testAnim = newAnimation(1.8, true)
+        var procCallCount = 0
+
+        proc foo1() {.closure.} = procCallCount.inc
+        let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 0.0)]
+
+        testAnim.addProcTrack(procFrames)
+
+        # Initial state
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(0.0)
+        assertEquals(procCallCount, 1)
+
+        testAnim.update(0.0)
+        assertEquals(procCallCount, 1)
+
+      it "Calls a single proc at the end of a track and animation":
+        let testAnim = newAnimation(1.8, true)
+        var procCallCount = 0
+
+        proc foo1() {.closure.} = procCallCount.inc
+        let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, testAnim.duration)]
+
+        testAnim.addProcTrack(procFrames)
+
+        # Initial state
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(0.01)
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(testAnim.duration - 0.01)
+        assertEquals(procCallCount, 1)
+
+      it "Calls a single proc at the end of a track, before the animation has ended":
+        let testAnim = newAnimation(1.8, true)
+        var procCallCount = 0
+
+        proc foo1() {.closure.} = procCallCount.inc
+        let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 1.1)]
+
+        testAnim.addProcTrack(procFrames)
+
+        # Initial state
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(0.1)
+        assertEquals(procCallCount, 0)
+
+        testAnim.update(1.0)
+        assertEquals(procCallCount, 1)
+
+      it "Calls multiple procs at the right times":
+        let testAnim = newAnimation(1.8, true)
+        var
+          proc1CallCount = 0
+          proc2CallCount = 0
+          proc3CallCount = 0
+
+        proc foo1() {.closure.} = proc1CallCount.inc
+        proc foo2() {.closure.} = proc2CallCount.inc
+        proc foo3() {.closure.} = proc3CallCount.inc
+
+        let procFrames: seq[KeyFrame[ClosureProc]] = @[
+          (foo1, 0.1),
+          (foo2, 0.5),
+          (foo3, 1.6)
+        ]
+
+        testAnim.addProcTrack(procFrames)
+
+        # Initial state
+        assertEquals(proc1CallCount, 0)
+        assertEquals(proc2CallCount, 0)
+        assertEquals(proc3CallCount, 0)
+
+        testAnim.update(0)
+        assertEquals(proc1CallCount, 0)
+        assertEquals(proc2CallCount, 0)
+        assertEquals(proc3CallCount, 0)
+
+        testAnim.update(0.01)
+        assertEquals(proc1CallCount, 0)
+        assertEquals(proc2CallCount, 0)
+        assertEquals(proc3CallCount, 0)
+
+        testAnim.update(0.1)
+        assertEquals(proc1CallCount, 1)
+        assertEquals(proc2CallCount, 0)
+        assertEquals(proc3CallCount, 0)
 

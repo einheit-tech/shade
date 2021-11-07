@@ -163,6 +163,7 @@ proc removeChildNow(this, child: Node) =
       index = i
       break
   
+  # echo "removing child at index: " & $index
   if index >= 0:
     this.children.delete(index)
     this.onChildRemoved(child)
@@ -171,9 +172,12 @@ method removeChild*(this, child: Node) {.base.} =
   ## Removes the child from this Node.
   ## If the children are being iterated over at the time of this call,
   ## the child will be removed at the start of the next update.
+  # echo "removeChild"
   if tryAcquire(this.childLock):
+    # echo "aquired lock for removeChild"
     this.removeChildNow(child)
     this.childLock.release()
+    # echo "aquired lock for removeChild"
   else:
     this.removeQueue.addFirst(child)
 
@@ -200,7 +204,10 @@ method update*(this: Node, deltaTime: float) {.base.} =
   if this.onUpdate != nil:
     this.onUpdate(this, deltaTime)
 
+  # TODO: Locking this causes removeChild to be called infinitely?
+  # this loop is the last thing that fires before the inf loop
   withLock(this.childLock):
+    # echo "lock children update"
     for child in this.children:
       if loUpdate in child.flags:
         child.update(deltaTime)

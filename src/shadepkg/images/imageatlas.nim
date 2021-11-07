@@ -28,6 +28,9 @@ proc loadImage*(this: ImageAtlas, imagePath: string): tuple[id: int, image: Imag
 
   result.id = this.registerImage(result.image)
 
+template `[]`*(this: ImageAtlas, imageID: int): Image =
+  this.images[imageID]
+
 proc free*(this: ImageAtlas, imageID: int) =
   freeImage this.images[imageID]
   this.images.del(imageID)

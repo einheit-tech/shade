@@ -1,3 +1,1 @@
-switch("path", "$projectDir/../../src")
-switch("import", "./testutils")
-
+switch("threads", "on")

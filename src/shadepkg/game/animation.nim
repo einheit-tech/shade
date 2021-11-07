@@ -21,11 +21,16 @@ makeEnum(TrackType, TrackKind, "tk")
 
 type
   Keyframe*[T] = tuple[value: T, time: float]
-  AnimateProc* = proc(currentTime, deltaTime: float, wrapInterpolation: bool = false)
+  AnimateProc* = proc(
+    track: var AnimationTrack,
+    currentTime: float,
+    deltaTime: float,
+    wrapInterpolation: bool = false
+  )
   AnimationTrack* = object
     animateToTime*: AnimateProc
     wrapInterpolation: bool
-    case kind: TrackKind:
+    case kind*: TrackKind:
       of tkInt:
         framesInt: seq[Keyframe[int]]
       of tkFloat:
@@ -40,6 +45,7 @@ type
         IVec3: seq[Keyframe[IVec3]]
       of tkClosureProc:
         framesClosureProc: seq[Keyframe[ClosureProc]]
+        lastFiredProcIndex: int
 
   Animation* = ref object of Node
     currentTime: float
@@ -61,11 +67,14 @@ proc newAnimation*(duration: float, looping: bool): Animation =
   initAnimation(result, duration, looping)
 
 proc animateToTime*(this: Animation, currentTime, deltaTime: float) =
-  for track in this.tracks:
-    track.animateToTime(currentTime, deltaTime, track.wrapInterpolation)
+  for track in this.tracks.mitems:
+    track.animateToTime(track, currentTime, deltaTime, track.wrapInterpolation)
 
-proc resetTime*(this: Animation) =
+proc reset*(this: Animation) =
   this.currentTime = 0
+  for track in this.tracks.mitems:
+    if track.kind == tkClosureProc:
+      track.lastFiredProcIndex = -1
 
 method update*(this: Animation, deltaTime: float) =
   procCall Node(this).update(deltaTime)
@@ -74,8 +83,8 @@ method update*(this: Animation, deltaTime: float) =
     this.currentTime = (this.currentTime + deltaTime) mod this.duration
     this.animateToTime(this.currentTime, deltaTime)
   else:
-    this.currentTime += deltaTime
-    if this.currentTime <= this.duration:
+    if this.currentTime < this.duration:
+      this.currentTime += deltaTime
       this.animateToTime(this.currentTime, deltaTime)
   
 proc newAnimationTrack*[T: TrackType](
@@ -125,7 +134,8 @@ proc newAnimationTrack*[T: TrackType](
     result = AnimationTrack(
       kind: tkClosureProc,
       framesClosureProc: frames,
-      wrapInterpolation: wrapInterpolation
+      wrapInterpolation: wrapInterpolation,
+      lastFiredProcIndex: -1
     )
   else:
     raise newException(Exception, "Unsupported animation track type: " & typeof field)
@@ -170,7 +180,12 @@ macro addNewAnimationTrack*[T: TrackType](
     trackName = gensym(nskLet, "track")
 
   result = quote do:
-    proc `procName`(currentTime, deltaTime: float, wrapInterpolation: bool = false) =
+    proc `procName`(
+      track: var AnimationTrack,
+      currentTime: float,
+      deltaTime: float,
+      wrapInterpolation: bool = false
+    ) =
       var currIndex = -1
       for i in `frames`.low..<`frames`.high:
         if currentTime >= `frames`[i].time and currentTime <= `frames`[i + 1].time:
@@ -229,14 +244,18 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
     trackName = gensym(nskLet, "track")
 
   result = quote do:
-    var lastFiredProcIndex: int = -1
-
-    proc `procName`(currentTime, deltaTime: float, wrapInterpolation: bool = false) =
+    proc `procName`(
+      track: var AnimationTrack,
+      currentTime: float,
+      deltaTime: float,
+      wrapInterpolation: bool = false
+    ) =
       # Find the start time
       var timeInAnim = currentTime - deltaTime
       if timeInAnim < 0:
-        timeInAnim += `this`.duration
+        timeInAnim = euclMod(timeInAnim, `this`.duration)
 
+      # Finds the next frame we will "play"
       var currIndex = -1
       for i in `frames`.low..<`frames`.high:
         if almostEqual(timeInAnim, `frames`[i].time):
@@ -245,31 +264,68 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
         elif timeInAnim > `frames`[i].time and timeInAnim <= `frames`[i + 1].time:
           currIndex = i + 1
           break
-
       # Between last and 1st frames
       if currIndex == -1:
         currIndex = `frames`.low
 
-      var remainingTime = deltaTime
-      while remainingTime > 0:
-        let nextFrame = `frames`[currIndex]
-        remainingTime =
-          if timeInAnim != 0 and currIndex == `frames`.low:
-            remainingTime - (`this`.duration - timeInAnim) + nextFrame.time
-          else:
-            remainingTime - (nextFrame.time - timeInAnim)
+      if not `this`.looping:
+        var
+          nextFrame = `frames`[currIndex]
+          collectiveFrameTime = round(nextFrame.time - timeInAnim, 2)
 
-        timeInAnim = nextFrame.time
-        currIndex = (currIndex + 1) mod `frames`.len
+        if timeInAnim <= `frames`[`frames`.high].time:
+          while deltaTime - collectiveFrameTime >= 0:
+            if currIndex == track.lastFiredProcIndex:
+              break
 
-        if remainingTime >= 0 and lastFiredProcIndex != currIndex:
+            nextFrame.value()
+            track.lastFiredProcIndex = currIndex
+            if currIndex == `frames`.high:
+              break
+
+            collectiveFrameTime = round(
+              collectiveFrameTime + `frames`[currIndex + 1].time - nextFrame.time,
+              2
+            )
+            currIndex += 1
+
+            if currIndex > `frames`.high:
+              break
+            nextFrame = `frames`[currIndex]
+      else:
+        var
+          remainingTime = deltaTime
+          nextFrame: Keyframe[ClosureProc]
+          frameStartTime = currentTime - deltaTime
+
+        while true:
+          if currIndex == track.lastFiredProcIndex:
+            if `frames`.len == 1:
+              break
+            currIndex = euclMod(currIndex + 1, `frames`.len)
+            continue
+
+          nextFrame = `frames`[currIndex]
+          # Find time from frameStartTime to the current frame,
+          # we'll sutract it from remainingTime
+          # then play the proc if remainingTime >= 0
+          let modFrameStartTime = euclMod(frameStartTime, `this`.duration)
+
+          let timeTillNextFrame =
+            # Time in animation is between the last frame and duration of the anim.
+            if currIndex == `frames`.low and modFrameStartTime > nextFrame.time:
+              round(`this`.duration - modFrameStartTime + nextFrame.time, 2)
+            else:
+              round(nextFrame.time - modFrameStartTime, 2)
+
+          remainingTime = round(remainingTime - timeTillNextFrame, 2)
+          if remainingTime < 0:
+            break
+          
           nextFrame.value()
-          if `frames`.len > 1:
-            lastFiredProcIndex = currIndex
-
-        # Special case if there's only one frame.
-        if timeInAnim == 0 and `frames`.len == 1:
-          break
+          track.lastFiredProcIndex = currIndex
+          currIndex = euclMod(currIndex + 1, `frames`.len)
+          frameStartTime = nextFrame.time
 
     let `trackName` = newAnimationTrack[ClosureProc](
       nil,

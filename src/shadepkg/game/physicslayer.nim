@@ -26,6 +26,9 @@ proc initPhysicsLayer*(
   initLayer(layer, z)
   layer.space = newSpace()
   layer.space.gravity = cast[Vect](gravity)
+  layer.space.iterations = meterToPixelScalar.int div 2
+  layer.space.collisionSlop = 0.001
+  layer.space.collisionBias = pow(0.5, 60.0)
 
 proc newPhysicsLayer*(gravity: DVec2 = DEFAULT_GRAVITY, z: float = 1.0): PhysicsLayer =
   result = PhysicsLayer()
@@ -44,10 +47,5 @@ method onChildAdded*(this: PhysicsLayer, child: Node) =
 
 method update*(this: PhysicsLayer, deltaTime: float) =
   procCall Layer(this).update(deltaTime)
-
-  # TODO: I hope there's a better way to do this.
-  # Found the solution at:
-  # https://www.reddit.com/r/ebiten/comments/mghl4k/using_the_go_port_of_chipmunk2d_in_a_tile_based/gstvdhi/
-  for i in 0..<6:
-    this.space.step(deltaTime / 6)
+  this.space.step(deltaTime)
 
