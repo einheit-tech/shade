@@ -1,23 +1,51 @@
 import
   macros,
-  strformat
+  strformat,
+  terminal
 
-from ../src/shadepkg/math/mathutils import almostEquals
+template echoSuccess(args: varargs[untyped]) =
+  styledWriteLine(
+    stdout,
+    fgGreen,
+    "  [Success]: ",
+    fgDefault,
+    args
+  )
+
+template echoError(args: varargs[untyped]) =
+  styledWriteLine(
+    stdout,
+    fgRed,
+    "  [Failed]: ",
+    fgDefault,
+    args
+  )
 
 macro describe*(description: string, body: untyped): untyped =
   result = newStmtList()
   result.add quote do:
-    echo "[" & `description` & "]:"
+    styledWrite(
+      stdout,
+      fgYellow,
+      styleUnderscore,
+      `description`
+    )
+    styledWriteLine(
+      stdout,
+      fgYellow,
+      ":"
+    )
 
   var testBlocks: seq[NimNode]
-  for i, test in body:
+  for test in body:
     if test.kind == nnkCommand:
       let testDecl = test[0]
       if testDecl.kind == nnkDotExpr:
-        if testDecl[0].kind == nnkIdent and testDecl[0].strVal == "test":
-          if testDecl[1].kind == nnkIdent and testDecl[1].strVal == "only":
-            test[0] = newIdentNode("test")
-            testBlocks.add test
+        if testDecl[0].kind == nnkIdent:
+          if testDecl[0].strVal == "test" or testDecl[0].strVal == "it":
+            if testDecl[1].kind == nnkIdent and testDecl[1].strVal == "only":
+              test[0] = newIdentNode("test")
+              testBlocks.add test
 
   if testBlocks.len > 0:
     result.add testBlocks
@@ -25,30 +53,30 @@ macro describe*(description: string, body: untyped): untyped =
     result.add body
 
 template test*(description: string, body: untyped) =
-  block:
-    # TODO: Print errors after {title} [Failed]
-    try:
-      body
-      echo "  " & description & " [Success]"
-    except:
-      echo "  " & description & " [Failed]"
-      echo "ERROR: " & getCurrentExceptionMsg()
+  try:
+    body
+    echoSuccess(description)
+  except:
+    echoError(description, "\n\t", getCurrentExceptionMsg())
 
-template it*(description: string, body: untyped) = test(description, body)
+template it*(description: string, body: untyped) =
+  test(description, body)
 
 template assertEquals*(a, b: untyped): untyped =
   if a != b:
-    # TODO: print the failed expression (as it exists in code)
     raise newException(
       Exception,
       "Expected " & (repr a) & " to equal " & (repr b) &
-      "\n  assertEquals(" & astToStr(a) & ", " & astToStr(b) & ")"
+      "\n\tassertEquals(" & astToStr(a) & ", " & astToStr(b) & ")"
     )
 
 template assertAlmostEquals*(a, b: float): untyped =
   if not almostEquals(a, b):
-    # TODO: print the failed expression (as it exists in code)
-    raise newException(Exception, "Expected " & (repr a) & " to equal " & (repr b))
+    raise newException(
+      Exception,
+      "Expected " & (repr a) & " to equal " & (repr b) &
+      "\n\tassertAlmostEquals(" & astToStr(a) & ", " & astToStr(b) & ")"
+    )
 
 template assertRaises*(exception: typedesc, errorMessage: string, code: untyped) =
   ## Raises ``AssertionDefect`` if specified ``code`` does not raise the
@@ -75,9 +103,12 @@ template assertRaises*(exception: typedesc, errorMessage: string, code: untyped)
     except exception:
       discard
     except Exception:
-      raiseAssert(astToStr(exception) &
-                  " wasn't raised, another error was raised instead by:\n"&
-                  astToStr(code))
+      raiseAssert(
+        astToStr(exception) &
+        " wasn't raised, another error was raised instead by:\n"&
+        astToStr(code)
+      )
+
   if wrong:
     raiseAssert(astToStr(exception) & " wasn't raised by:\n" & astToStr(code))
 

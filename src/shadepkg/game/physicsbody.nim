@@ -3,8 +3,7 @@ import chipmunk7
 import 
   ../math/collision/collisionshape,
   material,
-  node,
-  shapefilters
+  node
 
 export
   node,

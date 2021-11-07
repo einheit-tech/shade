@@ -1,4 +1,5 @@
 import
+  ../testutils,
   shade,
   math
 
@@ -592,5 +593,4 @@ describe "Animation":
         assertEquals(proc1CallCount, 1)
         assertEquals(proc2CallCount, 0)
         assertEquals(proc3CallCount, 0)
-
 

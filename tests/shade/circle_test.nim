@@ -1,10 +1,12 @@
-import shade
+import
+  ../testutils,
+  shade
 
 describe "Circle tests":
 
   let circle = newCircle(dvec2(124, 256), 50)
 
-  describe "project":
+  describe "Projection":
 
     it "projects the circle correctly onto a horizontal axis":
       let
@@ -23,5 +25,4 @@ describe "Circle tests":
       assertEquals(projection.x, 206)
       # circle.center.y + circle.radius
       assertEquals(projection.y, 306)
-
 
