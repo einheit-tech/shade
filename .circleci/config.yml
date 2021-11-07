@@ -44,4 +44,8 @@ jobs:
 workflows:
   ci:
     jobs:
-      - build
+      - build:
+          filters:
+            branches:
+              only:
+                - master
