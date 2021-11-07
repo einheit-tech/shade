@@ -18,7 +18,10 @@ jobs:
           name: "Update the system"
           command: "apt-get update"
       - run:
-          name: "Install chipmunk"
+          name: "Install chipmunk lib files"
+          command: "wget 'http://archive.ubuntu.com/ubuntu/pool/universe/c/chipmunk/libchipmunk-dev_7.0.3-3_amd64.deb' && apt-get -y install ./libchipmunk-dev_7.0.3-3_amd64.deb"
+      - run:
+          name: "Install chipmunk dev files"
           command: "wget 'http://archive.ubuntu.com/ubuntu/pool/universe/c/chipmunk/chipmunk-dev_7.0.3-3_all.deb' && apt-get -y install ./chipmunk-dev_7.0.3-3_all.deb"
       - run:
           name: "Install sdl"
