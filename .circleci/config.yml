@@ -9,7 +9,7 @@ jobs:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
-      - image: nimlang/nim:latest-ubuntu-regular
+      - image: nimlang/nim
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
@@ -19,7 +19,7 @@ jobs:
           command: "apt-get update"
       - run:
           name: "Install chipmunk"
-          command: "apt-get -y install chipmunk-dev"
+          command: "wget 'http://archive.ubuntu.com/ubuntu/pool/universe/c/chipmunk/chipmunk-dev_7.0.3-3_all.deb' && apt-get -y install ./chipmunk-dev_7.0.3-3_all.deb"
       - run:
           name: "Install sdl"
           command: "DEBIAN_FRONTEND='noninteractive' apt-get -y install libsdl2-dev"
