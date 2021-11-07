@@ -12,8 +12,6 @@ describe "Animation":
     vec3Val*: DVec3
 
   describe "Animates all possible field types":
-    var callCount = 0
-
     let
       startingIntVal: int = 8
       startingFloatVal: float = 2.0
@@ -533,7 +531,6 @@ describe "Animation":
         testAnim.update(0.01)
         assertEquals(procCallCount, 0)
 
-        # TODO: Issue here is that we've hit 0.0 (from modulo)
         testAnim.update(testAnim.duration - 0.01)
         assertEquals(procCallCount, 1)
 

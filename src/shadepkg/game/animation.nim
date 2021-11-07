@@ -271,7 +271,7 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
       if not `this`.looping:
         var
           nextFrame = `frames`[currIndex]
-          collectiveFrameTime = nextFrame.time - timeInAnim
+          collectiveFrameTime = round(nextFrame.time - timeInAnim, 2)
 
         if timeInAnim <= `frames`[`frames`.high].time:
           while deltaTime - collectiveFrameTime >= 0:
@@ -283,7 +283,10 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
             if currIndex == `frames`.high:
               break
 
-            collectiveFrameTime += `frames`[currIndex + 1].time - nextFrame.time
+            collectiveFrameTime = round(
+              collectiveFrameTime + `frames`[currIndex + 1].time - nextFrame.time,
+              2
+            )
             currIndex += 1
 
             if currIndex > `frames`.high:
@@ -306,18 +309,16 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
           # Find time from frameStartTime to the current frame,
           # we'll sutract it from remainingTime
           # then play the proc if remainingTime >= 0
-          let modFrameStartTime = frameStartTime mod `this`.duration
-
-          # TODO: Add a special case when frame.time == this.duration
+          let modFrameStartTime = euclMod(frameStartTime, `this`.duration)
 
           let timeTillNextFrame =
             # Time in animation is between the last frame and duration of the anim.
             if currIndex == `frames`.low and modFrameStartTime > nextFrame.time:
-              `this`.duration - modFrameStartTime + nextFrame.time
+              round(`this`.duration - modFrameStartTime + nextFrame.time, 2)
             else:
-              nextFrame.time - modFrameStartTime
+              round(nextFrame.time - modFrameStartTime, 2)
 
-          remainingTime -= timeTillNextFrame
+          remainingTime = round(remainingTime - timeTillNextFrame, 2)
           if remainingTime < 0:
             break
           
