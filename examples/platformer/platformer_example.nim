@@ -18,6 +18,7 @@ player.y = 20
 
 # Track the player with the camera.
 let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
+camera.z = 0.55
 Game.scene.camera = camera
 
 let (_, groundImage) = Images.loadImage("./examples/assets/images/ground.png")

@@ -76,12 +76,12 @@ proc createNewKing*(): King =
 
   let sprite = createKingSprite()
   sprite.x = 8.0 * pixelToMeterScalar
+  sprite.y = 1.0 * pixelToMeterScalar
   result.addChild(sprite)
   result.animationPlayer = createAnimPlayer(sprite)
 
-  let collisionShape = createCollisionShape()
-  collisionShape.y = -2 * pixelToMeterScalar
-  result.addChild(collisionShape)
+  result.addChild(createCollisionShape())
+  # collisionShape.filter = newShapeFilter(nil, 1, 1)
 
 proc playAnimation*(king: King, name: string) =
   king.animationPlayer.playAnimation(name)
