@@ -37,6 +37,8 @@ type
     chkPolygon
 
   CollisionShape* = ref object of Node
+    body: Body
+    material: Material
     bounds: Rectangle
 
     # Properties that live on the cpShape.
@@ -47,10 +49,6 @@ type
     massOpt: Option[float]
     surfaceVelocityOpt: Option[DVec2]
 
-    # TODO: Need to take this.center into account.
-    # This means we need to override
-    # method `center=`*(this: Node, center: DVec2)
-    # and "invalidate" the scaled and unscaled shapes?
     case kind*: CollisionShapeKind:
     of chkCircle:
       unscaledCircle: Circle
@@ -61,6 +59,7 @@ type
       scaledPolygon: Polygon
       polygonCollisionShape*: PolyShape
 
+proc attachToBody*(this: CollisionShape, body: Body, material: Material)
 proc createScaledShape(this: CollisionShape, scale: DVec2)
 proc getBounds*(this: CollisionShape): Rectangle
 
@@ -108,6 +107,23 @@ template collisionShape(this: CollisionShape): Shape =
       this.circleCollisionShape
     of chkPolygon:
       this.polygonCollisionShape
+
+method onCenterChanged*(this: CollisionShape) =
+  procCall Node(this).onCenterChanged()
+  case this.kind:
+    of chkCircle:
+      this.unscaledCircle.center = this.center
+      this.scaledCircle.center = this.center
+    of chkPolygon:
+      this.unscaledPolygon = this.unscaledPolygon.getTranslatedInstance(
+        this.center - this.unscaledPolygon.center
+      )
+      this.scaledPolygon = this.scaledPolygon.getTranslatedInstance(
+        this.center - this.scaledPolygon.center
+      )
+
+  if this.body != nil:
+    this.attachToBody(this.body, this.material)
 
 template filter*(this: CollisionShape) =
   if this.filterOpt.isSome():
@@ -205,6 +221,8 @@ template applyExistingPropertiesToShape(this: CollisionShape) =
       this.collisionShape.surfaceVelocity = this.surfaceVelocityOpt.get()
 
 proc attachToBody*(this: CollisionShape, body: Body, material: Material) =
+  this.body = body
+  this.material = material
   case this.kind:
     of chkCircle:
       this.circleCollisionShape = newCircleShape(body, this.scaledCircle.radius, this.center)

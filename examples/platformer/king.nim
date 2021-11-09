@@ -63,6 +63,7 @@ proc createCollisionShape(): CollisionShape =
       dvec2(-8, 13),
     ]).getScaledInstance(VEC2_PIXELS_TO_METERS)
   )
+  result.y = -32 * pixelToMeterScalar
 
 type King* = ref object of PhysicsBody
   animationPlayer: AnimationPlayer
@@ -76,7 +77,6 @@ proc createNewKing*(): King =
 
   let sprite = createKingSprite()
   sprite.x = 8.0 * pixelToMeterScalar
-  sprite.y = 1.0 * pixelToMeterScalar
   result.addChild(sprite)
   result.animationPlayer = createAnimPlayer(sprite)
 
