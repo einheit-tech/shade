@@ -1,5 +1,7 @@
 import ../../src/shade
-import king
+import
+  collision,
+  king
 
 initEngineSingleton(
   "Physics Example",
@@ -39,6 +41,7 @@ let groundShape = newPolygonCollisionShape(
     dvec2(-halfGroundWidth, halfGroundHeight)
   ])
 )
+groundShape.filter = newShapeFilter(GROUND, GROUND, PLAYER)
 
 let ground = newPhysicsBody(
   kind = pbStatic,
@@ -60,6 +63,7 @@ let wallShapePolygon = newPolygon([
 proc createWall(): PhysicsBody =
   # Left wall
   let wallShape = newPolygonCollisionShape(wallShapePolygon)
+  wallShape.filter = newShapeFilter(GROUND, GROUND, PLAYER)
   result = newPhysicsBody(
     kind = pbStatic,
     material = PLATFORM
@@ -125,7 +129,7 @@ proc physicsProcess(gravity: DVec2, damping, deltaTime: float) =
 
   player.velocity = dvec2(x, y)
 
-  camera.z += Input.wheelScrolledLastFrame.float * 0.01
+  camera.z += Input.wheelScrolledLastFrame.float * 0.03
 
 player.onPhysicsUpdate = physicsProcess
 

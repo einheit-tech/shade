@@ -25,9 +25,11 @@ export
   polygon
 
 export
+  options,
   Group,
   Bitmask,
-  ShapeFilter
+  ShapeFilter,
+  CollisionType
 
 converter dvec2ToVect(v: DVec2): Vect = cast[Vect](v)
 
@@ -125,7 +127,7 @@ method onCenterChanged*(this: CollisionShape) =
   if this.body != nil:
     this.attachToBody(this.body, this.material)
 
-template filter*(this: CollisionShape) =
+template filter*(this: CollisionShape): ShapeFilter =
   if this.filterOpt.isSome():
     this.filterOpt.get()
   else:

@@ -1,4 +1,6 @@
-import ../../src/shade
+import
+  ../../src/shade,
+  collision
 
 proc createIdleAnimation(king: Sprite): Animation =
   const
@@ -63,7 +65,6 @@ proc createCollisionShape(): CollisionShape =
       dvec2(-8, 13),
     ]).getScaledInstance(VEC2_PIXELS_TO_METERS)
   )
-  result.y = -32 * pixelToMeterScalar
 
 type King* = ref object of PhysicsBody
   animationPlayer: AnimationPlayer
@@ -77,11 +78,14 @@ proc createNewKing*(): King =
 
   let sprite = createKingSprite()
   sprite.x = 8.0 * pixelToMeterScalar
+  sprite.y = 1.0 * pixelToMeterScalar
   result.addChild(sprite)
   result.animationPlayer = createAnimPlayer(sprite)
 
-  result.addChild(createCollisionShape())
-  # collisionShape.filter = newShapeFilter(nil, 1, 1)
+  let collisionShape = createCollisionShape()
+  collisionShape.filter = newShapeFilter(PLAYER, PLAYER, GROUND)
+
+  result.addChild(collisionShape)
 
 proc playAnimation*(king: King, name: string) =
   king.animationPlayer.playAnimation(name)
