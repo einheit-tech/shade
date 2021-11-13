@@ -52,7 +52,7 @@ render(Sprite, Node):
       -rect.h / 2,
       rect.w / 2,
       rect.h / 2,
-      RED
+      BLUE
     )
 
   if callback != nil:

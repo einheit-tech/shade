@@ -287,7 +287,6 @@ proc stroke*(this: CollisionShape, ctx: Target, color: Color = RED) =
   case this.kind:
   of chkPolygon:
     this.unscaledPolygon.getScaledInstance(VEC2_METERS_TO_PIXELS).stroke(ctx, color)
-    discard
   of chkCircle:
     this.unscaledCircle.getScaledInstance(VEC2_METERS_TO_PIXELS).stroke(ctx, color)
 
