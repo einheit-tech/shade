@@ -3,6 +3,9 @@ import
   spritesheet,
   ../math/mathutils
 
+when defined(spriteBounds):
+  import ../render/color
+
 export node, spritesheet, mathutils
 
 type Sprite* = ref object of Node
@@ -40,6 +43,17 @@ render(Sprite, Node):
     0,
     0
   )
+
+  when defined(spriteBounds):
+    ## Renders the bounds or sprites.
+    let rect = this.spritesheet[this.frameCoords]
+    ctx.rectangle(
+      -rect.w / 2,
+      -rect.h / 2,
+      rect.w / 2,
+      rect.h / 2,
+      BLUE
+    )
 
   if callback != nil:
     callback()

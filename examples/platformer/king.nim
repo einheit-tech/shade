@@ -1,4 +1,6 @@
-import ../../src/shade
+import
+  ../../src/shade,
+  collision
 
 proc createIdleAnimation(king: Sprite): Animation =
   const
@@ -76,11 +78,13 @@ proc createNewKing*(): King =
 
   let sprite = createKingSprite()
   sprite.x = 8.0 * pixelToMeterScalar
+  sprite.y = 1.0 * pixelToMeterScalar
   result.addChild(sprite)
   result.animationPlayer = createAnimPlayer(sprite)
 
   let collisionShape = createCollisionShape()
-  collisionShape.y = -2 * pixelToMeterScalar
+  collisionShape.filter = newShapeFilter(PLAYER, PLAYER, GROUND)
+
   result.addChild(collisionShape)
 
 proc playAnimation*(king: King, name: string) =

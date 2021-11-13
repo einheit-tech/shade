@@ -26,6 +26,9 @@ task physics, "Runs the physics example":
 task platformer, "Runs the platformer example":
   exec "nim r examples/platformer/platformer_example.nim"
 
+task platformerd, "Runs the platformer example with debug options enabled":
+  exec "nim -d:debug -d:collisionoutlines -d:spriteBounds r examples/platformer/platformer_example.nim"
+
 task runtests, "Runs all tests":
   exec "cd tests && nim r --hints:off testrunner.nim"
 

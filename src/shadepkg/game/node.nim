@@ -24,8 +24,14 @@ type
     loRender
 
   Node* = ref object of RootObj
+    # Invoked after this node and its children have been updated.
     onUpdate*: proc(this: Node, deltaTime: float)
+    # Called when this node has rendered (before children).
+    # This can be used to draw within its localized rendering space.
     onRender*: proc(this: Node, ctx: Target)
+    # Called when this node has rendered, including children.
+    # This can be used to draw within its localized rendering space.
+    afterRender*: proc(this: Node, ctx: Target)
 
     shader: Shader
     children: seq[Node]
@@ -163,7 +169,6 @@ proc removeChildNow(this, child: Node) =
       index = i
       break
   
-  # echo "removing child at index: " & $index
   if index >= 0:
     this.children.delete(index)
     this.onChildRemoved(child)
@@ -172,12 +177,9 @@ method removeChild*(this, child: Node) {.base.} =
   ## Removes the child from this Node.
   ## If the children are being iterated over at the time of this call,
   ## the child will be removed at the start of the next update.
-  # echo "removeChild"
   if tryAcquire(this.childLock):
-    # echo "aquired lock for removeChild"
     this.removeChildNow(child)
     this.childLock.release()
-    # echo "aquired lock for removeChild"
   else:
     this.removeQueue.addFirst(child)
 
@@ -201,16 +203,13 @@ method update*(this: Node, deltaTime: float) {.base.} =
       let child = this.removeQueue.popFirst()
       this.removeChildNow(child)
 
-  if this.onUpdate != nil:
-    this.onUpdate(this, deltaTime)
-
-  # TODO: Locking this causes removeChild to be called infinitely?
-  # this loop is the last thing that fires before the inf loop
   withLock(this.childLock):
-    # echo "lock children update"
     for child in this.children:
       if loUpdate in child.flags:
         child.update(deltaTime)
+
+  if this.onUpdate != nil:
+    this.onUpdate(this, deltaTime)
 
 method renderChildren*(this: Node, ctx: Target) {.base.} =
   withLock(this.childLock):
@@ -221,9 +220,6 @@ method renderChildren*(this: Node, ctx: Target) {.base.} =
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   ## Renders the node with its given position, rotation, and scale.
   ## It will render its children relative to its center.
-  ##
-  ## If a callback is given, the caller is responsible for rendering the children.
-  ## Use Node.renderChildren(ctx).
   if this.center != VEC2_ZERO:
     translate(this.center.x * meterToPixelScalar, this.center.y * meterToPixelScalar, 0)
 
@@ -239,7 +235,13 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   if callback != nil:
     callback()
 
+  if this.onRender != nil:
+    this.onRender(this, ctx)
+
   this.renderChildren(ctx)
+
+  if this.afterRender != nil:
+    this.afterRender(this, ctx)
 
   if this.shader != nil:
     activateShaderProgram(0, nil)

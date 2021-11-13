@@ -1,16 +1,15 @@
 ## CollisionShapes are the shapes used to determine collisions between objects.
 ##
 ## The shape location is relative to its owner,
-## so the shape should be centered around the origin (0, 0),
-## if the goal is to center it on its owner for collisions.
-##
+## so the shape should be centered around the origin (0, 0).
 ## The CollisionShape's `center` property is NOT TAKEN INTO ACCOUNT.
 ##
 ## See: http://chipmunk-physics.net/release/ChipmunkLatest-Docs/#cpShape
 
 import
   sdl2_nim/sdl_gpu,
-  chipmunk7
+  chipmunk7,
+  options
 
 import
   ../../game/constants,
@@ -25,14 +24,34 @@ export
   circle,
   polygon
 
+export
+  options,
+  Group,
+  Bitmask,
+  ShapeFilter,
+  CollisionType
+
+converter dvec2ToVect(v: DVec2): Vect = cast[Vect](v)
+
 type
   CollisionShapeKind* = enum
     chkCircle
     chkPolygon
 
   CollisionShape* = ref object of Node
+    body: Body
+    material: Material
     bounds: Rectangle
-    case kind*: CollisionShapeKind
+
+    # Properties that live on the cpShape.
+    # We need to keep track of them between shape resizes/etc.
+    filterOpt: Option[ShapeFilter]
+    elasticityOpt: Option[float]
+    frictionOpt: Option[float]
+    massOpt: Option[float]
+    surfaceVelocityOpt: Option[DVec2]
+
+    case kind*: CollisionShapeKind:
     of chkCircle:
       unscaledCircle: Circle
       scaledCircle: Circle
@@ -42,8 +61,12 @@ type
       scaledPolygon: Polygon
       polygonCollisionShape*: PolyShape
 
+proc attachToBody*(this: CollisionShape, body: Body, material: Material)
 proc createScaledShape(this: CollisionShape, scale: DVec2)
 proc getBounds*(this: CollisionShape): Rectangle
+
+proc newShapeFilter*(group: Group, categories: Bitmask, mask: Bitmask): ShapeFilter =
+  return chipmunk7.newShapeFilter(group, categories, mask)
 
 proc initPolygonCollisionShape*(shape: CollisionShape, polygon: Polygon) =
   # TODO: Document our compile time flags in our wiki/README.
@@ -87,33 +110,82 @@ template collisionShape(this: CollisionShape): Shape =
     of chkPolygon:
       this.polygonCollisionShape
 
-template `filter=`*(filter: ShapeFilter) =
-  this.collisionShape.filter = filter
+method onCenterChanged*(this: CollisionShape) =
+  procCall Node(this).onCenterChanged()
+  case this.kind:
+    of chkCircle:
+      this.unscaledCircle.center = this.center
+      this.scaledCircle.center = this.center
+    of chkPolygon:
+      this.unscaledPolygon = this.unscaledPolygon.getTranslatedInstance(
+        this.center - this.unscaledPolygon.center
+      )
+      this.scaledPolygon = this.scaledPolygon.getTranslatedInstance(
+        this.center - this.scaledPolygon.center
+      )
+
+  if this.body != nil:
+    this.attachToBody(this.body, this.material)
+
+template filter*(this: CollisionShape): ShapeFilter =
+  if this.filterOpt.isSome():
+    this.filterOpt.get()
+  else:
+    SHAPE_FILTER_ALL
+
+proc `filter=`*(this: CollisionShape, filter: ShapeFilter) =
+  ## Set the collision filtering parameters of this shape.
+  this.filterOpt = option(filter)
+  if this.collisionShape != nil:
+    this.collisionShape.filter = filter
 
 template elasticity*(this: CollisionShape): float =
-  this.collisionShape.elasticity
+  if this.elasticityOpt.isSome():
+    this.elasticityOpt.get()
+  else:
+    0
 
 proc `elasticity=`*(this: CollisionShape, elasticity: float) =
-  this.collisionShape.elasticity = elasticity
+  this.elasticityOpt = some(elasticity)
+  if this.collisionShape != nil:
+    this.collisionShape.elasticity = elasticity
 
 template friction*(this: CollisionShape): float =
   ## Gets the coefficient of friction.
-  this.collisionShape.friction
+  if this.frictionOpt.isSome():
+    this.frictionOpt.get()
+  else:
+    0
 
 proc `friction=`*(this: CollisionShape, friction: float) =
   ## Sets the coefficient of friction.
-  this.collisionShape.friction = friction
+  this.frictionOpt = some(friction)
+  if this.collisionShape != nil:
+    this.collisionShape.friction = friction
 
 template mass*(this: CollisionShape): float =
   ## Gets the mass of the shape.
-  this.collisionShape.mass
+  if this.massOpt.isSome():
+    this.massOpt.get()
+  else:
+    0
 
 proc `mass=`*(this: CollisionShape, mass: float) =
   ## Sets the mass of the shape.
-  this.collisionShape.mass = mass
+  this.massOpt = some(mass)
+  if this.collisionShape != nil:
+    this.collisionShape.mass = mass
+
+template surfaceVelocity*(this: CollisionShape, velocity: DVec2): DVec2 =
+  if this.surfaceVelocityOpt.isSome():
+    this.surfaceVelocityOpt.get()
+  else:
+    VEC2_ZERO
 
 proc `surfaceVelocity=`*(this: CollisionShape, velocity: DVec2) =
-  this.collisionShape.surfaceVelocity = cast[Vect](velocity)
+  this.surfaceVelocityOpt = some(velocity)
+  if this.collisionShape != nil:
+    this.collisionShape.surfaceVelocity = velocity
 
 proc createScaledShape(this: CollisionShape, scale: DVec2) =
   case this.kind:
@@ -130,18 +202,41 @@ method `scale=`*(this: CollisionShape, scale: DVec2) =
   # Recreate scaled shapes
   this.createScaledShape(scale)
 
+template applyExistingPropertiesToShape(this: CollisionShape) =
+  ## Reapplies properties to the current shape.
+  ## This is used primarily when a shape is changed,
+  ## and therefore must be recreated from scratch.
+  if this.collisionShape != nil:
+    if this.filterOpt.isSome():
+      this.collisionShape.filter = this.filterOpt.get()
+
+    if this.elasticityOpt.isSome():
+      this.collisionShape.elasticity = this.elasticityOpt.get()
+
+    if this.frictionOpt.isSome():
+      this.collisionShape.friction = this.frictionOpt.get()
+
+    if this.massOpt.isSome():
+      this.collisionShape.mass = this.massOpt.get()
+
+    if this.surfaceVelocityOpt.isSome():
+      this.collisionShape.surfaceVelocity = this.surfaceVelocityOpt.get()
+
 proc attachToBody*(this: CollisionShape, body: Body, material: Material) =
+  this.body = body
+  this.material = material
   case this.kind:
     of chkCircle:
-      this.circleCollisionShape = newCircleShape(body, this.scaledCircle.radius, vzero)
+      this.circleCollisionShape = newCircleShape(body, this.scaledCircle.radius, this.center)
       if body.mass == 0 and body.moment == 0:
         this.mass = material.density * this.scaledCircle.getArea()
 
     of chkPolygon:
+      var translatedVertices = this.scaledPolygon.getTranslatedInstance(this.center).vertices
       this.polygonCollisionShape = newPolyShape(
         body,
         cint this.scaledPolygon.len,
-        cast[ptr Vect](this.scaledPolygon.vertices[0].addr),
+        cast[ptr Vect](translatedVertices[0].addr),
         TransformIdentity,
         cfloat 0.0
       )
@@ -151,6 +246,7 @@ proc attachToBody*(this: CollisionShape, body: Body, material: Material) =
 
   this.elasticity = material.elasticity
   this.friction = material.friction
+  this.applyExistingPropertiesToShape()
 
 proc addToSpace*(this: CollisionShape, space: Space) =
   ## Adds this collision shape to the given space.
@@ -191,7 +287,6 @@ proc stroke*(this: CollisionShape, ctx: Target, color: Color = RED) =
   case this.kind:
   of chkPolygon:
     this.unscaledPolygon.getScaledInstance(VEC2_METERS_TO_PIXELS).stroke(ctx, color)
-    discard
   of chkCircle:
     this.unscaledCircle.getScaledInstance(VEC2_METERS_TO_PIXELS).stroke(ctx, color)
 
