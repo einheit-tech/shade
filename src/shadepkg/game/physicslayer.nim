@@ -1,7 +1,4 @@
 import
-  chipmunk7
-
-import
   constants,
   layer,
   physicsbody,
@@ -14,9 +11,7 @@ export
 # TODO: Tune
 const DEFAULT_GRAVITY* = dvec2(0, 2000 * pixelToMeterScalar)
 
-type
-  PhysicsLayer* = ref object of Layer
-    space: Space
+type PhysicsLayer* = ref object of Layer
 
 proc initPhysicsLayer*(
   layer: PhysicsLayer,
@@ -24,28 +19,21 @@ proc initPhysicsLayer*(
   z: float = 1.0
 ) =
   initLayer(layer, z)
-  layer.space = newSpace()
-  layer.space.gravity = cast[Vect](gravity)
-  layer.space.iterations = meterToPixelScalar.int div 2
-  layer.space.collisionSlop = 0.001
-  layer.space.collisionBias = pow(0.5, 60.0)
 
 proc newPhysicsLayer*(gravity: DVec2 = DEFAULT_GRAVITY, z: float = 1.0): PhysicsLayer =
   result = PhysicsLayer()
   initPhysicsLayer(result, gravity, z)
 
 proc destroy*(this: PhysicsLayer) =
-  # TODO: Should every node have a destroy proc?
-  if this.space != nil:
-    this.space.destroy()
   this.removeAllChildren()
 
 method onChildAdded*(this: PhysicsLayer, child: Node) =
   procCall Layer(this).onChildAdded(child)
   if child of PhysicsBody:
-    PhysicsBody(child).addToSpace(this.space)
+    # TODO: Add to quadtree/spatial hash/etc for broad phase.
+    discard
 
 method update*(this: PhysicsLayer, deltaTime: float) =
   procCall Layer(this).update(deltaTime)
-  this.space.step(deltaTime)
+  # TODO: Process physics
 

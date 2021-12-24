@@ -88,10 +88,7 @@ proc loop(this: Engine) =
   while not this.shouldExit:
     # Determine elapsed time in seconds
 
-    # TODO: Chipmunk2D says:
-    # "It is *highly* recommended to use a fixed size time step."
-    # let deltaTime: float = elapsedNanos.float64 / oneBillion.float64
-    let deltaTime: float = 1 / 60
+    let deltaTime: float = elapsedNanos.float64 / oneBillion.float64
 
     this.shouldExit = this.handleEvents()
     this.update(deltaTime)

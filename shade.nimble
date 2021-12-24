@@ -13,7 +13,6 @@ bin           = @["shade"]
 
 requires "nim >= 1.4.6"
 requires "sdl2_nim >= 2.0.14.3"
-requires "chipmunk7 >= 7.0.3"
 requires "vmath >= 1.1.0"
 
 # Tasks
