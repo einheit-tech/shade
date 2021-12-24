@@ -20,6 +20,10 @@ type
     collisionShape*: CollisionShape
     material*: Material
 
+    velocity*: DVec2
+    force*: DVec2
+    angularVelocity*: float
+
     case kind*: PhysicsBodyKind:
       of pbDynamic, pbKinematic:
         isOnGround*: bool
@@ -66,10 +70,6 @@ template height*(this: PhysicsBody): float =
   else:
     0
 
-method `center=`*(this: PhysicsBody, center: DVec2) =
-  procCall `center=`(Node(this), center)
-  this.body.position = center
-
 method `scale=`*(this: PhysicsBody, scale: DVec2) =
   procCall `scale=`(Node(this), scale)
   this.collisionShape.scale = scale
@@ -78,33 +78,17 @@ method onParentScaled*(this: PhysicsBody, parentScale: DVec2) =
   procCall Node(this).onParentScaled(parentScale)
   this.collisionShape.scale = this.scale * parentScale
 
-method velocity*(this: PhysicsBody): DVec2 {.base.} =
-  return this.body.velocity
-
-method `velocity=`*(this: PhysicsBody, velocity: DVec2) {.base.} =
-  this.body.velocity = velocity
-
 method velocityX*(this: PhysicsBody): float {.base.} =
-  this.body.velocity.x
+  this.velocity.x
 
 method `velocityX=`*(this: PhysicsBody, x: float) {.base.} =
-  this.body.velocity = dvec2(x, this.velocity.y)
+  this.velocity = dvec2(x, this.velocity.y)
 
 method velocityY*(this: PhysicsBody): float {.base.} =
-  this.body.velocity.y
+  this.velocity.y
 
 method `velocityY=`*(this: PhysicsBody, y: float) {.base.} =
-  this.body.velocity = dvec2(this.velocity.x, y)
-
-method `angularVelocity=`*(this: PhysicsBody, velocity: float) {.base.} =
-  this.body.angularVelocity = cfloat velocity
-
-method `force=`*(this: PhysicsBody, force: DVec2) {.base.} =
-  this.body.force = force
-
-method `rotation=`*(this: PhysicsBody, rotation: float) =
-  procCall `rotation=`(Node(this), rotation)
-  this.body.angle = this.rotation.degToRad()
+  this.velocity = dvec2(this.velocity.x, y)
 
 method onChildAdded*(this: PhysicsBody, child: Node) =
   procCall Node(this).onChildAdded(child)

@@ -44,7 +44,7 @@ type
     scale: DVec2
     center: DVec2
     # Rotation in degrees (clockwise).
-    rotation*: float
+    rotation: float
 
 method onCenterChanged*(this: Node) {.base.}
 method center*(this: Node): DVec2 {.base.}
@@ -129,6 +129,9 @@ method onParentScaled*(this: Node, parentScale: DVec2) {.base.} =
     # The whole tree needs to be notified of scaling.
     for child in this.children:
       child.onParentScaled(scale)
+
+template `rotation`*(this: Node): float =
+  this.rotation
 
 method `rotation=`*(this: Node, rotation: float) {.base.} =
   ## Sets the rotation of the node.

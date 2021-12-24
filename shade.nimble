@@ -11,7 +11,7 @@ bin           = @["shade"]
 
 # Dependencies
 
-requires "nim >= 1.4.6"
+requires "nim >= 1.6.2"
 requires "sdl2_nim >= 2.0.14.3"
 requires "vmath >= 1.1.0"
 
@@ -32,5 +32,5 @@ task runtests, "Runs all tests":
   exec "cd tests && nim r --hints:off testrunner.nim"
 
 task release, "Builds a release shade executable":
-  exec "nim c -d:release --opt:speed --multimethods:on src/shade.nim"
+  exec "nim c -d:release --multimethods:on src/shade.nim"
 
