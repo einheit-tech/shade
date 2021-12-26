@@ -9,14 +9,12 @@ describe "Animation":
     intVal*: int
     floatVal*: float
     vec2Val*: Vector
-    vec3Val*: DVec3
 
   describe "Animates all possible field types":
     let
       startingIntVal: int = 8
       startingFloatVal: float = 2.0
       startingVectorVal: Vector = vector(2.9, 32.7)
-      startingDVec3Val: DVec3 = dvec3(48.2, 831.0, 12.8)
 
     var this = FakeNode()
 
@@ -25,7 +23,6 @@ describe "Animation":
         intVal: startingIntVal,
         floatVal: startingFloatVal,
         vec2Val: startingVectorVal,
-        vec3Val: startingDVec3Val
       )
 
     it "without wrap interpolation":
@@ -65,17 +62,6 @@ describe "Animation":
         vec2Frames
       )
 
-      # DVec3
-      const vec3Frames: seq[KeyFrame[DVec3]] = @[
-        (dvec3(1.0, 2.1, 12.5), 0.0),
-        (dvec3(4.2, 3.2, 39.4), 0.5),
-        (dvec3(12.8, 34.8, 12.8), 1.1)
-      ]
-      testAnim.addNewAnimationTrack(
-        this.vec3Val,
-        vec3Frames
-      )
-
       var
         proc1CallCount = 0
         proc2CallCount = 0
@@ -98,7 +84,6 @@ describe "Animation":
       assertEquals(this.intVal, startingIntVal)
       assertEquals(this.floatVal, startingFloatVal)
       assertEquals(this.vec2Val, startingVectorVal)
-      assertEquals(this.vec3Val, startingDVec3Val)
       assertEquals(proc1CallCount, 0)
       assertEquals(proc2CallCount, 0)
       assertEquals(proc3CallCount, 0)
@@ -126,14 +111,6 @@ describe "Animation":
         testAnim.currentTime / (vec2Frames[1].time - vec2Frames[0].time),
       )
       assertEquals(this.vec2Val, expectedVectorVal)
-
-      # DVec3
-      var expectedDVec3Val = lerp(
-        vec3Frames[0].value,
-        vec3Frames[1].value,
-        testAnim.currentTime / (vec3Frames[1].time - vec3Frames[0].time),
-      )
-      assertEquals(this.vec3Val, expectedDVec3Val)
 
       # Proc calls
       assertEquals(proc1CallCount, 1)
@@ -169,16 +146,6 @@ describe "Animation":
       )
       assertEquals(this.vec2Val, expectedVectorVal)
 
-      # DVec3
-      completionRatio = 
-        (testAnim.currentTime - vec3Frames[1].time) / (vec3Frames[2].time - vec3Frames[1].time)
-      expectedDVec3Val = lerp(
-        vec3Frames[1].value,
-        vec3Frames[2].value,
-        completionRatio
-      )
-      assertEquals(this.vec3Val, expectedDVec3Val)
-
       assertEquals(proc1CallCount, 1)
       assertEquals(proc2CallCount, 1)
       assertEquals(proc3CallCount, 0)
@@ -196,9 +163,6 @@ describe "Animation":
 
       # Vector
       assertEquals(this.vec2Val, vec2Frames[2].value)
-
-      # Vector
-      assertEquals(this.vec3Val, vec3Frames[2].value)
 
       assertEquals(proc1CallCount, 1)
       assertEquals(proc2CallCount, 1)
@@ -218,9 +182,6 @@ describe "Animation":
 
       # Vector
       assertEquals(this.vec2Val, vec2Frames[0].value)
-
-      # DVec3
-      assertEquals(this.vec3Val, vec3Frames[0].value)
 
       # TODO: Wrapping proc tracks.
       assertEquals(proc1CallCount, 2)
@@ -267,18 +228,6 @@ describe "Animation":
         true
       )
 
-      # DVec3
-      const vec3Frames: seq[KeyFrame[DVec3]] = @[
-        (dvec3(1.0, 2.1, 12.5), 0.0),
-        (dvec3(4.2, 3.2, 39.4), 0.5),
-        (dvec3(12.8, 34.8, 12.8), 1.1)
-      ]
-      testAnim.addNewAnimationTrack(
-        this.vec3Val,
-        vec3Frames,
-        true
-      )
-
       var
         proc1CallCount = 0
         proc2CallCount = 0
@@ -301,7 +250,6 @@ describe "Animation":
       assertEquals(this.intVal, startingIntVal)
       assertEquals(this.floatVal, startingFloatVal)
       assertEquals(this.vec2Val, startingVectorVal)
-      assertEquals(this.vec3Val, startingDVec3Val)
       assertEquals(proc1CallCount, 0)
       assertEquals(proc2CallCount, 0)
       assertEquals(proc3CallCount, 0)
@@ -325,10 +273,6 @@ describe "Animation":
       # Vector
       let expectedVectorVal = lerp(vec2Frames[2].value, vec2Frames[0].value, completionRatio)
       assertEquals(this.vec2Val, expectedVectorVal)
-
-      # DVec3
-      let expectedDVec3Val = lerp(vec3Frames[2].value, vec3Frames[0].value, completionRatio)
-      assertEquals(this.vec3Val, expectedDVec3Val)
 
       assertEquals(proc1CallCount, 1)
       assertEquals(proc2CallCount, 1)

@@ -113,6 +113,7 @@ method `scale=`*(this: Node, scale: Vector) {.base.} =
   this.scale = scale
 
   # TODO: This locks up from animation player example.
+  # This was broken previously (on master), just didn't notice.
   withLock(this.childLock):
     for child in this.children:
       child.onParentScaled(scale)
