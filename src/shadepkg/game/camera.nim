@@ -12,10 +12,10 @@ type
     viewport*: Rectangle
 
     # For node tracking
-    offset*: DVec2
+    offset*: Vector
     trackedNode*: Node
     completionRatioPerFrame*: CompletionRatio
-    easingFunction*: EasingFunction[DVec2]
+    easingFunction*: EasingFunction[Vector]
 
 proc initCamera*(camera: Camera) =
   initNode(Node(camera), {loUpdate})
@@ -35,7 +35,7 @@ proc newCamera*(): Camera =
 proc newCamera*(
   trackedNode: Node,
   completionRatioPerFrame: CompletionRatio,
-  easingFunction: EasingFunction[DVec2] = lerp
+  easingFunction: EasingFunction[Vector] = lerp
 ): Camera =
   ## Creates a camera which follows a node.
   ## completionRatioPerFrame: The distance * CompletionRatio to travel each frame.
@@ -49,7 +49,7 @@ proc newCamera*(
   result.completionRatioPerFrame = completionRatioPerFrame
   result.easingFunction = easingFunction
 
-proc setTrackingEasingFunction*(this: Camera, easingFunction: EasingFunction[DVec2]) =
+proc setTrackingEasingFunction*(this: Camera, easingFunction: EasingFunction[Vector]) =
   this.easingFunction = easingFunction
 
 proc setTrackedNode*(this: Camera, n: Node) =

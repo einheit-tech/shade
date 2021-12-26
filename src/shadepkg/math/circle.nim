@@ -9,31 +9,31 @@ import
   ../render/color
 
 type Circle* = ref object
-  center*: DVec2
+  center*: Vector
   radius*: float
   area*: Option[float]
 
-proc newCircle*(center: DVec2, radius: float): Circle =
+proc newCircle*(center: Vector, radius: float): Circle =
   Circle(
     center: center,
     radius: radius
   )
 
 proc newCircle*(centerX, centerY, radius: float): Circle =
-  return newCircle(dvec2(centerX, centerY), radius)
+  return newCircle(vector(centerX, centerY), radius)
 
-func project*(this: Circle, location, axis: DVec2): DVec2 =
+func project*(this: Circle, location, axis: Vector): Vector =
   let
     newLoc = this.center + location
-    centerDot = axis.dot(newLoc)
-  return dvec2(centerDot - this.radius, centerDot + this.radius)
+    centerDot = axis.dotProduct(newLoc)
+  return vector(centerDot - this.radius, centerDot + this.radius)
 
 proc getArea*(this: Circle): float =
   if this.area.isNone:
     this.area = (PI * this.radius * this.radius).option
   return this.area.get
 
-proc getScaledInstance*(this: Circle, scale: DVec2): Circle =
+proc getScaledInstance*(this: Circle, scale: Vector): Circle =
   if scale.x == 0 or scale.y == 0:
     raise newException(Exception, "Scaled size cannot be 0!")
   return newCircle(this.center, this.radius * max(scale.x, scale.y))

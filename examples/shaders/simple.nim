@@ -14,8 +14,8 @@ let (_, image) = Images.loadImage("./examples/assets/images/king.png")
 image.setImageFilter(FILTER_NEAREST)
 
 let king = newSprite(image, 11, 8)
-king.scale = dvec2(10, 10)
-king.center = dvec2(width / 2, height / 2) * pixelToMeterScalar
+king.scale = vector(10, 10)
+king.center = vector(width / 2, height / 2) * pixelToMeterScalar
 layer.addChild(king)
 
 # Load a shader

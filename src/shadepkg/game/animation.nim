@@ -16,7 +16,7 @@ import
 
 type
   ClosureProc* = proc() {.closure.}
-  TrackType = int|float|DVec2|IVec2|DVec3|IVec3|ClosureProc
+  TrackType = int|float|Vector|ClosureProc
 makeEnum(TrackType, TrackKind, "tk")
 
 type
@@ -35,14 +35,8 @@ type
         framesInt: seq[Keyframe[int]]
       of tkFloat:
         framesFloat: seq[Keyframe[float]]
-      of tkDVec2:
-        framesDVec2: seq[Keyframe[DVec2]]
-      of tkIVec2:
-        framesIVec2: seq[Keyframe[IVec2]]
-      of tkDVec3:
-        framesDVec3: seq[Keyframe[DVec3]]
-      of tkIVec3:
-        IVec3: seq[Keyframe[IVec3]]
+      of tkVector:
+        framesVector: seq[Keyframe[Vector]]
       of tkClosureProc:
         framesClosureProc: seq[Keyframe[ClosureProc]]
         lastFiredProcIndex: int
@@ -106,28 +100,10 @@ proc newAnimationTrack*[T: TrackType](
       framesFloat: frames,
       wrapInterpolation: wrapInterpolation
     )
-  elif field is DVec2:
+  elif field is Vector:
     result = AnimationTrack(
-      kind: tkDVec2,
-      framesDVec2: frames,
-      wrapInterpolation: wrapInterpolation
-    )
-  elif field is IVec2:
-    result = AnimationTrack(
-      kind: tkIVec2,
-      framesIVec2: frames,
-      wrapInterpolation: wrapInterpolation
-    )
-  elif field is DVec3:
-    result = AnimationTrack(
-      kind: tkDVec3,
-      framesDVec3: frames,
-      wrapInterpolation: wrapInterpolation
-    )
-  elif field is IVec3:
-    result = AnimationTrack(
-      kind: IVec3,
-      IVec3: frames,
+      kind: tkVector,
+      framesVector: frames,
       wrapInterpolation: wrapInterpolation
     )
   elif field is ClosureProc:

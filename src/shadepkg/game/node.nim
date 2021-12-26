@@ -41,21 +41,21 @@ type
     additionQueue: Deque[Node]
     removeQueue: Deque[Node]
 
-    scale: DVec2
-    center: DVec2
+    scale: Vector
+    center: Vector
     # Rotation in degrees (clockwise).
     rotation: float
 
 method onCenterChanged*(this: Node) {.base.}
-method center*(this: Node): DVec2 {.base.}
-method `center=`*(this: Node, center: DVec2) {.base.}
+method center*(this: Node): Vector {.base.}
+method `center=`*(this: Node, center: Vector) {.base.}
 method `x=`*(this: Node, x: float) {.base.}
 method `y=`*(this: Node, y: float) {.base.}
 method shader*(this: Node): Shader {.base.}
 method `shader=`*(this: Node, shader: Shader) {.base.}
-method scale*(this: Node): DVec2 {.base.}
-method `scale=`*(this: Node, scale: DVec2) {.base.}
-method onParentScaled*(this: Node, parentScale: DVec2) {.base.}
+method scale*(this: Node): Vector {.base.}
+method `scale=`*(this: Node, scale: Vector) {.base.}
+method onParentScaled*(this: Node, parentScale: Vector) {.base.}
 method `rotation=`*(this: Node, rotation: float) {.base.}
 method onChildAdded*(this: Node, child: Node) {.base.}
 method onChildRemoved*(this: Node, child: Node) {.base.}
@@ -67,7 +67,7 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.}
 proc initNode*(node: Node, flags: set[LayerObjectFlags], centerX, centerY: float = 0.0) =
   node.flags = flags
   node.scale = VEC2_ONE
-  node.center = dvec2(centerX, centerY)
+  node.center = vector(centerX, centerY)
   initLock(node.childLock)
 
 proc newNode*(flags: set[LayerObjectFlags]): Node =
@@ -78,10 +78,10 @@ method onCenterChanged*(this: Node) {.base.} =
   ## Fired whenever the location of the node changes.
   discard
 
-method center*(this: Node): DVec2 {.base.} =
+method center*(this: Node): Vector {.base.} =
   return this.center
 
-method `center=`*(this: Node, center: DVec2) {.base.} =
+method `center=`*(this: Node, center: Vector) {.base.} =
   this.center = center
   this.onCenterChanged()
 
@@ -89,14 +89,14 @@ proc x*(this: Node): float =
   return this.center.x
 
 method `x=`*(this: Node, x: float) {.base.} =
-  `center=`(this, dvec2(x, this.center.y))
+  `center=`(this, vector(x, this.center.y))
   this.onCenterChanged()
 
 proc y*(this: Node): float =
   return this.center.y
 
 method `y=`*(this: Node, y: float) {.base.} =
-  `center=`(this, dvec2(this.center.x, y))
+  `center=`(this, vector(this.center.x, y))
   this.onCenterChanged()
 
 method shader*(this: Node): Shader {.base.} =
@@ -105,10 +105,10 @@ method shader*(this: Node): Shader {.base.} =
 method `shader=`*(this: Node, shader: Shader) {.base.} =
   this.shader = shader
 
-method scale*(this: Node): DVec2 {.base.} =
+method scale*(this: Node): Vector {.base.} =
   return this.scale
 
-method `scale=`*(this: Node, scale: DVec2) {.base.} =
+method `scale=`*(this: Node, scale: Vector) {.base.} =
   ## Sets the scale of the node.
   this.scale = scale
 
@@ -116,7 +116,7 @@ method `scale=`*(this: Node, scale: DVec2) {.base.} =
     for child in this.children:
       child.onParentScaled(scale)
 
-method onParentScaled*(this: Node, parentScale: DVec2) {.base.} =
+method onParentScaled*(this: Node, parentScale: Vector) {.base.} =
   ## Called when the parent node has been scaled.
   ## `parentScale` is the multiplicative scale of all parents above this node.
   let scale =

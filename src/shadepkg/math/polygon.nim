@@ -13,47 +13,47 @@ import
 export rectangle
 
 type Polygon* = ref object
-  vertices*: seq[DVec2]
+  vertices*: seq[Vector]
   bounds: Rectangle
-  center: Option[DVec2]
+  center: Option[Vector]
   clockwise: Option[bool]
   area: Option[float]
 
-proc newPolygon*(vertices: openArray[DVec2]): Polygon =
+proc newPolygon*(vertices: openArray[Vector]): Polygon =
   if vertices.len < 3:
     raise newException(Exception, "Polygon must have at least 3 vertices.")
   result = Polygon(vertices: toSeq(vertices))
 
 func len*(this: Polygon): int = this.vertices.len
 
-func `[]`*(this: Polygon, i: int): DVec2 = this.vertices[i]
-proc `[]=`*(this: var Polygon, i: int, vector: DVec2) =
+func `[]`*(this: Polygon, i: int): Vector = this.vertices[i]
+proc `[]=`*(this: var Polygon, i: int, vector: Vector) =
   this.vertices[i] = vector
 
-iterator items*(this: Polygon): DVec2 =
+iterator items*(this: Polygon): Vector =
   for v in this.vertices:
     yield v
 
-iterator pairs*(this: Polygon): (int, DVec2) =
+iterator pairs*(this: Polygon): (int, Vector) =
   for i, v in this.vertices:
     yield (i, v)
 
-func project*(this: Polygon, location, axis: DVec2): DVec2 =
+func project*(this: Polygon, location, axis: Vector): Vector =
   let startLoc = this[0] + location
   var
-    dotProduct = axis.dot(startLoc)
+    dotProduct = axis.dotProduct(startLoc)
     min = dotProduct
     max = dotProduct
   for i in 0..<this.len:
     let currLoc = this[i] + location
-    dotProduct = axis.dot(currLoc)
+    dotProduct = axis.dotProduct(currLoc)
     if dotProduct < min:
       min = dotProduct
     if dotProduct > max:
       max = dotProduct
-  return dvec2(min, max)
+  return vector(min, max)
 
-func getLinePixels*(v1, v2: DVec2, outPixels: var seq[DVec2]) =
+func getLinePixels*(v1, v2: Vector, outPixels: var seq[Vector]) =
   ## Generates an array of points which lie on the parameterized line.
   ## @param v1:
   ##   The starting point on the line.
@@ -80,7 +80,7 @@ func getLinePixels*(v1, v2: DVec2, outPixels: var seq[DVec2]) =
       x = v1.x
       y = v1y
     while y != v2y:
-      outPixels.add(dvec2(round(x), y))
+      outPixels.add(vector(round(x), y))
       x += inverseSlope
       y += signY
   else:
@@ -95,18 +95,18 @@ func getLinePixels*(v1, v2: DVec2, outPixels: var seq[DVec2]) =
       x = v1x
       y = v1.y
     while x != v2x:
-      outPixels.add(dvec2(x, round(y)))
+      outPixels.add(vector(x, round(y)))
       x += signX
       y += slope
 
-func generatePerimeterPixels*(this: Polygon): seq[DVec2] =
+func generatePerimeterPixels*(this: Polygon): seq[Vector] =
   ## Generates an array of points which lie on the Polygon's perimeter.
   var lastVertex = this.vertices[this.vertices.high]
   for i, vertex in this:
     getLinePixels(lastVertex, vertex, result)
     lastVertex = vertex
 
-func getAverage*(this: Polygon): DVec2 =
+func getAverage*(this: Polygon): Vector =
   ## Calculates the average of all of the vertices in the polygon.
   var
     x = 0f
@@ -115,7 +115,7 @@ func getAverage*(this: Polygon): DVec2 =
     x += v.x;
     y += v.y;
   let d = 1.0 / this.len.float;
-  return dvec2(x * d, y * d)
+  return vector(x * d, y * d)
 
 func getBounds*(this: Polygon): Rectangle =
   ## Gets the bounds of the polygon.
@@ -147,10 +147,10 @@ func getArea*(this: Polygon): float =
   if this.area.isNone:
     var
       area: float = 0
-      lastV: DVec2 = this[this.vertices.high]
+      lastV: Vector = this[this.vertices.high]
 
     for i, v in this:
-      let cross = lastV.cross(v)
+      let cross = lastV.crossProduct(v)
       area += cross
       lastV = v
 
@@ -158,7 +158,7 @@ func getArea*(this: Polygon): float =
 
   return this.area.get
 
-func center*(this: Polygon): DVec2 =
+func center*(this: Polygon): Vector =
   ## Gets the centroid of the Polygon.
   if this.center.isSome:
     return this.center.get
@@ -168,7 +168,7 @@ func center*(this: Polygon): DVec2 =
     lastV = this[this.vertices.high]
 
   for i, v in this:
-    let cross = lastV.cross(v)
+    let cross = lastV.crossProduct(v)
     area += cross
     x += (lastV.x + v.x) * cross
     y += (lastV.y + v.y) * cross
@@ -178,30 +178,30 @@ func center*(this: Polygon): DVec2 =
   let area6 = 1.0 / (area * 6.0)
   x *= area6
   y *= area6
-  this.center = some(dvec2(x, y))
+  this.center = some(vector(x, y))
   return this.center.get
 
-template getWidth*(this: DVec2): float = this.getBounds().width
-template getHeight*(this: DVec2): float = this.getBounds().height
-template getSize*(this: DVec2): DVec2 =
-  DVec2(this.getWidth(), this.getHeight())
+template getWidth*(this: Vector): float = this.getBounds().width
+template getHeight*(this: Vector): float = this.getBounds().height
+template getSize*(this: Vector): Vector =
+  Vector(this.getWidth(), this.getHeight())
 
-func getTranslatedInstance*(this: Polygon, delta: DVec2): Polygon =
-  var verts: seq[DVec2]
+func getTranslatedInstance*(this: Polygon, delta: Vector): Polygon =
+  var verts: seq[Vector]
   for v in this:
     verts.add(v + delta)
   return newPolygon(verts)
 
-func getScaledInstance*(this: Polygon, scale, anchorPoint: DVec2): Polygon =
+func getScaledInstance*(this: Polygon, scale, anchorPoint: Vector): Polygon =
   if scale.x == 0 or scale.y == 0:
     raise newException(Exception, "Scaled size cannot be 0!")
 
-  var verts: seq[DVec2]
+  var verts: seq[Vector]
   for i, v in this:
     verts.add(anchorPoint + (v - anchorPoint) * scale)
   return newPolygon(verts)
 
-func getScaledInstance*(this: Polygon, scale: DVec2): Polygon =
+func getScaledInstance*(this: Polygon, scale: Vector): Polygon =
   return this.getScaledInstance(scale, center(this))
 
 proc createRandomConvex*(vertexCount: int, width, height: float): Polygon =
@@ -278,20 +278,20 @@ proc createRandomConvex*(vertexCount: int, width, height: float): Polygon =
   shuffle(yComponents)
 
   # Combine the paired up components into vectors.
-  var vectors: seq[DVec2]
+  var vectors: seq[Vector]
   for i in 0..<vertexCount:
-    vectors.add(dvec2(xComponents[i], yComponents[i]))
+    vectors.add(vector(xComponents[i], yComponents[i]))
 
   # Sort the vectors by angle.
-  vectors = vectors.sortedByIt(it.angle().toRadians())
+  vectors = vectors.sortedByIt(it.getAngleRadians())
 
   # Lay the vectors end-to-end.
   var
     x, y, minPolyX, minPolyY: float
-    points: seq[DVec2]
+    points: seq[Vector]
 
   for i in 0..<vertexCount:
-    points.add(dvec2(x, y))
+    points.add(vector(x, y))
     x += vectors[i].x
     y += vectors[i].y
     minPolyX = min(minPolyX, x)
@@ -300,7 +300,7 @@ proc createRandomConvex*(vertexCount: int, width, height: float): Polygon =
   # Move the polygon to the origin.
   if minPolyX != 0 or minPolyY != 0:
     for i in 0..<vertexCount:
-      points[i] = points[i] - dvec2(minPolyX, minPolyY)
+      points[i] = points[i] - vector(minPolyX, minPolyY)
 
   return newPolygon(points)
 
@@ -317,7 +317,7 @@ proc isClockwise*(this: Polygon): bool =
     var
       sum = 0f
       lastV = this[this.len - 1]
-      currV: DVec2
+      currV: Vector
     for i in 0..<this.len:
       currV = this[i]
       sum += (currV.x - lastV.x) * (currV.y + lastV.y)
@@ -333,12 +333,12 @@ proc rotate*(this: var Polygon, deltaRotation: float) =
   for i, vertex in this:
     this[i] = vertex.rotateAround(deltaRotation, center)
 
-  this.center = none(DVec2)
+  this.center = none(Vector)
 
 proc fill*(this: Polygon, ctx: Target, color: Color = RED) =
-  var verts: seq[Vec2] = @[]
+  var verts: seq[Vector] = @[]
   for v in this.vertices:
-    verts.add vec2(v.x, v.y)
+    verts.add(vector(v.x, v.y))
 
   ctx.polygonFilled(
     cuint this.vertices.len,
@@ -349,8 +349,8 @@ proc fill*(this: Polygon, ctx: Target, color: Color = RED) =
 proc stroke*(this: Polygon, ctx: Target, color: Color = RED) =
   for i, v in this:
     var
-      start: DVec2 = this[i]
-      finish: DVec2 =
+      start: Vector = this[i]
+      finish: Vector =
         if i == this.len - 1:
           this[0]
         else:

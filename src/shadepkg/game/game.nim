@@ -60,7 +60,7 @@ proc initEngineSingleton*(
   Game.scene = scene
   Game.clearColor = clearColor
 
-  gamestate.resolutionPixels = dvec2(gameWidth.float, gameHeight.float)
+  gamestate.resolutionPixels = vector(gameWidth.float, gameHeight.float)
   gamestate.resolutionMeters = gamestate.resolutionPixels * pixelToMeterScalar
 
   initInputHandlerSingleton()

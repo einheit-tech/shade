@@ -33,10 +33,10 @@ runAnim.addNewAnimationTrack(
 )
 
 # Change the scale
-let scaleFrames: seq[KeyFrame[DVec2]] =
+let scaleFrames: seq[KeyFrame[Vector]] =
   @[
-    (dvec2(3, 3), 0.0),
-    (dvec2(3.3, 3.3), animDuration / 2),
+    (vector(3, 3), 0.0),
+    (vector(3.3, 3.3), animDuration / 2),
   ]
 
 runAnim.addNewAnimationTrack(
@@ -49,7 +49,7 @@ let animPlayer = newAnimationPlayer(("run", runAnim))
 animPlayer.playAnimation("run")
 king.addChild(animPlayer)
 
-king.center = dvec2(200, 200) * pixelToMeterScalar
+king.center = vector(200, 200) * pixelToMeterScalar
 layer.addChild king
 
 Game.start()

@@ -10,18 +10,22 @@ export
 
 type
   PhysicsBodyKind* = enum
-    # TODO: Define what these mean.
+    ## A body controlled by applied forces.
     pbDynamic,
+    ## A body that does not move based on forces, collisions, etc.
+    ## Mainly used for terrain, moving platforms, and the like.
     pbStatic,
+    ## A body which is controlled by code, rather than the physics engine.
+    ## TODO: More docs about Kinematic bodies
     pbKinematic
 
   PhysicsBody* = ref object of Node
     # TODO: PhysicsBodies need to support multiple CollisionShapes at some point.
     collisionShape*: CollisionShape
     material*: Material
-
-    velocity*: DVec2
-    force*: DVec2
+    velocity*: Vector
+    ## Total force applied to the center of mass.
+    force*: Vector
     angularVelocity*: float
 
     case kind*: PhysicsBodyKind:
@@ -70,11 +74,11 @@ template height*(this: PhysicsBody): float =
   else:
     0
 
-method `scale=`*(this: PhysicsBody, scale: DVec2) =
+method `scale=`*(this: PhysicsBody, scale: Vector) =
   procCall `scale=`(Node(this), scale)
   this.collisionShape.scale = scale
 
-method onParentScaled*(this: PhysicsBody, parentScale: DVec2) =
+method onParentScaled*(this: PhysicsBody, parentScale: Vector) =
   procCall Node(this).onParentScaled(parentScale)
   this.collisionShape.scale = this.scale * parentScale
 
@@ -82,13 +86,13 @@ method velocityX*(this: PhysicsBody): float {.base.} =
   this.velocity.x
 
 method `velocityX=`*(this: PhysicsBody, x: float) {.base.} =
-  this.velocity = dvec2(x, this.velocity.y)
+  this.velocity = vector(x, this.velocity.y)
 
 method velocityY*(this: PhysicsBody): float {.base.} =
   this.velocity.y
 
 method `velocityY=`*(this: PhysicsBody, y: float) {.base.} =
-  this.velocity = dvec2(this.velocity.x, y)
+  this.velocity = vector(this.velocity.x, y)
 
 method onChildAdded*(this: PhysicsBody, child: Node) =
   procCall Node(this).onChildAdded(child)

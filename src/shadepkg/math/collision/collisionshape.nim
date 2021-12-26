@@ -40,7 +40,7 @@ type
       unscaledPolygon: Polygon
       scaledPolygon: Polygon
 
-proc setShapeScale(this: CollisionShape, scale: DVec2)
+proc setShapeScale(this: CollisionShape, scale: Vector)
 proc getBounds*(this: CollisionShape): Rectangle
 
 proc initPolygonCollisionShape*(shape: CollisionShape, polygon: Polygon) =
@@ -87,7 +87,7 @@ method onCenterChanged*(this: CollisionShape) =
         this.center - this.scaledPolygon.center
       )
 
-proc setShapeScale(this: CollisionShape, scale: DVec2) =
+proc setShapeScale(this: CollisionShape, scale: Vector) =
   ## Sets the scale of the internal shape.
   ## This scales from the size of the original shape.
   case this.kind:
@@ -96,7 +96,7 @@ proc setShapeScale(this: CollisionShape, scale: DVec2) =
     of chkPolygon:
       this.scaledPolygon = this.unscaledPolygon.getScaledInstance(scale)
 
-method `scale=`*(this: CollisionShape, scale: DVec2) =
+method `scale=`*(this: CollisionShape, scale: Vector) =
   ## Scales the underlying shapes.
 
   # Scale shapes before notifying children nodes.
@@ -117,6 +117,29 @@ template width*(this: CollisionShape): float =
 
 template height*(this: CollisionShape): float =
   this.getBounds().height
+
+func polygonGetFarthest(this: Polygon, direction: Vector): seq[Vector] =
+  ## Gets the farthest point(s) of the Polygon in the direction of the vector.
+  var max = NegInf
+  for i in 0..<this.len:
+    let vertex = this[i]
+    # Normalize the numeric precision of the dot product.
+    # NOTE: strformat will be much slower.
+    let projection = round(direction.dotProduct(vertex), MaxFloatPrecision)
+    # TODO: Is this logic correct?
+    if projection >= max:
+      if projection > max:
+        max = projection
+        result.setLen(0)
+      result.add(vertex)
+
+func getFarthest*(this: CollisionShape, direction: Vector): seq[Vector] =
+  ## Gets the farthest point(s) of the CollisionHull in the direction of the vector.
+  case this.kind:
+    of chkCircle:
+      return @[this.scaledCircle.center + direction.normalize() * this.scaledCircle.radius]
+    of chkPolygon:
+      return polygonGetFarthest(this.scaledPolygon, direction)
 
 proc stroke*(this: CollisionShape, ctx: Target, color: Color = RED) =
   case this.kind:

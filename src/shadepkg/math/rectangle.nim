@@ -25,7 +25,7 @@ template width*(this: Rectangle): float =
 template height*(this: Rectangle): float =
   this.bottom - this.top
 
-proc getScaledInstance*(this: Rectangle, scale: DVec2): Rectangle =
+proc getScaledInstance*(this: Rectangle, scale: Vector): Rectangle =
   if scale.x == 0 or scale.y == 0:
     raise newException(Exception, "Scaled size cannot be 0!")
   newRectangle(
@@ -35,7 +35,7 @@ proc getScaledInstance*(this: Rectangle, scale: DVec2): Rectangle =
     this.bottom * scale.y
   )
 
-template contains*(this: Rectangle, v: DVec2): bool =
+template contains*(this: Rectangle, v: Vector): bool =
   return
     v.x >= this.left and v.x <= this.right and
     v.y >= this.top and v.y <= this.bottom

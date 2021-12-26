@@ -14,7 +14,7 @@ type
     justReleased: bool
 
   MouseInfo = object
-    location: DVec2
+    location: Vector
     buttons: Table[int, MouseButtonState]
     vScrolled: int
 
@@ -141,7 +141,7 @@ template wasRightMouseButtonJustReleased*(this: InputHandler): bool =
 template wheelScrolledLastFrame*(this: InputHandler): int =
   this.mouse.vScrolled
 
-proc mouseLocation*(this: InputHandler): DVec2 =
+proc mouseLocation*(this: InputHandler): Vector =
   return this.mouse.location
 
 proc update*(this: InputHandler, deltaTime: float) =
@@ -188,5 +188,5 @@ proc update*(this: InputHandler, deltaTime: float) =
 
 #     let text = mouseLocationText & leftButtonText & rightButtonText & pressedKeys
 
-#     ctx.image.fillText(font.typeset(text, dvec2(1920, 1080)), translate(dvec2(10, 10)))
+#     ctx.image.fillText(font.typeset(text, vector(1920, 1080)), translate(vector(10, 10)))
 
