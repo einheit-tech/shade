@@ -22,11 +22,12 @@ const
 let runAnim = newAnimation(animDuration, true)
 
 # Change the spritesheet coordinate
-let animCoordFrames: seq[KeyFrame[IVec2]] =
+let animCoordFrames: seq[KeyFrame[IVector]] =
   @[
-    (ivec2(0, 7), 0.0),
-    (ivec2(7, 7), animDuration - frameSpeed),
+    (ivector(0, 7), 0.0),
+    (ivector(7, 7), animDuration - frameSpeed),
   ]
+
 runAnim.addNewAnimationTrack(
   king.frameCoords,
   animCoordFrames
@@ -52,5 +53,6 @@ king.addChild(animPlayer)
 king.center = vector(200, 200) * pixelToMeterScalar
 layer.addChild king
 
+echo "start"
 Game.start()
 

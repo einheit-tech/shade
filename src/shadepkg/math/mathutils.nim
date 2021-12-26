@@ -37,6 +37,7 @@ func smootherStep*(x: float): float
 func smoothStep*(x: float): float
 func lerp*(startValue, endValue: float, completionRatio: CompletionRatio): float
 func lerp*(startValue, endValue: int, completionRatio: CompletionRatio): int
+func lerp*(startValue, endValue: IVector, completionRatio: CompletionRatio): IVector
 func lerpDiscrete*[T](startValue, endValue: T, completionRatio: CompletionRatio): T
 func minUnsignedAngle*(a1, a2, halfRange: float): float
 func minUnsignedDegreeAngle*(d1, d2: float): float
@@ -136,6 +137,12 @@ func lerp*(startValue, endValue: int, completionRatio: CompletionRatio): int =
       int floor(f)
     else:
       int ceil(f)
+
+func lerp*(startValue, endValue: IVector, completionRatio: CompletionRatio): IVector =
+  return ivector(
+    lerp(startValue.x, endValue.x, completionRatio),
+    lerp(startValue.y, endValue.y, completionRatio)
+  )
 
 func lerpDiscrete*[T](startValue, endValue: T, completionRatio: CompletionRatio): T =
   ## Returns the endValue when completionRatio reaches 1.0.
@@ -287,10 +294,6 @@ func cubicBezierVector*(t: float, p0, p1, p2, p3: Vector): Vector =
   return vector(cubicBezier(t, p0.x, p1.x, p2.x, p3.x), cubicBezier(t, p0.y, p1.y, p2.y, p3.y))
 
 # Vector
-
-const
-  VEC2_ZERO* = vector(0, 0)
-  VEC2_ONE* = vector(1.0, 1.0)
 
 proc ease*(v1, v2: Vector, completionRatio: CompletionRatio, f: EasingFunction[float]): Vector =
   ## Applies an easing function

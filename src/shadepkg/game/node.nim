@@ -66,7 +66,7 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.}
 
 proc initNode*(node: Node, flags: set[LayerObjectFlags], centerX, centerY: float = 0.0) =
   node.flags = flags
-  node.scale = VEC2_ONE
+  node.scale = VECTOR_ONE
   node.center = vector(centerX, centerY)
   initLock(node.childLock)
 
@@ -112,7 +112,8 @@ method `scale=`*(this: Node, scale: Vector) {.base.} =
   ## Sets the scale of the node.
   this.scale = scale
 
-  withLock(this.childLock):
+  # TODO: This locks up from animation player example.
+  withLock(this.childLock)
     for child in this.children:
       child.onParentScaled(scale)
 
@@ -120,7 +121,7 @@ method onParentScaled*(this: Node, parentScale: Vector) {.base.} =
   ## Called when the parent node has been scaled.
   ## `parentScale` is the multiplicative scale of all parents above this node.
   let scale =
-    if this.scale == VEC2_ONE:
+    if this.scale == VECTOR_ONE:
       parentScale
     else:
       parentScale * this.scale
@@ -223,13 +224,13 @@ method renderChildren*(this: Node, ctx: Target) {.base.} =
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   ## Renders the node with its given position, rotation, and scale.
   ## It will render its children relative to its center.
-  if this.center != VEC2_ZERO:
+  if this.center != VECTOR_ZERO:
     translate(this.center.x * meterToPixelScalar, this.center.y * meterToPixelScalar, 0)
 
   if this.rotation != 0:
     rotate(this.rotation, 0, 0, 1)
 
-  if this.scale != VEC2_ONE:
+  if this.scale != VECTOR_ONE:
     scale(this.scale.x, this.scale.y, 1.0)
 
   if this.shader != nil:
@@ -249,12 +250,12 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   if this.shader != nil:
     activateShaderProgram(0, nil)
 
-  if this.scale != VEC2_ONE:
+  if this.scale != VECTOR_ONE:
     scale(1 / this.scale.x, 1 / this.scale.y, 1.0)
 
   if this.rotation != 0:
     rotate(this.rotation, 0, 0, -1)
 
-  if this.center != VEC2_ZERO:
+  if this.center != VECTOR_ZERO:
     translate(-this.center.x * meterToPixelScalar, -this.center.y * meterToPixelScalar, 0)
 

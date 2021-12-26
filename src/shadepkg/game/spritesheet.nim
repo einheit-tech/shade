@@ -54,7 +54,7 @@ template `[]`*(this: Spritesheet, x, y: int): Rect =
   ## Gets the sprite image at (x, y).
   this.spriteRects[x + y * this.cols]
 
-template `[]`*(this: Spritesheet, x, y: int): Rect =
+template `[]`*(this: Spritesheet, coord: IVector): Rect =
   ## Gets the sprite image at (x, y).
   this[coord.x, coord.y]
 

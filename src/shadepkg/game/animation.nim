@@ -16,7 +16,7 @@ import
 
 type
   ClosureProc* = proc() {.closure.}
-  TrackType = int|float|Vector|ClosureProc
+  TrackType = int|float|Vector|IVector|ClosureProc
 makeEnum(TrackType, TrackKind, "tk")
 
 type
@@ -37,6 +37,8 @@ type
         framesFloat: seq[Keyframe[float]]
       of tkVector:
         framesVector: seq[Keyframe[Vector]]
+      of tkIVector:
+        framesIVector: seq[Keyframe[IVector]]
       of tkClosureProc:
         framesClosureProc: seq[Keyframe[ClosureProc]]
         lastFiredProcIndex: int
@@ -104,6 +106,12 @@ proc newAnimationTrack*[T: TrackType](
     result = AnimationTrack(
       kind: tkVector,
       framesVector: frames,
+      wrapInterpolation: wrapInterpolation
+    )
+  elif field is IVector:
+    result = AnimationTrack(
+      kind: tkIVector,
+      framesIVector: frames,
       wrapInterpolation: wrapInterpolation
     )
   elif field is ClosureProc:

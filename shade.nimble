@@ -15,17 +15,11 @@ requires "nim >= 1.6.2"
 requires "sdl2_nim >= 2.0.14.3"
 
 # Tasks
-task example, "Runs the basic example":
-  exec "nim -d:collisionoutlines -d:inputdebug r examples/basic/basic_game.nim"
+task shaders, "Runs the shader example":
+  exec "nim r --threads:on --multimethods:on -d:collisionoutlines -d:inputdebug examples/shaders/simple.nim"
 
-task physics, "Runs the physics example":
-  exec "nim r --threads:on --multimethods:on -d:collisionoutlines -d:inputdebug examples/physics/physics_example.nim"
-
-task platformer, "Runs the platformer example":
-  exec "nim r --threads:on --multimethods:on examples/platformer/platformer_example.nim"
-
-task platformerd, "Runs the platformer example with debug options enabled":
-  exec "nim r --threads:on --multimethods:on -d:debug -d:collisionoutlines -d:spriteBounds examples/platformer/platformer_example.nim"
+task animations, "Runs the animation player example":
+  exec "nim r --threads:on --multimethods:on -d:collisionoutlines -d:inputdebug examples/basic/animationplayer_example.nim"
 
 task runtests, "Runs all tests":
   exec "cd tests && nim r --hints:off testrunner.nim"
