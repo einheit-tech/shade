@@ -1,11 +1,9 @@
 import 
   ../math/collision/collisionshape,
-  material,
   node
 
 export
   node,
-  material,
   collisionshape
 
 type
@@ -21,8 +19,7 @@ type
 
   PhysicsBody* = ref object of Node
     # TODO: PhysicsBodies need to support multiple CollisionShapes at some point.
-    collisionShape*: CollisionShape
-    material*: Material
+    collisionShape: CollisionShape
     velocity*: Vector
     ## Total force applied to the center of mass.
     force*: Vector
@@ -37,17 +34,14 @@ type
 
 proc initPhysicsBody*(
   physicsBody: var PhysicsBody,
-  material: Material = ROCK,
   flags: set[LayerObjectFlags] = {loUpdate, loRender},
   centerX: float = 0.0,
   centerY: float = 0.0
 ) =
   initNode(Node(physicsBody), flags, centerX, centerY)
-  physicsBody.material = material
 
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
-  material: Material = ROCK,
   flags: set[LayerObjectFlags] = {loUpdate, loRender},
   centerX: float = 0.0,
   centerY: float = 0.0
@@ -56,7 +50,6 @@ proc newPhysicsBody*(
   result = PhysicsBody(kind: kind)
   initPhysicsBody(
     result,
-    material,
     flags,
     centerX,
     centerY
@@ -74,13 +67,13 @@ template height*(this: PhysicsBody): float =
   else:
     0
 
+template collisionShape*(this: PhysicsBody): CollisionShape =
+  this.collisionShape
+
 method `scale=`*(this: PhysicsBody, scale: Vector) =
   procCall `scale=`(Node(this), scale)
-  this.collisionShape.scale = scale
-
-method onParentScaled*(this: PhysicsBody, parentScale: Vector) =
-  procCall Node(this).onParentScaled(parentScale)
-  this.collisionShape.scale = this.scale * parentScale
+  if this.collisionShape != nil:
+    this.collisionShape.scale = scale
 
 method velocityX*(this: PhysicsBody): float {.base.} =
   this.velocity.x
@@ -96,6 +89,10 @@ method `velocityY=`*(this: PhysicsBody, y: float) {.base.} =
 
 method onChildAdded*(this: PhysicsBody, child: Node) =
   procCall Node(this).onChildAdded(child)
+  # TODO: In the future, support multiple shapes per body.
   if child of CollisionShape:
     this.collisionShape = CollisionShape(child)
+    # TODO: This may not be accurate
+    # if the scale of the body's parent is not (1, 1)
+    this.collisionShape.scale = this.scale
 

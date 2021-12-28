@@ -29,7 +29,7 @@ type
     friction*: float
     mass*: float
 
-    material: Material
+    material*: Material
     bounds: Rectangle
 
     case kind*: CollisionShapeKind:
@@ -86,6 +86,11 @@ method onCenterChanged*(this: CollisionShape) =
       this.scaledPolygon = this.scaledPolygon.getTranslatedInstance(
         this.center - this.scaledPolygon.center
       )
+
+method onParentScaled*(this: CollisionShape, parentScale: Vector) =
+  procCall Node(this).onParentScaled(parentScale)
+  # We want to scale up to match the parent's size.
+  this.scale = parentScale
 
 proc setShapeScale(this: CollisionShape, scale: Vector) =
   ## Sets the scale of the internal shape.

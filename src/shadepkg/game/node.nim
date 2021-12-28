@@ -111,12 +111,8 @@ method scale*(this: Node): Vector {.base.} =
 method `scale=`*(this: Node, scale: Vector) {.base.} =
   ## Sets the scale of the node.
   this.scale = scale
-
-  # TODO: This locks up from animation player example.
-  # This was broken previously (on master), just didn't notice.
-  withLock(this.childLock):
-    for child in this.children:
-      child.onParentScaled(scale)
+  for child in this.children:
+    child.onParentScaled(scale)
 
 method onParentScaled*(this: Node, parentScale: Vector) {.base.} =
   ## Called when the parent node has been scaled.
@@ -127,10 +123,9 @@ method onParentScaled*(this: Node, parentScale: Vector) {.base.} =
     else:
       parentScale * this.scale
   
-  withLock(this.childLock):
-    # The whole tree needs to be notified of scaling.
-    for child in this.children:
-      child.onParentScaled(scale)
+  # The whole tree needs to be notified of scaling.
+  for child in this.children:
+    child.onParentScaled(scale)
 
 template `rotation`*(this: Node): float =
   this.rotation

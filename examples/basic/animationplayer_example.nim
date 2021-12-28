@@ -53,6 +53,5 @@ king.addChild(animPlayer)
 king.center = vector(200, 200) * pixelToMeterScalar
 layer.addChild king
 
-echo "start"
 Game.start()
 
