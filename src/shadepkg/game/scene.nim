@@ -2,7 +2,6 @@ import algorithm
 
 import
   layer,
-  constants,
   camera
 
 export layer
@@ -57,9 +56,9 @@ proc renderWithCamera(this: Scene, ctx: Target) =
       let halfViewportSize = vector(
         this.camera.viewport.width,
         this.camera.viewport.height
-      ) * meterToPixelScalar * 0.5
+      ) * 0.5
 
-      let trans = (this.camera.center * meterToPixelScalar) * inversedScalar - halfViewportSize
+      let trans = (this.camera.center) * inversedScalar - halfViewportSize
       translate(
         -trans.x,
         -trans.y,

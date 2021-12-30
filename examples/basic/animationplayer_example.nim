@@ -56,7 +56,7 @@ king.onUpdate = proc(this: Node, deltaTime: float) =
 king.onRender = proc(this: Node, ctx: Target) =
   kingSprite.render(ctx)
 
-king.center = vector(200, 200) * pixelToMeterScalar
+king.center = vector(200, 200)
 layer.addChild king
 
 Game.start()

@@ -2,7 +2,7 @@ import sdl2_nim/sdl_gpu
 
 export sdl_gpu except Camera
 
-template renderNodeChild*(ChildType: typedesc, ParentType: typedesc, body: untyped): untyped =
+template renderNodeChild*(ChildType: typedesc, body: untyped): untyped =
   ## Macro as a helper for the render method.
   ## `this`, `ctx`, and `callback` are all injected.
   ## All code in the macro is ran inside the parent's render callback.
@@ -18,7 +18,7 @@ template renderNodeChild*(ChildType: typedesc, ParentType: typedesc, body: untyp
     ctx {.inject.}: Target,
     callback {.inject.}: proc() = nil
   ) =
-    procCall `ParentType`(this).render(ctx, proc =
+    procCall `Node`(this).render(ctx, proc =
       `body`
     )
 

@@ -32,28 +32,6 @@ type
       of pbStatic:
         discard
 
-# NOTE:
-# When a PhysicsBody is scaled,
-# we create a copy of the internal collisionShape
-# e.g. unscaledPolygon and scaledPolygon.
-# We _render_ the unscaledPolygon,
-# but use the scaledPolygon for physics.
-
-# TODO: How do we know about scaling of the whole tree?
-# Propagate downward when `scale=` is called,
-# but when a CollisionShape is attached to an already-scaled node?
-# We _could_ query the whole tree;
-# this would only be done when a child is added,
-# so it isn't that costly.
-# It does mean we'll need children to know about their parents?
-
-# When the body is rotated,
-# TODO:
-
-# When the body is translated,
-# we do nothing to the body
-# because children are relative.
-
 proc initPhysicsBody*(physicsBody: var PhysicsBody, flags: set[LayerObjectFlags] = {loUpdate, loRender}) =
   initNode(Node(physicsBody), flags)
 
@@ -91,4 +69,12 @@ template velocityY*(this: PhysicsBody): float =
 
 template `velocityY=`*(this: PhysicsBody, y: float) =
   this.velocity = vector(this.velocity.x, y)
+
+PhysicsBody.renderNodeChild:
+  when defined(collisionoutlines):
+    if this.collisionShape != nil:
+      this.collisionShape.render(ctx)
+
+  if callback != nil:
+    callback()
 

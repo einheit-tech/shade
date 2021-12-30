@@ -16,10 +16,13 @@ requires "sdl2_nim >= 2.0.14.3"
 
 # Tasks
 task shaders, "Runs the shader example":
-  exec "nim r --threads:on --multimethods:on -d:collisionoutlines -d:inputdebug examples/shaders/simple.nim"
+  exec "nim r --threads:on --multimethods:on -d:inputdebug examples/shaders/simple.nim"
 
 task animations, "Runs the animation player example":
-  exec "nim r --threads:on --multimethods:on -d:collisionoutlines -d:inputdebug examples/basic/animationplayer_example.nim"
+  exec "nim r --threads:on --multimethods:on -d:inputdebug examples/basic/animationplayer_example.nim"
+
+task physics, "Runs the physics example":
+  exec "nim r --threads:on --multimethods:on -d:collisionoutlines -d:inputdebug examples/physics/physics_example.nim"
 
 task runtests, "Runs all tests":
   exec "cd tests && nim r --hints:off testrunner.nim"

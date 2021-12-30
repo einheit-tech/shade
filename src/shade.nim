@@ -1,7 +1,6 @@
 import shadepkg / [
   errors,
   game/game,
-  game/constants,
   game/gamestate,
   input/inputhandler,
   audio/audioplayer,
@@ -32,7 +31,6 @@ import shadepkg / [
 export
   errors,
   game,
-  constants,
   gamestate,
   spritesheet,
   sprite,

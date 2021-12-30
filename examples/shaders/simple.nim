@@ -15,7 +15,7 @@ image.setImageFilter(FILTER_NEAREST)
 
 let king = newNode({loUpdate, loRender})
 king.scale = vector(10, 10)
-king.center = vector(width / 2, height / 2) * pixelToMeterScalar
+king.center = vector(width / 2, height / 2)
 
 let kingSprite = newSprite(image, 11, 8)
 

@@ -1,5 +1,4 @@
 import
-  constants,
   layer,
   physicsbody,
   ../math/mathutils
@@ -9,7 +8,7 @@ export
   physicsbody
 
 # TODO: Tune
-const DEFAULT_GRAVITY* = vector(0, 2000 * pixelToMeterScalar)
+const DEFAULT_GRAVITY* = vector(0, 2000)
 
 type PhysicsLayer* = ref object of Layer
 
@@ -23,7 +22,4 @@ proc initPhysicsLayer*(
 proc newPhysicsLayer*(gravity: Vector = DEFAULT_GRAVITY, z: float = 1.0): PhysicsLayer =
   result = PhysicsLayer()
   initPhysicsLayer(result, gravity, z)
-
-proc destroy*(this: PhysicsLayer) =
-  this.removeAllChildren()
 

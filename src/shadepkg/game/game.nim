@@ -7,7 +7,6 @@ import
 
 import
   scene,
-  constants,
   gamestate,
   ../input/inputhandler,
   ../audio/audioplayer,
@@ -61,7 +60,7 @@ proc initEngineSingleton*(
   Game.clearColor = clearColor
 
   gamestate.resolutionPixels = vector(gameWidth.float, gameHeight.float)
-  gamestate.resolutionMeters = gamestate.resolutionPixels * pixelToMeterScalar
+  gamestate.resolutionMeters = gamestate.resolutionPixels
 
   initInputHandlerSingleton()
   initAudioPlayerSingleton()

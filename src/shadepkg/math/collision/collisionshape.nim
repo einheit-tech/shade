@@ -7,7 +7,6 @@
 import sdl2_nim/sdl_gpu
 
 import
-  ../../game/constants,
   ../../game/node,
   ../../game/material,
   ../circle,
@@ -80,16 +79,16 @@ func getFarthest*(this: CollisionShape, direction: Vector): seq[Vector] =
 proc stroke*(this: CollisionShape, ctx: Target, color: Color = RED) =
   case this.kind:
   of chkPolygon:
-    this.polygon.getScaledInstance(VEC2_METERS_TO_PIXELS).stroke(ctx, color)
+    this.polygon.stroke(ctx, color)
   of chkCircle:
-    this.circle.getScaledInstance(VEC2_METERS_TO_PIXELS).stroke(ctx, color)
+    this.circle.stroke(ctx, color)
 
 proc fill*(this: CollisionShape, ctx: Target, color: Color) =
   case this.kind:
   of chkPolygon:
-    this.polygon.getScaledInstance(VEC2_METERS_TO_PIXELS).fill(ctx, color)
+    this.polygon.fill(ctx, color)
   of chkCircle:
-    this.circle.getScaledInstance(VEC2_METERS_TO_PIXELS).fill(ctx, color)
+    this.circle.fill(ctx, color)
 
 render(CollisionShape):
   this.stroke(ctx)

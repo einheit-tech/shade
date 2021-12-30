@@ -4,7 +4,6 @@ import
 
 import
   gamestate,
-  constants,
   ../render/render,
   ../render/shader,
   ../math/mathutils
@@ -70,7 +69,7 @@ method update*(this: Node, deltaTime: float) {.base.} =
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   ## Renders the node with its given position, rotation, and scale.
   if this.center != VECTOR_ZERO:
-    translate(this.center.x * meterToPixelScalar, this.center.y * meterToPixelScalar, 0)
+    translate(this.center.x, this.center.y, 0)
 
   if this.rotation != 0:
     rotate(this.rotation, 0, 0, 1)
@@ -97,5 +96,5 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
     rotate(this.rotation, 0, 0, -1)
 
   if this.center != VECTOR_ZERO:
-    translate(-this.center.x * meterToPixelScalar, -this.center.y * meterToPixelScalar, 0)
+    translate(-this.center.x, -this.center.y, 0)
 
