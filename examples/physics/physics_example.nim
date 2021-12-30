@@ -4,7 +4,7 @@ const
   width = 1920
   height = 1080
 
-initEngineSingleton("Animation Player Example", width, height)
+initEngineSingleton("Physics Example", width, height)
 let layer = newPhysicsLayer()
 Game.scene.addLayer(layer)
 
@@ -17,7 +17,7 @@ body1.center = vector(100, 100)
 body1.velocity = vector(100, 100)
 layer.addChild(body1)
 
-let body2 = newPhysicsBody(pbDynamic)
+let body2 = newPhysicsBody(pbStatic)
 let body2Hull = newPolygonCollisionShape(newPolygon([
   vector(-100, -100),
   vector(100, -100),

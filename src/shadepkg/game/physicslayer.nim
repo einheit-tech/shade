@@ -76,7 +76,10 @@ method update*(this: PhysicsLayer, deltaTime: float) =
       )
 
       if collisionResult != nil:
-        echo "collision!"
+        # TODO: Proper collision resolution.
+        let resultA = if collisionResult.isCollisionOwnerA: collisionResult else: collisionResult.flip()
+        let resultB = if collisionResult.isCollisionOwnerA: collisionResult.flip() else: collisionResult
+        bodyA.center += resultA.getMinimumTranslationVector()
 
 PhysicsLayer.renderAsChildOf(Layer):
   for body in this.physicsBodyChildIterator():
