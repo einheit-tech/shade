@@ -2,13 +2,13 @@ import sdl2_nim/sdl_gpu
 
 export sdl_gpu except Camera
 
-template renderNodeChild*(ChildType: typedesc, body: untyped): untyped =
-  ## Macro as a helper for the render method.
+template renderAsChildOf*(ChildType, ParentType: typedesc, body: untyped): untyped =
+  ## Helper for the render method.
   ## `this`, `ctx`, and `callback` are all injected.
   ## All code in the macro is ran inside the parent's render callback.
   ##
   ## Example:
-  ## renderNodeChild(B, A):
+  ## renderChild(B, A):
   ##   ctx.blit(...)
   ##   if callback != nil:
   ##    callback()
@@ -18,11 +18,34 @@ template renderNodeChild*(ChildType: typedesc, body: untyped): untyped =
     ctx {.inject.}: Target,
     callback {.inject.}: proc() = nil
   ) =
-    procCall `Node`(this).render(ctx, proc =
+    procCall `ParentType`(this).render(ctx, proc =
       `body`
     )
 
+template renderAsNodeChild*(ChildType: typedesc, body: untyped): untyped =
+  ## Helper for the render method.
+  ## `this`, `ctx`, and `callback` are all injected.
+  ## All code in the macro is ran inside the parent's render callback.
+  ##
+  ## Example:
+  ## renderNodeChild(T):
+  ##   ctx.blit(...)
+  ##   if callback != nil:
+  ##    callback()
+  ChildType.renderAsChildOf(Node):
+    body
+
+template renderAsParent*(T: typedesc, body: untyped): untyped =
+  ## Creates a render method (for a superclass).
+  method render*(
+    this {.inject.}: `T`,
+    ctx {.inject.}: Target,
+    callback {.inject.}: proc() = nil
+  ) {.base.} =
+    `body`
+
 template render*(T: typedesc, body: untyped): untyped =
+  ## Creates a standalone render proc.
   proc render*(this {.inject.}: `T`, ctx {.inject.}: Target) =
     `body`
 

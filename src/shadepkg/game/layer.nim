@@ -41,7 +41,11 @@ proc `z=`*(this: Layer, z: float) =
     for listener in this.zChangeListeners:
       listener(oldZ, this.z)
 
-proc addChildNow(this: Layer, child: Node) =
+iterator childIterator*(this: Layer): Node =
+  for child in this.children:
+    yield child
+
+method addChildNow*(this: Layer, child: Node) {.base.} =
   ## Adds the child IMMEDIATELY.
   ## This is unsafe; use addChild unless you know what you're doing.
   this.children.add(child)
@@ -56,10 +60,10 @@ proc addChild*(this: Layer, child: Node) =
   else:
     this.additionQueue.addLast(child)
 
-proc removeChildNow(this: Layer, child: Node) =
+method removeChildNow*(this: Layer, child: Node) {.base.} =
   ## Removes the child IMMEDIATELY.
   ## This is unsafe; use removeChild unless you know what you're doing.
-  var index: int = -1
+  var index = -1
   for i, n in this.children:
     if n == child:
       index = i
@@ -108,7 +112,7 @@ proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeLis
   this.zChangeListeners.add(onceListener)
   return onceListener
 
-proc update*(this: Layer, deltaTime: float) =
+method update*(this: Layer, deltaTime: float) {.base.} =
   withLock(this.childLock):
     while this.additionQueue.len > 0:
       let child = this.additionQueue.popFirst()
@@ -122,7 +126,7 @@ proc update*(this: Layer, deltaTime: float) =
       if loUpdate in child.flags:
         child.update(deltaTime)
 
-Layer.render:
+Layer.renderAsParent:
   for child in this.children:
     if loRender in child.flags:
       child.render(ctx)

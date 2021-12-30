@@ -71,7 +71,7 @@ method update*(this: PhysicsBody, deltaTime: float) =
   procCall Node(this).update(deltaTime)
   this.center += this.velocity * deltaTime
 
-PhysicsBody.renderNodeChild:
+PhysicsBody.renderAsNodeChild:
   when defined(collisionoutlines):
     if this.collisionShape != nil:
       this.collisionShape.render(ctx)

@@ -62,7 +62,7 @@ func projectionFrom*(vertices: seq[Vector], axis: Vector): MinMaxProjectionInter
     maxPoint: Option[Vector]
 
   for vert in vertices:
-    let value = vert.dot(axis)
+    let value = vert.dotProduct(axis)
     if value < min:
       min = value
       minPoint = vert.option
@@ -279,7 +279,7 @@ proc collides*(
     let projB = hullB.project(VectorZero, axis)
 
     # Project the velocity on the current axis.
-    let moveVectorProjection = relativeMoveVector.dot(axis)
+    let moveVectorProjection = relativeMoveVector.dotProduct(axis)
     var totalProjectionMinA = projA.x
     var totalProjectionMaxA = projA.y
 
@@ -342,7 +342,7 @@ proc collides*(
   if maxEnterTimeRatio <= minExitTimeRatio:
     if contactNormal.isSome:
       # Dynamic collision
-      let moveVectorDot = contactNormal.get.dot(relativeMoveVector)
+      let moveVectorDot = contactNormal.get.dotProduct(relativeMoveVector)
       if moveVectorDot != 0:
         # Calculate the location of hullA at time of collision
         let collisionLocA = locA + (relativeMoveVector * maxEnterTimeRatio)
