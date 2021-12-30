@@ -1,4 +1,7 @@
-import node
+import
+  node,
+  locks,
+  deques
 
 export node
 
@@ -11,13 +14,18 @@ type
   ## Layers have a `z` axis coordinate.
   ## All nodes on the layer are assumed to share this same coordinate.
   ##
-  Layer* = ref object of Node
+  Layer* = ref object of RootObj
     # Location of the layer on the `z` axis.
     z: float
     zChangeListeners: seq[ZChangeListener]
 
+    children: seq[Node]
+    childLock: Lock
+    additionQueue: Deque[Node]
+    removeQueue: Deque[Node]
+
 proc initLayer*(layer: Layer, z: float = 1.0) =
-  initNode(layer, {loUpdate, loRender})
+  initLock(layer.childLock)
   layer.z = z
 
 proc newLayer*(z: float = 1.0): Layer =
@@ -32,6 +40,52 @@ proc `z=`*(this: Layer, z: float) =
     this.z = z
     for listener in this.zChangeListeners:
       listener(oldZ, this.z)
+
+proc addChildNow(this: Layer, child: Node) =
+  ## Adds the child IMMEDIATELY.
+  ## This is unsafe; use addChild unless you know what you're doing.
+  this.children.add(child)
+
+proc addChild*(this: Layer, child: Node) =
+  ## Adds the child to this Node.
+  ## If the children are being iterated over at the time of this call,
+  ## the child will be added at the start of the next update.
+  if tryAcquire(this.childLock):
+    this.addChildNow(child)
+    this.childLock.release()
+  else:
+    this.additionQueue.addLast(child)
+
+proc removeChildNow(this: Layer, child: Node) =
+  ## Removes the child IMMEDIATELY.
+  ## This is unsafe; use removeChild unless you know what you're doing.
+  var index: int = -1
+  for i, n in this.children:
+    if n == child:
+      index = i
+      break
+  
+  if index >= 0:
+    this.children.delete(index)
+
+proc removeChild*(this: Layer, child: Node) =
+  ## Removes the child from this Node.
+  ## If the children are being iterated over at the time of this call,
+  ## the child will be removed at the start of the next update.
+  if tryAcquire(this.childLock):
+    this.removeChildNow(child)
+    this.childLock.release()
+  else:
+    this.removeQueue.addLast(child)
+
+proc removeAllChildren*(this: Layer) =
+  ## Removes all children from the node.
+  if tryAcquire(this.childLock):
+    this.children.setLen(0)
+    this.childLock.release()
+  else:
+    for child in this.children:
+      this.removeQueue.addLast(child)
 
 proc addZChangeListener*(this: Layer, listener: ZChangeListener) =
   this.zChangeListeners.add(listener)
@@ -53,4 +107,23 @@ proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeLis
 
   this.zChangeListeners.add(onceListener)
   return onceListener
+
+proc update*(this: Layer, deltaTime: float) =
+  withLock(this.childLock):
+    while this.additionQueue.len > 0:
+      let child = this.additionQueue.popFirst()
+      this.addChildNow(child)
+
+    while this.removeQueue.len > 0:
+      let child = this.removeQueue.popFirst()
+      this.removeChildNow(child)
+
+    for child in this.children:
+      if loUpdate in child.flags:
+        child.update(deltaTime)
+
+Layer.render:
+  for child in this.children:
+    if loRender in child.flags:
+      child.render(ctx)
 

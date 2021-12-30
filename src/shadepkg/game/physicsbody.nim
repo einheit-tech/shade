@@ -32,28 +32,38 @@ type
       of pbStatic:
         discard
 
-proc initPhysicsBody*(
-  physicsBody: var PhysicsBody,
-  flags: set[LayerObjectFlags] = {loUpdate, loRender},
-  centerX: float = 0.0,
-  centerY: float = 0.0
-) =
-  initNode(Node(physicsBody), flags, centerX, centerY)
+# NOTE:
+# When a PhysicsBody is scaled,
+# we create a copy of the internal collisionShape
+# e.g. unscaledPolygon and scaledPolygon.
+# We _render_ the unscaledPolygon,
+# but use the scaledPolygon for physics.
+
+# TODO: How do we know about scaling of the whole tree?
+# Propagate downward when `scale=` is called,
+# but when a CollisionShape is attached to an already-scaled node?
+# We _could_ query the whole tree;
+# this would only be done when a child is added,
+# so it isn't that costly.
+# It does mean we'll need children to know about their parents?
+
+# When the body is rotated,
+# TODO:
+
+# When the body is translated,
+# we do nothing to the body
+# because children are relative.
+
+proc initPhysicsBody*(physicsBody: var PhysicsBody, flags: set[LayerObjectFlags] = {loUpdate, loRender}) =
+  initNode(Node(physicsBody), flags)
 
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
-  flags: set[LayerObjectFlags] = {loUpdate, loRender},
-  centerX: float = 0.0,
-  centerY: float = 0.0
+  flags: set[LayerObjectFlags] = {loUpdate, loRender}
 ): PhysicsBody =
   ## Creates a new PhysicsBody.
   result = PhysicsBody(kind: kind)
-  initPhysicsBody(
-    result,
-    flags,
-    centerX,
-    centerY
-  )
+  initPhysicsBody(result, flags)
 
 template width*(this: PhysicsBody): float =
   if this.collisionShape != nil:
@@ -70,29 +80,15 @@ template height*(this: PhysicsBody): float =
 template collisionShape*(this: PhysicsBody): CollisionShape =
   this.collisionShape
 
-method `scale=`*(this: PhysicsBody, scale: Vector) =
-  procCall `scale=`(Node(this), scale)
-  if this.collisionShape != nil:
-    this.collisionShape.scale = scale
-
-method velocityX*(this: PhysicsBody): float {.base.} =
+template velocityX*(this: PhysicsBody): float =
   this.velocity.x
 
-method `velocityX=`*(this: PhysicsBody, x: float) {.base.} =
+template `velocityX=`*(this: PhysicsBody, x: float) =
   this.velocity = vector(x, this.velocity.y)
 
-method velocityY*(this: PhysicsBody): float {.base.} =
+template velocityY*(this: PhysicsBody): float =
   this.velocity.y
 
-method `velocityY=`*(this: PhysicsBody, y: float) {.base.} =
+template `velocityY=`*(this: PhysicsBody, y: float) =
   this.velocity = vector(this.velocity.x, y)
-
-method onChildAdded*(this: PhysicsBody, child: Node) =
-  procCall Node(this).onChildAdded(child)
-  # TODO: In the future, support multiple shapes per body.
-  if child of CollisionShape:
-    this.collisionShape = CollisionShape(child)
-    # TODO: This may not be accurate
-    # if the scale of the body's parent is not (1, 1)
-    this.collisionShape.scale = this.scale
 

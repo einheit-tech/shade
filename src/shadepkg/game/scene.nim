@@ -2,33 +2,22 @@ import algorithm
 
 import
   layer,
-  node,
   constants,
   camera
 
-export
-  layer,
-  node
+export layer
 
-type Scene* = ref object of Node
+type Scene* = ref object
   layers: seq[Layer]
   isLayerOrderValid: bool
-  camera: Camera
+  camera*: Camera
 
 proc initScene*(scene: Scene) =
-  initNode(Node(scene), {loUpdate, loRender})
   scene.isLayerOrderValid = true
 
 proc newScene*(): Scene = 
   result = Scene()
   initScene(result)
-
-proc `camera=`*(this: Scene, camera: Camera) =
-  if this.camera != nil:
-    this.removeChild(this.camera)
-
-  this.camera = camera
-  this.addChild(this.camera)
 
 proc invalidateLayerOrder(this: Scene) =
   this.isLayerOrderValid = false
@@ -46,8 +35,10 @@ proc sortLayers(this: Scene) =
   if not this.isLayerOrderValid:
     this.layers = this.layers.sortedByIt(it.z)
 
-method update*(this: Scene, deltaTime: float) =
-  procCall Node(this).update(deltaTime)
+proc update*(this: Scene, deltaTime: float) =
+  if this.camera != nil:
+    this.camera.update(deltaTime)
+
   this.sortLayers()
   this.forEachLayer(layer):
     layer.update(deltaTime)
@@ -63,7 +54,11 @@ proc renderWithCamera(this: Scene, ctx: Target) =
     if relativeZ > 0:
 
       inversedScalar = 1.0 / relativeZ
-      let halfViewportSize = vector(this.camera.viewport.width, this.camera.viewport.height) * meterToPixelScalar * 0.5
+      let halfViewportSize = vector(
+        this.camera.viewport.width,
+        this.camera.viewport.height
+      ) * meterToPixelScalar * 0.5
+
       let trans = (this.camera.center * meterToPixelScalar) * inversedScalar - halfViewportSize
       translate(
         -trans.x,
@@ -82,14 +77,11 @@ proc renderWithCamera(this: Scene, ctx: Target) =
         0
       )
 
-render(Scene, Node):
+Scene.render:
   this.sortLayers()
   if this.camera != nil:
     this.renderWithCamera(ctx)
   else:
     this.forEachLayer(l):
       l.render(ctx)
-
-  if callback != nil:
-    callback()
 

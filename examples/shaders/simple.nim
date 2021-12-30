@@ -13,9 +13,15 @@ Game.scene.addLayer layer
 let (_, image) = Images.loadImage("./examples/assets/images/king.png")
 image.setImageFilter(FILTER_NEAREST)
 
-let king = newSprite(image, 11, 8)
+let king = newNode({loUpdate, loRender})
 king.scale = vector(10, 10)
 king.center = vector(width / 2, height / 2) * pixelToMeterScalar
+
+let kingSprite = newSprite(image, 11, 8)
+
+king.onRender = proc(this: Node, ctx: Target) =
+  kingSprite.render(ctx)
+
 layer.addChild(king)
 
 # Load a shader

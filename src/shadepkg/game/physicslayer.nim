@@ -27,13 +27,3 @@ proc newPhysicsLayer*(gravity: Vector = DEFAULT_GRAVITY, z: float = 1.0): Physic
 proc destroy*(this: PhysicsLayer) =
   this.removeAllChildren()
 
-method onChildAdded*(this: PhysicsLayer, child: Node) =
-  procCall Layer(this).onChildAdded(child)
-  if child of PhysicsBody:
-    # TODO: Add to quadtree/spatial hash/etc for broad phase.
-    discard
-
-method update*(this: PhysicsLayer, deltaTime: float) =
-  procCall Layer(this).update(deltaTime)
-  # TODO: Process physics
-

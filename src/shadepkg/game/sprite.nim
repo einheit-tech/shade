@@ -9,7 +9,7 @@ when defined(spriteBounds):
 export node, spritesheet, mathutils
 
 type
-  Sprite* = ref object of Node
+  Sprite* = ref object
     spritesheet: Spritesheet
     frameCoords*: IVector
 
@@ -18,10 +18,8 @@ proc initSprite*(
   image: Image,
   hframes,
   vframes: int,
-  flags: set[LayerObjectFlags] = {loUpdate, loRender},
   frameCoords: IVector = IVECTOR_ZERO
 ) =
-  initNode(Node(sprite), flags)
   sprite.spritesheet = newSpritesheet(image, hframes, vframes)
   sprite.frameCoords = frameCoords
 
@@ -29,13 +27,12 @@ proc newSprite*(
   image: Image,
   hframes: int = 1,
   vframes: int = 1,
-  flags: set[LayerObjectFlags] = {loUpdate, loRender},
   frameCoords: IVector = IVECTOR_ZERO
 ): Sprite =
   result = Sprite()
-  initSprite(result, image, hframes, vframes, flags, frameCoords)
+  initSprite(result, image, hframes, vframes, frameCoords)
 
-render(Sprite, Node):
+Sprite.render:
   # `blit` renders the image centered at the given location.
   blit(
     this.spritesheet.image,
@@ -55,7 +52,4 @@ render(Sprite, Node):
       rect.h / 2,
       BLUE
     )
-
-  if callback != nil:
-    callback()
 

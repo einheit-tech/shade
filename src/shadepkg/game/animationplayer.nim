@@ -1,5 +1,4 @@
 import
-  node,
   animation,
   tables
 
@@ -7,7 +6,7 @@ export animation
 
 type
   NamedAnimation* = tuple[name: string, animation: Animation]
-  AnimationPlayer* = ref object of Node
+  AnimationPlayer* = ref object
     # Table[animationName, Animation]
     animations: Table[string, Animation]
     currentAnimation: Animation
@@ -19,7 +18,6 @@ proc initAnimationPlayer*(
   player: AnimationPlayer,
   animations: varargs[NamedAnimation]
 ) =
-  initNode(Node(player), {loUpdate})
   player.addAnimations(animations)
 
 proc newAnimationPlayer*(animations: varargs[NamedAnimation]): AnimationPlayer =
@@ -51,9 +49,7 @@ template currentAnimationName*(this: AnimationPlayer): string =
 
 # TODO: etc...
 
-method update*(this: AnimationPlayer, deltaTime: float) =
-  procCall Node(this).update(deltaTime)
-
+proc update*(this: AnimationPlayer, deltaTime: float) =
   if this.currentAnimation != nil:
     this.currentAnimation.update(deltaTime)
 

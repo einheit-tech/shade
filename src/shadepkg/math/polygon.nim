@@ -335,6 +335,21 @@ proc rotate*(this: var Polygon, deltaRotation: float) =
 
   this.center = none(Vector)
 
+func getFarthest*(this: Polygon, direction: Vector): seq[Vector] =
+  ## Gets the farthest point(s) of the Polygon in the direction of the vector.
+  var max = NegInf
+  for i in 0..<this.len:
+    let vertex = this[i]
+    # Normalize the numeric precision of the dot product.
+    # NOTE: strformat will be much slower.
+    let projection = round(direction.dotProduct(vertex), MaxFloatPrecision)
+    # TODO: Is this logic correct?
+    if projection >= max:
+      if projection > max:
+        max = projection
+        result.setLen(0)
+      result.add(vertex)
+
 proc fill*(this: Polygon, ctx: Target, color: Color = RED) =
   var verts: seq[Vector] = @[]
   for v in this.vertices:
