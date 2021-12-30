@@ -11,7 +11,7 @@ import
 type Circle* = ref object
   center*: Vector
   radius*: float
-  area*: Option[float]
+  area: Option[float]
 
 proc newCircle*(center: Vector, radius: float): Circle =
   Circle(
@@ -28,7 +28,7 @@ func project*(this: Circle, location, axis: Vector): Vector =
     centerDot = axis.dotProduct(newLoc)
   return vector(centerDot - this.radius, centerDot + this.radius)
 
-proc getArea*(this: Circle): float =
+proc area*(this: Circle): float =
   if this.area.isNone:
     this.area = (PI * this.radius * this.radius).option
   return this.area.get

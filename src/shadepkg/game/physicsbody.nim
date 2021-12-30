@@ -19,7 +19,7 @@ type
 
   PhysicsBody* = ref object of Node
     # TODO: PhysicsBodies need to support multiple CollisionShapes at some point.
-    collisionShape: CollisionShape
+    collisionShape*: CollisionShape
     velocity*: Vector
     ## Total force applied to the center of mass.
     force*: Vector
@@ -55,9 +55,6 @@ template height*(this: PhysicsBody): float =
   else:
     0
 
-template collisionShape*(this: PhysicsBody): CollisionShape =
-  this.collisionShape
-
 template velocityX*(this: PhysicsBody): float =
   this.velocity.x
 
@@ -69,6 +66,10 @@ template velocityY*(this: PhysicsBody): float =
 
 template `velocityY=`*(this: PhysicsBody, y: float) =
   this.velocity = vector(this.velocity.x, y)
+
+method update*(this: PhysicsBody, deltaTime: float) =
+  procCall Node(this).update(deltaTime)
+  this.center += this.velocity * deltaTime
 
 PhysicsBody.renderNodeChild:
   when defined(collisionoutlines):
