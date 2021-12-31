@@ -51,7 +51,7 @@ iterator physicsBodyChildIterator(this: PhysicsLayer): PhysicsBody =
   for body in this.physicsBodyChildren:
     yield body
 
-proc resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
+proc resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody, deltaTime: float) =
   let
     collisionA = if collision.isCollisionOwnerA: collision else: collision.flip()
     collisionB = if collision.isCollisionOwnerA: collision.flip() else: collision
@@ -72,13 +72,22 @@ proc resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
   # Calculate impuse scalar.
   let j = (-(1.0 + e) * velAlongNormal) / (iMassA + iMassB)
 
+  # Translate the body to the point of contact.
+  # bodyA.center += bodyA.velocity * deltaTime * collisionA.contactRatio
+  # TODO: Force is calculated based on point where we overlap.
+  # Need to calc force needed based on point of collision.
+  bodyA.center += bodyA.velocity * deltaTime
+
   # Apply the impulse.
+  # TODO: Impulse too much? Ball is bouncing higher each time.
   bodyA.velocity -= collisionA.normal * (j * iMassA)
-  bodyB.velocity += collisionA.normal * (j * iMassB)
 
   # Translate the bodies out of each other.
-  bodyA.center += collisionA.getMinimumTranslationVector() * 0.5
-  bodyB.center += collisionB.getMinimumTranslationVector() * 0.5
+  # bodyA.center += collisionA.getMinimumTranslationVector() * (iMassA / (iMassA + iMassB))
+
+  if bodyB.kind != pbStatic:
+    bodyB.velocity += collisionA.normal * (j * iMassB)
+    bodyB.center += collisionB.getMinimumTranslationVector() * 0.5
 
 proc handleCollisions*(this: PhysicsLayer, deltaTime: float) =
   # TODO: Implement broad collision phase.
@@ -107,7 +116,7 @@ proc handleCollisions*(this: PhysicsLayer, deltaTime: float) =
       if collision == nil:
         continue
 
-      collision.resolve(bodyA, bodyB)
+      collision.resolve(bodyA, bodyB, deltaTime)
 
 method update*(this: PhysicsLayer, deltaTime: float) =
   procCall Layer(this).update(deltaTime)
