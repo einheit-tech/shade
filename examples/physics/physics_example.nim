@@ -8,24 +8,29 @@ initEngineSingleton("Physics Example", width, height)
 let layer = newPhysicsLayer()
 Game.scene.addLayer(layer)
 
-# TODO: Generate shapes, add them to the layer.
-
 let body1 = newPhysicsBody(pbDynamic)
 let body1Hull = newCircleCollisionShape(newCircle(VECTOR_ZERO, 10))
+body1Hull.mass = 10
+body1Hull.elasticity = 1.0
+
 body1.collisionShape = body1Hull
 body1.center = vector(100, 100)
 body1.velocity = vector(100, 100)
+echo body1.velocity.getMagnitude()
 layer.addChild(body1)
 
-let body2 = newPhysicsBody(pbStatic)
+let body2 = newPhysicsBody(pbDynamic)
 let body2Hull = newPolygonCollisionShape(newPolygon([
   vector(-100, -100),
   vector(100, -100),
   vector(100, 100),
   vector(-100, 100)
 ]))
+body2Hull.mass = 20
+body2Hull.elasticity = 1.0
+
 body2.collisionShape = body2Hull
-body2.center = vector(300, 300)
+body2.center = vector(250, 250)
 layer.addChild(body2)
 
 Game.start()

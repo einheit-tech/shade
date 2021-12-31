@@ -3,14 +3,14 @@ import ../mathutils
 type CollisionResult* = ref object
   isCollisionOwnerA*: bool
   intrusion*: float
-  contactNormal*: Vector
+  normal*: Vector
   contactRatio*: float
   contactPoint*: Vector
 
 proc newCollisionResult*(
   isCollisionOwnerA: bool,
   intrusion: float,
-  contactNormal: Vector,
+  normal: Vector,
   contactPoint: Vector,
   contactRatio: float = NaN
 ): CollisionResult =
@@ -20,7 +20,7 @@ proc newCollisionResult*(
   ## @param intrusion:
   ##   The distance the objects overlap along the contact normal.
   ##
-  ## @param contactNormal:
+  ## @param normal:
   ##   The axis that the objects first make contact along.
   ##   The vector points away from the object that owns this collision result.
   ##
@@ -33,7 +33,7 @@ proc newCollisionResult*(
   CollisionResult(
     isCollisionOwnerA: isCollisionOwnerA,
     intrusion: intrusion,
-    contactNormal: contactNormal,
+    normal: normal,
     contactRatio: contactRatio,
     contactPoint: contactPoint
   )
@@ -43,7 +43,7 @@ proc flip*(this: CollisionResult): CollisionResult =
   return newCollisionResult(
     not this.isCollisionOwnerA,
     this.intrusion,
-    this.contactNormal.negate(),
+    this.normal.negate(),
     this.contactPoint,
     this.contactRatio
   )
@@ -51,5 +51,5 @@ proc flip*(this: CollisionResult): CollisionResult =
 template getMinimumTranslationVector*(this: CollisionResult): Vector =
   ## Calculates a vector which can be used to separate the objects.
   ## This vector may be seen abbreviated as `mtv`.
-  this.contactNormal * -this.intrusion
+  this.normal * -this.intrusion
 

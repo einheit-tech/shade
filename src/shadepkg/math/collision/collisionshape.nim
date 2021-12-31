@@ -26,7 +26,7 @@ type
   CollisionShape* = ref object
     elasticity*: float
     friction*: float
-    mass*: float
+    inverseMass: float
 
     material*: Material
     bounds: Rectangle
@@ -67,6 +67,21 @@ template width*(this: CollisionShape): float =
 
 template height*(this: CollisionShape): float =
   this.getBounds().height
+
+template inverseMass*(this: CollisionShape): float =
+  this.inverseMass
+
+template mass*(this: CollisionShape): float =
+  if this.inverseMass == 0:
+    0.0
+  else:
+    1.0 / this.inverseMass
+
+template `mass=`*(this: CollisionShape, mass: float) =
+  if mass == 0:
+    this.inverseMass = 0.0
+  else:
+    this.inverseMass = 1.0 / mass
 
 func getCircleToCircleProjectionAxes(circleA, circleB: Circle, aToB: Vector): seq[Vector] =
   result.add(

@@ -18,12 +18,13 @@ type
     pbKinematic
 
   PhysicsBody* = ref object of Node
-    # TODO: PhysicsBodies need to support multiple CollisionShapes at some point.
     collisionShape*: CollisionShape
     velocity*: Vector
+
+    # TODO
     ## Total force applied to the center of mass.
-    force*: Vector
-    angularVelocity*: float
+    # force*: Vector
+    # angularVelocity*: float
 
     case kind*: PhysicsBodyKind:
       of pbDynamic, pbKinematic:

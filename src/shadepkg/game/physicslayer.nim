@@ -66,7 +66,7 @@ method update*(this: PhysicsLayer, deltaTime: float) =
         # Don't collide with self.
         continue
       
-      let collisionResult = collides(
+      let collision = collides(
         bodyA.center,
         bodyA.collisionShape,
         moveVectorA,
@@ -75,11 +75,36 @@ method update*(this: PhysicsLayer, deltaTime: float) =
         bodyB.velocity * deltaTime
       )
 
-      if collisionResult != nil:
-        # TODO: Proper collision resolution.
-        let resultA = if collisionResult.isCollisionOwnerA: collisionResult else: collisionResult.flip()
-        let resultB = if collisionResult.isCollisionOwnerA: collisionResult.flip() else: collisionResult
-        bodyA.center += resultA.getMinimumTranslationVector()
+      if collision == nil:
+        continue
+
+      let
+        collisionA = if collision.isCollisionOwnerA: collision else: collision.flip()
+        collisionB = if collision.isCollisionOwnerA: collision.flip() else: collision
+
+      let
+        relVelocity = bodyB.velocity - bodyA.velocity
+        velAlongNormal = relVelocity.dotProduct(collisionA.normal)
+
+      if velAlongNormal > 0:
+        # Do not resolve if velocities are separating.
+        continue
+
+      # Calculate restitution.
+      let e = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
+      template iMassA: float = bodyA.collisionShape.inverseMass
+      template iMassB: float = bodyB.collisionShape.inverseMass
+
+      # Calculate impuse scalar.
+      let j = (-(1.0 + e) * velAlongNormal) / (iMassA + iMassB)
+
+      # Apply the impulse.
+      bodyA.velocity -= collisionA.normal * (j * iMassA)
+      bodyB.velocity += collisionA.normal * (j * iMassB)
+
+      # Translate the bodies out of each other.
+      bodyA.center += collisionA.getMinimumTranslationVector()
+      bodyB.center += collisionB.getMinimumTranslationVector()
 
 PhysicsLayer.renderAsChildOf(Layer):
   for body in this.physicsBodyChildIterator():
