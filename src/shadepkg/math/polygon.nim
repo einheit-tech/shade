@@ -22,7 +22,7 @@ type Polygon* = ref object
 proc newPolygon*(vertices: openArray[Vector]): Polygon =
   if vertices.len < 3:
     raise newException(Exception, "Polygon must have at least 3 vertices.")
-  result = Polygon(vertices: toSeq(vertices))
+  result = Polygon(vertices: @vertices)
 
 func len*(this: Polygon): int = this.vertices.len
 
@@ -351,9 +351,10 @@ func getFarthest*(this: Polygon, direction: Vector): seq[Vector] =
       result.add(vertex)
 
 proc fill*(this: Polygon, ctx: Target, color: Color = RED) =
-  var verts: seq[Vector] = @[]
+  var verts: seq[float]
   for v in this.vertices:
-    verts.add(vector(v.x, v.y))
+    verts.add(v.x)
+    verts.add(v.y)
 
   ctx.polygonFilled(
     cuint this.vertices.len,

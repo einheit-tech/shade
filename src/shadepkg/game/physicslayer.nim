@@ -13,7 +13,9 @@ export
 const DEFAULT_GRAVITY* = vector(0, 2000)
 
 type PhysicsLayer* = ref object of Layer
+  gravity*: Vector
   physicsBodyChildren: seq[PhysicsBody]
+  slop*: float
 
 proc initPhysicsLayer*(
   layer: PhysicsLayer,
@@ -21,6 +23,7 @@ proc initPhysicsLayer*(
   z: float = 1.0
 ) =
   initLayer(layer, z)
+  layer.gravity = gravity
 
 proc newPhysicsLayer*(gravity: Vector = DEFAULT_GRAVITY, z: float = 1.0): PhysicsLayer =
   result = PhysicsLayer()
@@ -48,11 +51,37 @@ iterator physicsBodyChildIterator(this: PhysicsLayer): PhysicsBody =
   for body in this.physicsBodyChildren:
     yield body
 
-method update*(this: PhysicsLayer, deltaTime: float) =
-  procCall Layer(this).update(deltaTime)
+proc resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
+  let
+    collisionA = if collision.isCollisionOwnerA: collision else: collision.flip()
+    collisionB = if collision.isCollisionOwnerA: collision.flip() else: collision
 
-  # TODO: Implement broad phase
+  let
+    relVelocity = bodyB.velocity - bodyA.velocity
+    velAlongNormal = relVelocity.dotProduct(collisionA.normal)
 
+  if velAlongNormal > 0:
+    # Do not resolve if velocities are separating.
+    return
+
+  # Calculate restitution.
+  let e = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
+  template iMassA: float = bodyA.collisionShape.inverseMass
+  template iMassB: float = bodyB.collisionShape.inverseMass
+
+  # Calculate impuse scalar.
+  let j = (-(1.0 + e) * velAlongNormal) / (iMassA + iMassB)
+
+  # Apply the impulse.
+  bodyA.velocity -= collisionA.normal * (j * iMassA)
+  bodyB.velocity += collisionA.normal * (j * iMassB)
+
+  # Translate the bodies out of each other.
+  bodyA.center += collisionA.getMinimumTranslationVector() * 0.5
+  bodyB.center += collisionB.getMinimumTranslationVector() * 0.5
+
+proc handleCollisions*(this: PhysicsLayer, deltaTime: float) =
+  # TODO: Implement broad collision phase.
   for bodyA in this.physicsBodyChildIterator:
     if bodyA.kind == pbStatic or bodyA.collisionShape == nil:
       # Static bodies do not need to be checked,
@@ -65,7 +94,7 @@ method update*(this: PhysicsLayer, deltaTime: float) =
       if bodyA == bodyB or bodyB.collisionShape == nil:
         # Don't collide with self.
         continue
-      
+
       let collision = collides(
         bodyA.center,
         bodyA.collisionShape,
@@ -78,33 +107,18 @@ method update*(this: PhysicsLayer, deltaTime: float) =
       if collision == nil:
         continue
 
-      let
-        collisionA = if collision.isCollisionOwnerA: collision else: collision.flip()
-        collisionB = if collision.isCollisionOwnerA: collision.flip() else: collision
+      collision.resolve(bodyA, bodyB)
 
-      let
-        relVelocity = bodyB.velocity - bodyA.velocity
-        velAlongNormal = relVelocity.dotProduct(collisionA.normal)
+method update*(this: PhysicsLayer, deltaTime: float) =
+  procCall Layer(this).update(deltaTime)
 
-      if velAlongNormal > 0:
-        # Do not resolve if velocities are separating.
-        continue
+  # Update bodies with gravity applied over the frame.
+  let frameGravity = this.gravity * deltaTime
+  for body in this.physicsBodyChildIterator:
+    if body.kind != pbStatic:
+      body.velocity += frameGravity
 
-      # Calculate restitution.
-      let e = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
-      template iMassA: float = bodyA.collisionShape.inverseMass
-      template iMassB: float = bodyB.collisionShape.inverseMass
-
-      # Calculate impuse scalar.
-      let j = (-(1.0 + e) * velAlongNormal) / (iMassA + iMassB)
-
-      # Apply the impulse.
-      bodyA.velocity -= collisionA.normal * (j * iMassA)
-      bodyB.velocity += collisionA.normal * (j * iMassB)
-
-      # Translate the bodies out of each other.
-      bodyA.center += collisionA.getMinimumTranslationVector()
-      bodyB.center += collisionB.getMinimumTranslationVector()
+  this.handleCollisions(deltaTime)
 
 PhysicsLayer.renderAsChildOf(Layer):
   for body in this.physicsBodyChildIterator():

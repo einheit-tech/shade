@@ -5,7 +5,7 @@ const
   height = 1080
 
 initEngineSingleton("Physics Example", width, height)
-let layer = newPhysicsLayer()
+let layer = newPhysicsLayer(gravity = VECTOR_ZERO)
 Game.scene.addLayer(layer)
 
 let body1 = newPhysicsBody(pbDynamic)
@@ -16,7 +16,6 @@ body1Hull.elasticity = 1.0
 body1.collisionShape = body1Hull
 body1.center = vector(100, 100)
 body1.velocity = vector(100, 100)
-echo body1.velocity.getMagnitude()
 layer.addChild(body1)
 
 let body2 = newPhysicsBody(pbDynamic)

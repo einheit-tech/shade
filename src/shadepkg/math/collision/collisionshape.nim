@@ -113,10 +113,8 @@ func getCircleToPolygonProjectionAxes(
   poly: Polygon,
   circleToPoly: Vector
 ): seq[Vector] =
-  for i in 0..<poly.len:
-    result.add(
-      normalize((poly[i] - circle.center) - circleToPoly)
-    )
+  for v in poly:
+    result.add(normalize(v - circle.center + circleToPoly))
 
 func getProjectionAxes*(
   this: CollisionShape,
@@ -136,11 +134,7 @@ func getProjectionAxes*(
         return this.circle.getCircleToPolygonProjectionAxes(otherShape.polygon, toOther)
 
     of chkPolygon:
-      case otherShape.kind:
-      of chkCircle:
-        return otherShape.circle.getCircleToPolygonProjectionAxes(this.polygon, toOther.negate())
-      of chkPolygon:
-        return this.polygon.getPolygonProjectionAxes()
+      return this.polygon.getPolygonProjectionAxes()
 
 func project*(this: CollisionShape, relativeLoc, axis: Vector): Vector =
   case this.kind:

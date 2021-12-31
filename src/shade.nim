@@ -24,7 +24,8 @@ import shadepkg / [
   math/polygon,
   math/rectangle,
   math/circle,
-  math/collision/collisionshape
+  math/collision/collisionshape,
+  math/collision/sat
 ]
 
 
@@ -54,5 +55,6 @@ export
   polygon,
   rectangle,
   circle,
-  collisionshape
+  collisionshape,
+  sat
 

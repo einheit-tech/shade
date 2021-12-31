@@ -22,7 +22,7 @@ const
 type 
   Engine* = ref object of RootObj
     shouldExit: bool
-    screen: Target
+    screen*: Target
 
     scene: Scene
 
