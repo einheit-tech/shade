@@ -51,7 +51,7 @@ iterator physicsBodyChildIterator(this: PhysicsLayer): PhysicsBody =
   for body in this.physicsBodyChildren:
     yield body
 
-proc resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody, deltaTime: float) =
+template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody, deltaTime: float) =
   let
     collisionA = if collision.isCollisionOwnerA: collision else: collision.flip()
     collisionB = if collision.isCollisionOwnerA: collision.flip() else: collision
@@ -69,27 +69,22 @@ proc resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody, deltaTime: f
   template iMassA: float = bodyA.collisionShape.inverseMass
   template iMassB: float = bodyB.collisionShape.inverseMass
 
-  # Calculate impuse scalar.
-  let j = (-(1.0 + e) * velAlongNormal) / (iMassA + iMassB)
+  let totalInverseMass = iMassA + iMassB
 
-  # Translate the body to the point of contact.
-  # bodyA.center += bodyA.velocity * deltaTime * collisionA.contactRatio
-  # TODO: Force is calculated based on point where we overlap.
-  # Need to calc force needed based on point of collision.
+  # Calculate impuse scalar.
+  let j = (-(1.0 + e) * velAlongNormal) / totalInverseMass
+
+  # Translate the body forward the full frame.
   bodyA.center += bodyA.velocity * deltaTime
 
-  # Apply the impulse.
-  # TODO: Impulse too much? Ball is bouncing higher each time.
-  bodyA.velocity -= collisionA.normal * (j * iMassA)
-
-  # Translate the bodies out of each other.
-  # bodyA.center += collisionA.getMinimumTranslationVector() * (iMassA / (iMassA + iMassB))
-
   if bodyB.kind != pbStatic:
-    bodyB.velocity += collisionA.normal * (j * iMassB)
-    bodyB.center += collisionB.getMinimumTranslationVector() * 0.5
+    # Apply the impulse.
+    bodyA.velocity -= collisionA.normal * (j * iMassA * (iMassA / totalInverseMass))
+    bodyB.velocity -= collisionB.normal * (j * iMassB * (iMassB / totalInverseMass))
+  else:
+    bodyA.velocity -= collisionA.normal * (j * iMassA)
 
-proc handleCollisions*(this: PhysicsLayer, deltaTime: float) =
+template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
   # TODO: Implement broad collision phase.
   for bodyA in this.physicsBodyChildIterator:
     if bodyA.kind == pbStatic or bodyA.collisionShape == nil:
@@ -99,6 +94,8 @@ proc handleCollisions*(this: PhysicsLayer, deltaTime: float) =
 
     let moveVectorA = bodyA.velocity * deltaTime
 
+    # TODO: Instead of a double for loop
+    # we only need to check indices (i + 1 ..< bodies.len)
     for bodyB in this.physicsBodyChildIterator:
       if bodyA == bodyB or bodyB.collisionShape == nil:
         # Don't collide with self.
@@ -118,15 +115,23 @@ proc handleCollisions*(this: PhysicsLayer, deltaTime: float) =
 
       collision.resolve(bodyA, bodyB, deltaTime)
 
-method update*(this: PhysicsLayer, deltaTime: float) =
-  procCall Layer(this).update(deltaTime)
-
-  # Update bodies with gravity applied over the frame.
-  let frameGravity = this.gravity * deltaTime
+template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
   for body in this.physicsBodyChildIterator:
     if body.kind != pbStatic:
-      body.velocity += frameGravity
+      # Apply forces to all non-static bodies.
+      for force in body.forces:
+        body.velocity += force * deltaTime
 
+    # Clear forces every frame.
+    if body.kind == pbDynamic and this.gravity != VECTOR_ZERO:
+      # Re-apply gravity to dynamic bodies.
+      body.forces = @[this.gravity]
+    else:
+      body.forces.setLen(0)
+
+method update*(this: PhysicsLayer, deltaTime: float) =
+  procCall Layer(this).update(deltaTime)
+  this.applyForcesToBodies(deltaTime)
   this.handleCollisions(deltaTime)
 
 PhysicsLayer.renderAsChildOf(Layer):
