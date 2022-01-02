@@ -1,36 +1,56 @@
-import ../../src/shade
+import
+  ../../src/shade,
+  std/random
+
+randomize()
 
 const
   width = 1920
   height = 1080
 
-initEngineSingleton("Physics Example", width, height)
-let layer = newPhysicsLayer(gravity = VECTOR_ZERO)
+initEngineSingleton(
+  "Physics Example",
+  width,
+  height,
+  clearColor = newColor(20, 20, 20)
+)
+
+let layer = newPhysicsLayer()
 Game.scene.addLayer(layer)
 
-let body1 = newPhysicsBody(pbDynamic)
-let body1Hull = newCircleCollisionShape(newCircle(VECTOR_ZERO, 10))
-body1Hull.mass = 10
-body1Hull.elasticity = 1.0
-
-body1.collisionShape = body1Hull
-body1.center = vector(100, 100)
-body1.velocity = vector(100, 100)
-layer.addChild(body1)
-
-let body2 = newPhysicsBody(pbDynamic)
-let body2Hull = newPolygonCollisionShape(newPolygon([
-  vector(-100, -100),
-  vector(100, -100),
-  vector(100, 100),
-  vector(-100, 100)
+# Create and add the platform.
+const platformWidth = width - 200
+let platform = newPhysicsBody(pbStatic)
+let platformHull = newPolygonCollisionShape(newPolygon([
+  vector(-platformWidth / 2, -100),
+  vector(platformWidth / 2, -100),
+  vector(platformWidth / 2, 100),
+  vector(-platformWidth / 2, 100)
 ]))
-body2Hull.mass = 20
-body2Hull.elasticity = 1.0
+platform.collisionShape = platformHull
+platform.center = vector(width / 2, 900)
+layer.addChild(platform)
 
-body2.collisionShape = body2Hull
-body2.center = vector(250, 250)
-layer.addChild(body2)
+const colors = [ RED, GREEN, BLUE, PURPLE, ORANGE ]
+template getRandomColor(): Color = colors[rand(colors.high)]
+
+proc addRandomBodyToLayer() =
+  let
+    body = newPhysicsBody(pbDynamic)
+    bodyHull = newCircleCollisionShape(newCircle(VECTOR_ZERO, 30))
+
+  body.collisionShape = bodyHull
+  body.center = Input.mouseLocation
+
+  let randColor = getRandomColor()
+  body.onRender = proc(this: Node, ctx: Target) =
+    PhysicsBody(this).collisionShape.fill(ctx, randColor)
+    PhysicsBody(this).collisionShape.stroke(ctx, WHITE)
+
+  layer.addChild(body)
+
+# Add random shapes on click.
+Input.addMousePressEventListener(addRandomBodyToLayer)
 
 Game.start()
 

@@ -10,7 +10,8 @@ export
   physicsbody
 
 # TODO: Tune
-const DEFAULT_GRAVITY* = vector(0, 2000)
+# const DEFAULT_GRAVITY* = vector(0, 2000)
+const DEFAULT_GRAVITY* = vector(0, 577)
 
 type PhysicsLayer* = ref object of Layer
   gravity*: Vector
@@ -51,6 +52,13 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody, deltaTim
   ## Resolves a collision between two bodies.
   ## NOTE: Perfectly inelastic collisions are not calculated correctly,
   ## and some momentum will be added.
+
+  if collision.contactRatio < 0:
+    # TODO: Our SAT algorithm has a bug (at least one).
+    # This should be impossible, right?
+    # Also check getCircleToPolygonProjectionAxes etc
+    echo collision.contactRatio
+
   let
     collisionA = if collision.isCollisionOwnerA: collision else: collision.flip()
     relVelocity = bodyB.velocity - bodyA.velocity
@@ -58,7 +66,8 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody, deltaTim
 
   if velAlongNormal > 0:
     # Do not resolve if velocities are separating.
-    return
+    # TODO: Return some useful value?
+    continue
 
   template iMassA: float = bodyA.collisionShape.inverseMass
   template iMassB: float = bodyB.collisionShape.inverseMass
@@ -71,23 +80,39 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody, deltaTim
   let impulse = collisionA.normal * (-(1.0 + e) * velAlongNormal) / totalInverseMass
 
   if bodyB.kind != pbStatic:
-    let
-      massRatioA = iMassA / totalInverseMass
-      massRatioB = iMassB / totalInverseMass
-
-    # Translate the bodies out of each other.
+    # Translate the bodies to the point of collision.
     bodyA.center += bodyA.velocity * deltaTime * collisionA.contactRatio
-    bodyB.center -= bodyB.velocity * deltaTime * (1.0 - collisionA.contactRatio)
+    bodyB.center += bodyB.velocity * deltaTime * (1.0 - collisionA.contactRatio)
 
     # Apply the impulse.
-    bodyA.velocity -= impulse * iMassA * massRatioA * (1.0 - collisionA.contactRatio)
-    bodyB.velocity += impulse * iMassB * massRatioB * collisionA.contactRatio
+    bodyA.velocity -= impulse * iMassA
+    bodyB.velocity += impulse * iMassB
+
+    # Move the bodies the remainder of the time in the frame.
+    # bodyA.center += bodyA.velocity * deltaTime * (1.0 - collisionA.contactRatio)
+    # bodyB.center += bodyB.velocity * deltaTime * collisionA.contactRatio
+
   else:
     # Translate bodyA out of bodyB.
+
+    # TODO: Extract these vars,
+    # explore improving this,
+    # and implement it in the above example as well?
+    const
+      slop = 0.1
+      percent = 0.6
+
+    if collisionA.intrusion > slop:
+      let correction = (collisionA.intrusion - slop) / totalInverseMass
+      bodyA.center += collisionA.normal * percent * correction * iMassA
+
     bodyA.center += bodyA.velocity * deltaTime * collisionA.contactRatio
 
     # Apply the impulse.
     bodyA.velocity -= impulse * iMassA
+
+    # Move the body the remainder of the time in the frame.
+    # bodyA.center += bodyA.velocity * deltaTime * (1.0 - collisionA.contactRatio)
 
 template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
   # TODO: Implement broad collision phase.
@@ -98,7 +123,7 @@ template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
       continue
 
     let moveVectorA = bodyA.velocity * deltaTime
-    for j in countup(i + 1, this.physicsBodyChildren.high):
+    for j in countup(0, this.physicsBodyChildren.high):
       let bodyB = this.physicsBodyChildren[j]
       if bodyA == bodyB or bodyB.collisionShape == nil or bodyB.collisionShape.mass <= 0:
         # Don't collide with self.

@@ -26,7 +26,7 @@ let bodyBHull = newPolygonCollisionShape(newPolygon([
 ]))
 
 bodyB.collisionShape = bodyBHull
-bodyB.center = vector(width / 2, 900)
+bodyB.center = vector(width / 2, 250)
 layer.addChild(bodyB)
 
 Game.start()
