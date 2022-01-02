@@ -2,7 +2,6 @@ import
   options,
   random,
   algorithm,
-  sequtils,
   sdl2_nim/sdl_gpu
 
 import
@@ -143,7 +142,7 @@ func getBounds*(this: Polygon): Rectangle =
 
   return this.bounds
 
-func getArea*(this: Polygon): float =
+func area*(this: Polygon): float =
   if this.area.isNone:
     var
       area: float = 0

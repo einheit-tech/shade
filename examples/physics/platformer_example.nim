@@ -10,8 +10,6 @@ Game.scene.addLayer(layer)
 
 let bodyA = newPhysicsBody(pbDynamic)
 let bodyAHull = newCircleCollisionShape(newCircle(VECTOR_ZERO, 10))
-bodyAHull.mass = 10
-bodyAHull.elasticity = 1.0
 
 bodyA.collisionShape = bodyAHull
 bodyA.center = vector(100, 100)
@@ -26,8 +24,6 @@ let bodyBHull = newPolygonCollisionShape(newPolygon([
   vector(width / 2, 100),
   vector(-width / 2, 100)
 ]))
-
-bodyBHull.elasticity = 1.0
 
 bodyB.collisionShape = bodyBHull
 bodyB.center = vector(width / 2, 900)

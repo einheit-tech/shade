@@ -18,14 +18,14 @@ export
   circle,
   polygon
 
+const DEFAULT_MATERIAL* = METAL
+
 type
   CollisionShapeKind* = enum
     chkCircle
     chkPolygon
 
   CollisionShape* = ref object
-    elasticity*: float
-    friction*: float
     inverseMass: float
 
     material*: Material
@@ -39,34 +39,21 @@ type
 
 proc getBounds*(this: CollisionShape): Rectangle
 
-proc initPolygonCollisionShape*(shape: CollisionShape, polygon: Polygon) =
-  shape.polygon = polygon
-
-proc newPolygonCollisionShape*(polygon: Polygon): CollisionShape =
-  result = CollisionShape(kind: chkPolygon)
-  initPolygonCollisionShape(result, polygon)
-
-proc initCircleCollisionShape*(shape: CollisionShape, circle: Circle) =
-  shape.circle = circle
-
-proc newCircleCollisionShape*(circle: Circle): CollisionShape =
-  result = CollisionShape(kind: chkCircle)
-  initCircleCollisionShape(result, circle)
-
-proc getBounds*(this: CollisionShape): Rectangle =
-  if this.bounds == nil:
-    case this.kind:
-      of chkPolygon:
-        this.bounds = this.polygon.getBounds()
-      of chkCircle:
-        this.bounds = this.circle.calcBounds()
-  return this.bounds
+template area*(this: CollisionShape): float =
+  case this.kind:
+    of chkPolygon:
+      this.polygon.area
+    of chkCircle:
+      this.circle.area
 
 template width*(this: CollisionShape): float =
   this.getBounds().width
 
 template height*(this: CollisionShape): float =
   this.getBounds().height
+
+template calculateMass(this: CollisionShape): float =
+  this.area * this.density
 
 template inverseMass*(this: CollisionShape): float =
   this.inverseMass
@@ -77,11 +64,60 @@ template mass*(this: CollisionShape): float =
   else:
     1.0 / this.inverseMass
 
-template `mass=`*(this: CollisionShape, mass: float) =
+template `mass=`(this: CollisionShape, mass: float) =
+  ## Sets the mass of the object.
+  ## Should be for internal use only, for calculations.
   if mass == 0:
     this.inverseMass = 0.0
   else:
     this.inverseMass = 1.0 / mass
+
+template elasticity*(this: CollisionShape): float =
+  this.material.elasticity
+
+template `elasticity=`*(this: CollisionShape, e: CompletionRatio) =
+  this.material.elasticity = e
+
+template density*(this: CollisionShape): float =
+  this.material.density
+
+template `density=`*(this: CollisionShape, density: CompletionRatio) =
+  this.material.density = density
+  this.mass = this.calculateMass()
+
+template friction*(this: CollisionShape): float =
+  this.material.friction
+
+template `friction=`*(this: CollisionShape, friction: CompletionRatio) =
+  this.material.friction = friction
+
+
+proc initPolygonCollisionShape*(shape: CollisionShape, polygon: Polygon, material = DEFAULT_MATERIAL) =
+  shape.polygon = polygon
+  shape.material = material
+  shape.mass = shape.calculateMass()
+
+proc newPolygonCollisionShape*(polygon: Polygon, material = DEFAULT_MATERIAL): CollisionShape =
+  result = CollisionShape(kind: chkPolygon)
+  initPolygonCollisionShape(result, polygon, material)
+
+proc initCircleCollisionShape*(shape: CollisionShape, circle: Circle, material = DEFAULT_MATERIAL) =
+  shape.circle = circle
+  shape.material = material
+  shape.mass = shape.calculateMass()
+
+proc newCircleCollisionShape*(circle: Circle, material  = DEFAULT_MATERIAL): CollisionShape =
+  result = CollisionShape(kind: chkCircle)
+  initCircleCollisionShape(result, circle, material)
+
+proc getBounds*(this: CollisionShape): Rectangle =
+  if this.bounds == nil:
+    case this.kind:
+      of chkPolygon:
+        this.bounds = this.polygon.getBounds()
+      of chkCircle:
+        this.bounds = this.circle.calcBounds()
+  return this.bounds
 
 func getCircleToCircleProjectionAxes(circleA, circleB: Circle, aToB: Vector): seq[Vector] =
   result.add(
