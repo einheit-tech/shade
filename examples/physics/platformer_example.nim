@@ -21,17 +21,16 @@ layer.addChild(bodyA)
 let bodyB = newPhysicsBody(pbStatic)
 
 let bodyBHull = newPolygonCollisionShape(newPolygon([
-  vector(-width / 2, -10),
-  vector(width / 2, -10),
-  vector(width / 2, 10),
-  vector(-width / 2, 10)
+  vector(-width / 2, -100),
+  vector(width / 2, -100),
+  vector(width / 2, 100),
+  vector(-width / 2, 100)
 ]))
 
-bodyBHull.mass = Inf
 bodyBHull.elasticity = 1.0
 
 bodyB.collisionShape = bodyBHull
-bodyB.center = vector(310, 200)
+bodyB.center = vector(width / 2, 900)
 layer.addChild(bodyB)
 
 Game.start()

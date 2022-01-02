@@ -351,10 +351,10 @@ func getFarthest*(this: Polygon, direction: Vector): seq[Vector] =
       result.add(vertex)
 
 proc fill*(this: Polygon, ctx: Target, color: Color = RED) =
-  var verts: seq[float]
+  var verts: seq[float32]
   for v in this.vertices:
-    verts.add(v.x)
-    verts.add(v.y)
+    verts.add(float32 v.x)
+    verts.add(float32 v.y)
 
   ctx.polygonFilled(
     cuint this.vertices.len,

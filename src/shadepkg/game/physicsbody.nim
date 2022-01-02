@@ -19,24 +19,12 @@ type
 
   PhysicsBody* = ref object of Node
     collisionShape*: CollisionShape
-    acceleration*: Vector
     velocity*: Vector
-
-    # TODO:
-    # Should have an array of applied forces?
-    # They would be applied, then cleared every frame.
-    # If gravity isn't (0, 0), apply always.
-
-    # Applying a force:
-    # acceleration += force * mass
-    # velocity += acceleration * deltaTime
-
-    # Then we can calculate the velocity
-    # at a given point during the tick.
 
     ## Forces applied to the center of mass, this frame.
     forces*: seq[Vector]
 
+    # TODO:
     # angularVelocity*: float
 
     case kind*: PhysicsBodyKind:
