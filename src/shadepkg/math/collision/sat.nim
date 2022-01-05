@@ -62,7 +62,6 @@ func checkCollisionCircleAndPolygon(
     if overlap < minOverlap:
       minOverlap = overlap
       collisionNormal =
-        # TODO: Sometimes this is incorrect (when circle is underneath).
         if (projA.x + projA.y) > (projB.x + projB.y):
           axis.negate()
         else:
@@ -84,9 +83,9 @@ func checkCollisionCircleAndPolygon(
       minOverlap = overlap
       collisionNormal =
         if (projA.x + projA.y) > (projB.x + projB.y):
-          axis.negate()
-        else:
           axis
+        else:
+          axis.negate()
 
   return newCollisionResult(
     minOverlap,

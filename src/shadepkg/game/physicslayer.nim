@@ -75,18 +75,8 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody, deltaTim
     bodyA.center += collision.getMinimumTranslationVector() * massRatio
     bodyB.center += collision.getMinimumTranslationVector() * (massRatio - 1.0)
   else:
-    # TODO: Extract these vars, explore improving this.
-    # const
-    #   slop = 0.1
-    #   percent = 0.8
-
-    # if collision.intrusion > slop:
-    #   let correction = (collision.intrusion - slop) / totalInverseMass
-    #   bodyA.center += collision.normal * percent * correction * iMassA
-
     # Translate bodyA out of bodyB.
     bodyA.center += collision.getMinimumTranslationVector()
-
     # Apply the impulse.
     bodyA.velocity -= impulse * iMassA
 
