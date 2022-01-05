@@ -26,7 +26,7 @@ type
   InputHandler* = ref object
     mouse: MouseInfo
     keys: Table[Keycode, KeyState]
-    mousePressedEventListeners: seq[proc()]
+    mousePressedEventListeners: seq[proc(mouseButton: int)]
 
 # InputHandler singleton
 var Input*: InputHandler
@@ -68,7 +68,7 @@ proc processEvent*(this: InputHandler, event: Event): bool =
       Input.mouse.buttons[button].justPressed = true
 
       for listener in this.mousePressedEventListeners:
-        listener()
+        listener(button)
 
     of MOUSEWHEEL:
       Input.mouse.vScrolled = event.wheel.y

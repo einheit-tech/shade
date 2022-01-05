@@ -12,7 +12,7 @@ proc initMaterial*(density, elasticity, friction: float): Material =
 
 const
   ROCK*: Material = initMaterial(0.8, 0.6, 0.1)
-  METAL*: Material = initMaterial(0.98, 0.8, 0.03)
+  METAL*: Material = initMaterial(0.98, 0.4, 0.03)
   PLATFORM*: Material = initMaterial(1, 1, 0.15)
   NULL*: Material = initMaterial(1, 0, 0)
 

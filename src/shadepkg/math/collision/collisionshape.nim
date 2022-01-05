@@ -33,9 +33,9 @@ type
 
     case kind*: CollisionShapeKind:
     of chkCircle:
-      circle: Circle
+      circle*: Circle
     of chkPolygon:
-      polygon: Polygon
+      polygon*: Polygon
 
 proc getBounds*(this: CollisionShape): Rectangle
 
@@ -119,12 +119,12 @@ proc getBounds*(this: CollisionShape): Rectangle =
         this.bounds = this.circle.calcBounds()
   return this.bounds
 
-func getCircleToCircleProjectionAxes(circleA, circleB: Circle, aToB: Vector): seq[Vector] =
+func getCircleToCircleProjectionAxes*(circleA, circleB: Circle, relativeLoc: Vector): seq[Vector] =
   result.add(
-    (circleB.center - circleA.center + aToB).normalize()
+    (circleB.center - circleA.center + relativeLoc).normalize()
   )
 
-func getPolygonProjectionAxes(poly: Polygon): seq[Vector] =
+func getPolygonProjectionAxes*(poly: Polygon): seq[Vector] =
   ## Fills an array with the projection axes of the PolygonCollisionShape facing away from the shape.
   ## @param poly the Polygon of the PolygonCollisionShape.
   ## @returns The array of axes facing away from the shape.
@@ -137,14 +137,14 @@ func getPolygonProjectionAxes(poly: Polygon): seq[Vector] =
       nextPoint = if j == poly.len: poly[0] else: poly[j]
       currentPoint = poly[i]
       edge = nextPoint - currentPoint
-    if edge.getMagnitude() == 0f:
+    if edge.getMagnitude() == 0.0:
         continue
     let axis: Vector = edge.perpendicular().normalize()
     result.add(if clockwise: axis.negate() else: axis)
     i.inc
     j.inc
 
-func getCircleToPolygonProjectionAxes(
+func getCircleToPolygonProjectionAxes*(
   circle: Circle,
   poly: Polygon,
   circleToPoly: Vector
@@ -158,8 +158,8 @@ func getProjectionAxes*(
   toOther: Vector
 ): seq[Vector] =
   ## Generates projection axes facing away from this shape towards the given other shape.
-  ## @param toOther A vector from this shape's reference frame to the other shape's reference frame.
   ## @param otherShape The collision shape being tested against.
+  ## @param toOther A vector from this shape's reference frame to the other shape's reference frame.
   ## @return The array of axes.
   case this.kind:
     of chkCircle:
@@ -178,14 +178,6 @@ func project*(this: CollisionShape, relativeLoc, axis: Vector): Vector =
     return this.polygon.project(relativeLoc, axis)
   of chkCircle:
     return this.circle.project(relativeLoc, axis)
-
-func getFarthest*(this: CollisionShape, direction: Vector): seq[Vector] =
-  ## Gets the farthest point(s) of the CollisionShape in the direction of the vector.
-  case this.kind:
-    of chkCircle:
-      return @[this.circle.center + direction.normalize() * this.circle.radius]
-    of chkPolygon:
-      return this.polygon.getFarthest(direction)
 
 proc stroke*(this: CollisionShape, ctx: Target, color: Color = RED) =
   case this.kind:
