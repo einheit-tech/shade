@@ -15,6 +15,7 @@ type
   ## All nodes on the layer are assumed to share this same coordinate.
   ##
   Layer* = ref object of RootObj
+    onUpdate*: proc(this: Layer, deltaTime: float)
     # Location of the layer on the `z` axis.
     z: float
     zChangeListeners: seq[ZChangeListener]
@@ -113,6 +114,9 @@ proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeLis
   return onceListener
 
 method update*(this: Layer, deltaTime: float) {.base.} =
+  if this.onUpdate != nil:
+    this.onUpdate(this, deltaTime)
+
   withLock(this.childLock):
     while this.additionQueue.len > 0:
       let child = this.additionQueue.popFirst()

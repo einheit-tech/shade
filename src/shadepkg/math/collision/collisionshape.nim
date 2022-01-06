@@ -36,6 +36,7 @@ type
       circle*: Circle
     of chkPolygon:
       polygon*: Polygon
+      projectionAxes: seq[Vector]
 
 proc getBounds*(this: CollisionShape): Rectangle
 
@@ -119,6 +120,29 @@ proc getBounds*(this: CollisionShape): Rectangle =
         this.bounds = this.circle.calcBounds()
   return this.bounds
 
+func projectOnAxis*(circ: Circle, location, axis: Vector): Vector =
+  let
+    newLoc = circ.center + location
+    centerDot = axis.dotProduct(newLoc)
+  return vector(centerDot - circ.radius, centerDot + circ.radius)
+
+func projectOnAxis*(this: Polygon, location, axis: Vector): Vector =
+  let startLoc = this[0] + location
+  var
+    dotProduct = axis.dotProduct(startLoc)
+
+  result.x = dotProduct
+  result.y = dotProduct
+
+  for i in 1..<this.len:
+    let currLoc = this[i] + location
+    dotProduct = axis.dotProduct(currLoc)
+    if dotProduct < result.x:
+      result.x = dotProduct
+    if dotProduct > result.y:
+      result.y = dotProduct
+
+
 func getCircleToCircleProjectionAxes*(circleA, circleB: Circle, relativeLoc: Vector): seq[Vector] =
   result.add(
     (circleB.center - circleA.center + relativeLoc).normalize()
@@ -170,14 +194,16 @@ func getProjectionAxes*(
         return this.circle.getCircleToPolygonProjectionAxes(otherShape.polygon, toOther)
 
     of chkPolygon:
-      return this.polygon.getPolygonProjectionAxes()
+      if this.projectionAxes.len == 0:
+        this.projectionAxes = this.polygon.getPolygonProjectionAxes()
+      return this.projectionAxes
 
 func project*(this: CollisionShape, relativeLoc, axis: Vector): Vector =
   case this.kind:
   of chkPolygon:
-    return this.polygon.project(relativeLoc, axis)
+    return this.polygon.projectOnAxis(relativeLoc, axis)
   of chkCircle:
-    return this.circle.project(relativeLoc, axis)
+    return this.circle.projectOnAxis(relativeLoc, axis)
 
 proc stroke*(this: CollisionShape, ctx: Target, color: Color = RED) =
   case this.kind:

@@ -37,22 +37,6 @@ iterator pairs*(this: Polygon): (int, Vector) =
   for i, v in this.vertices:
     yield (i, v)
 
-func project*(this: Polygon, location, axis: Vector): Vector =
-  let startLoc = this[0] + location
-  var
-    dotProduct = axis.dotProduct(startLoc)
-
-  result.x = dotProduct
-  result.y = dotProduct
-
-  for i in 1..<this.len:
-    let currLoc = this[i] + location
-    dotProduct = axis.dotProduct(currLoc)
-    if dotProduct < result.x:
-      result.x = dotProduct
-    if dotProduct > result.y:
-      result.y = dotProduct
-
 func getLinePixels*(v1, v2: Vector, outPixels: var seq[Vector]) =
   ## Generates an array of points which lie on the parameterized line.
   ## @param v1:

@@ -10,13 +10,11 @@ export
   physicsbody
 
 # TODO: Tune
-# const DEFAULT_GRAVITY* = vector(0, 2000)
 const DEFAULT_GRAVITY* = vector(0, 577)
 
 type PhysicsLayer* = ref object of Layer
   gravity*: Vector
   physicsBodyChildren: seq[PhysicsBody]
-  slop*: float
 
 proc initPhysicsLayer*(
   layer: PhysicsLayer,
@@ -48,7 +46,7 @@ method removeChildNow*(this: PhysicsLayer, child: Node) =
     if index >= 0:
       this.physicsBodyChildren.delete(index)
 
-template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody, deltaTime: float) =
+template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
   ## Resolves a collision between two bodies.
   ## NOTE: Perfectly inelastic collisions are not calculated correctly,
   ## and some momentum will be added.
@@ -64,33 +62,40 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody, deltaTim
   let e = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
 
   # Calculate impuse scalar.
-  let impulse = collision.normal * (-(1.0 + e) * velAlongNormal) / totalInverseMass
+  let impulse = collision.normal * ((-(1.0 + e) * velAlongNormal) / totalInverseMass)
 
-  if bodyB.kind != pbStatic:
+  if bodyB.kind == pbStatic:
+    # Translate bodyA out of bodyB.
+    bodyA.center += collision.getMinimumTranslationVector()
+    bodyA.velocity -= impulse * iMassA
+  elif bodyA.kind == pbStatic:
+    # Translate bodyB out of bodyA.
+    bodyB.center -= collision.getMinimumTranslationVector()
+    bodyB.velocity += impulse * iMassB
+  else:
     # Apply the impulse.
     bodyA.velocity -= impulse * iMassA
     bodyB.velocity += impulse * iMassB
-
+    # Translate bodies out of each other.
     let massRatio = iMassA / totalInverseMass
     bodyA.center += collision.getMinimumTranslationVector() * massRatio
     bodyB.center += collision.getMinimumTranslationVector() * (massRatio - 1.0)
-  else:
-    # Translate bodyA out of bodyB.
-    bodyA.center += collision.getMinimumTranslationVector()
-    # Apply the impulse.
-    bodyA.velocity -= impulse * iMassA
 
 template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
   # TODO: Implement broad collision phase.
   for i, bodyA in this.physicsBodyChildren:
-    if bodyA.kind == pbStatic or bodyA.collisionShape == nil or bodyA.collisionShape.mass <= 0:
+    if bodyA.collisionShape == nil or bodyA.collisionShape.mass <= 0:
       # Static bodies do not need to be checked,
       # but other bodies may collide with them.
       continue
 
-    for j in countup(0, this.physicsBodyChildren.high):
+    for j in countup(i + 1, this.physicsBodyChildren.high):
       let bodyB = this.physicsBodyChildren[j]
-      if bodyA == bodyB or bodyB.collisionShape == nil or bodyB.collisionShape.mass <= 0:
+      if 
+        bodyA == bodyB or
+        bodyB.collisionShape == nil or
+        bodyB.collisionShape.mass <= 0 or
+        bodyA.kind == pbStatic and bodyB.kind == pbStatic:
         # Don't collide with self,
         # objects without collision shapes,
         # or massless objects.
@@ -106,7 +111,7 @@ template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
       if collision == nil:
         continue
 
-      collision.resolve(bodyA, bodyB, deltaTime)
+      collision.resolve(bodyA, bodyB)
 
 template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
   for body in this.physicsBodyChildren:
@@ -118,14 +123,22 @@ template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
     # Clear forces every frame.
     if body.kind == pbDynamic and this.gravity != VECTOR_ZERO:
       # Re-apply gravity to dynamic bodies.
-      body.forces = @[this.gravity]
+      body.forces.setLen(1)
+      body.forces[0] = this.gravity
     else:
       body.forces.setLen(0)
 
+# TODO: Make this configurable,
+# and changed CollisionShape so we can cache polygon projection axes.
+const iterations = 32
+
 method update*(this: PhysicsLayer, deltaTime: float) =
   procCall Layer(this).update(deltaTime)
+
+  for i in 1..iterations:
+    this.handleCollisions(deltaTime / iterations)
+
   this.applyForcesToBodies(deltaTime)
-  this.handleCollisions(deltaTime)
 
 PhysicsLayer.renderAsChildOf(Layer):
   for body in this.physicsBodyChildren:

@@ -7,6 +7,11 @@ import
 
 export Scancode, Keycode
 
+export
+  BUTTON_LEFT,
+  BUTTON_MIDDLE,
+  BUTTON_RIGHT
+
 type
   MouseButtonState* = object
     pressed: bool
@@ -25,8 +30,8 @@ type
 
   InputHandler* = ref object
     mouse: MouseInfo
-    keys: Table[Keycode, KeyState]
     mousePressedEventListeners: seq[proc(mouseButton: int)]
+    keys: Table[Keycode, KeyState]
 
 # InputHandler singleton
 var Input*: InputHandler

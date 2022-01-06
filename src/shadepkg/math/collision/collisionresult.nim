@@ -13,7 +13,7 @@ proc newCollisionResult*(
   ##
   ## @param normal:
   ##   The axis that the objects first make contact along.
-  ##   The vector points away from the object that owns this collision result.
+  ##   The vector points toward the object that owns this collision result.
   ##
   CollisionResult(
     intrusion: intrusion,
@@ -23,5 +23,5 @@ proc newCollisionResult*(
 template getMinimumTranslationVector*(this: CollisionResult): Vector =
   ## Calculates a vector which can be used to separate the objects.
   ## This vector may be seen abbreviated as `mtv`.
-  this.normal * -this.intrusion
+  this.normal * this.intrusion
 

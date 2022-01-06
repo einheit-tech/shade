@@ -22,12 +22,6 @@ proc newCircle*(center: Vector, radius: float): Circle =
 proc newCircle*(centerX, centerY, radius: float): Circle =
   return newCircle(vector(centerX, centerY), radius)
 
-func project*(this: Circle, location, axis: Vector): Vector =
-  let
-    newLoc = this.center + location
-    centerDot = axis.dotProduct(newLoc)
-  return vector(centerDot - this.radius, centerDot + this.radius)
-
 proc area*(this: Circle): float =
   if this.area.isNone:
     this.area = (PI * this.radius * this.radius).option
