@@ -12,9 +12,10 @@ export
 # TODO: Tune
 const DEFAULT_GRAVITY* = vector(0, 577)
 
-type PhysicsLayer* = ref object of Layer
-  gravity*: Vector
-  physicsBodyChildren: seq[PhysicsBody]
+type
+  PhysicsLayer* = ref object of Layer
+    gravity*: Vector
+    physicsBodyChildren: seq[PhysicsBody]
 
 proc initPhysicsLayer*(
   layer: PhysicsLayer,
@@ -112,6 +113,12 @@ template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
         continue
 
       collision.resolve(bodyA, bodyB)
+
+      # TODO: Some circle collisions don't bounce,
+      # and invoke a "fireOnce" callback multiple times.
+      # This ALSO happens consistently when two dynamic bodies collide.
+      bodyA.notifyCollisionListeners(bodyB, collision)
+      bodyB.notifyCollisionListeners(bodyA, collision)
 
 template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
   for body in this.physicsBodyChildren:

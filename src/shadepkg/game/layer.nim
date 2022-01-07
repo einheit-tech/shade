@@ -22,8 +22,8 @@ type
 
     children: seq[Node]
     childLock: Lock
-    additionQueue: Deque[Node]
-    removeQueue: Deque[Node]
+    childrenToAdd: Deque[Node]
+    childrenToRemove: Deque[Node]
 
 proc initLayer*(layer: Layer, z: float = 1.0) =
   initLock(layer.childLock)
@@ -59,7 +59,7 @@ proc addChild*(this: Layer, child: Node) =
     this.addChildNow(child)
     this.childLock.release()
   else:
-    this.additionQueue.addLast(child)
+    this.childrenToAdd.addLast(child)
 
 method removeChildNow*(this: Layer, child: Node) {.base.} =
   ## Removes the child IMMEDIATELY.
@@ -81,7 +81,7 @@ proc removeChild*(this: Layer, child: Node) =
     this.removeChildNow(child)
     this.childLock.release()
   else:
-    this.removeQueue.addLast(child)
+    this.childrenToRemove.addLast(child)
 
 proc removeAllChildren*(this: Layer) =
   ## Removes all children from the node.
@@ -90,7 +90,7 @@ proc removeAllChildren*(this: Layer) =
     this.childLock.release()
   else:
     for child in this.children:
-      this.removeQueue.addLast(child)
+      this.childrenToRemove.addLast(child)
 
 proc addZChangeListener*(this: Layer, listener: ZChangeListener) =
   this.zChangeListeners.add(listener)
@@ -118,13 +118,13 @@ method update*(this: Layer, deltaTime: float) {.base.} =
     this.onUpdate(this, deltaTime)
 
   withLock(this.childLock):
-    while this.additionQueue.len > 0:
-      let child = this.additionQueue.popFirst()
-      this.addChildNow(child)
-
-    while this.removeQueue.len > 0:
-      let child = this.removeQueue.popFirst()
+    while this.childrenToRemove.len > 0:
+      let child = this.childrenToRemove.popFirst()
       this.removeChildNow(child)
+
+    while this.childrenToAdd.len > 0:
+      let child = this.childrenToAdd.popFirst()
+      this.addChildNow(child)
 
     for child in this.children:
       if loUpdate in child.flags:

@@ -1,12 +1,17 @@
 import 
+  locks,
+  deques,
+  node,
   ../math/collision/collisionshape,
-  node
+  ../math/collision/collisionresult
 
 export
   node,
-  collisionshape
+  collisionshape,
+  collisionresult
 
 type
+  CollisionListener* = proc(this, other: PhysicsBody, result: CollisionResult)
   PhysicsBodyKind* = enum
     ## A body controlled by applied forces.
     pbDynamic,
@@ -34,8 +39,19 @@ type
       of pbStatic:
         discard
 
+    collisionListenersLock: Lock
+    collisionListeners: seq[CollisionListener]
+    collisionListenersToAdd: Deque[(CollisionListener, bool)]
+    collisionListenersToRemove: Deque[CollisionListener]
+
+proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false)
+proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener)
+proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult)
+
 proc initPhysicsBody*(physicsBody: var PhysicsBody, flags: set[LayerObjectFlags] = {loUpdate, loRender}) =
   initNode(Node(physicsBody), flags)
+  initLock(physicsBody.collisionListenersLock)
+  physicsBody.addCollisionListener(wallAndGroundSetter, true)
 
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
@@ -69,9 +85,60 @@ template velocityY*(this: PhysicsBody): float =
 template `velocityY=`*(this: PhysicsBody, y: float) =
   this.velocity = vector(this.velocity.x, y)
 
+proc addCollisionListenerNow*(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false) =
+  if fireOnce:
+    var onceListener: CollisionListener
+    onceListener = proc(a, b: PhysicsBody, collisionResult: CollisionResult) =
+      listener(a, b, collisionResult)
+      this.removeCollisionListener(onceListener)
+    this.collisionListeners.add(onceListener)
+  else:
+    this.collisionListeners.add(listener)
+
+proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false) =
+  if tryAcquire(this.collisionListenersLock):
+    this.addCollisionListenerNow(listener, fireOnce)
+    this.collisionListenersLock.release()
+  else:
+    this.collisionListenersToAdd.addLast((listener, fireOnce))
+
+proc removeCollisionListenerNow*(this: PhysicsBody, listener: CollisionListener) =
+  var index = -1
+  for i, l in this.collisionListeners:
+    if l == listener:
+      index = i
+      break
+  
+  if index >= 0:
+    this.collisionListeners.delete(index)
+
+proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener) =
+  if tryAcquire(this.collisionListenersLock):
+    this.removeCollisionListenerNow(listener)
+    this.collisionListenersLock.release()
+  else:
+    this.collisionListenersToRemove.addLast(listener)
+
+proc notifyCollisionListeners*(this, other: PhysicsBody, collisionResult: CollisionResult) =
+  withLock(this.collisionListenersLock):
+    for listener in this.collisionListeners:
+      listener(this, other, collisionResult)
+
+proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult) =
+  echo "wallAndGroundSetter"
+
 method update*(this: PhysicsBody, deltaTime: float) =
   procCall Node(this).update(deltaTime)
   this.center += this.velocity * deltaTime
+
+  withLock(this.collisionListenersLock):
+    while this.collisionListenersToRemove.len > 0:
+      let listener = this.collisionListenersToRemove.popFirst()
+      this.removeCollisionListenerNow(listener)
+
+    while this.collisionListenersToAdd.len > 0:
+      let (listener, fireOnce) = this.collisionListenersToAdd.popFirst()
+      this.addCollisionListenerNow(listener, fireOnce)
 
 PhysicsBody.renderAsNodeChild:
   when defined(collisionoutlines):
