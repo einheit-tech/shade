@@ -9,8 +9,10 @@ export
   layer,
   physicsbody
 
-# TODO: Tune
-const DEFAULT_GRAVITY* = vector(0, 577)
+# TODO: Tune and make configurable.
+const
+  DEFAULT_GRAVITY* = vector(0, 577)
+  COLLISION_ITERATIONS* = 16
 
 type
   PhysicsLayer* = ref object of Layer
@@ -54,40 +56,31 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
   let
     relVelocity = bodyB.velocity - bodyA.velocity
     velAlongNormal = relVelocity.dotProduct(collision.normal)
+    bodiesAreNotSeparating = velAlongNormal > 0.0
 
   template iMassA: float = bodyA.collisionShape.inverseMass
   template iMassB: float = bodyB.collisionShape.inverseMass
   let totalInverseMass = iMassA + iMassB
 
-  # Calculate restitution.
-  let e = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
+  let
+    restitution = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
+    impulse = collision.normal * ((-(1.0 + restitution) * velAlongNormal) / totalInverseMass)
+    massRatio = iMassA / totalInverseMass
+    mtv = collision.getMinimumTranslationVector()
 
-  # Calculate impuse scalar.
-  let impulse = collision.normal * ((-(1.0 + e) * velAlongNormal) / totalInverseMass)
+  # Translate bodies out of each other.
+  bodyA.center += mtv * massRatio
+  bodyB.center += mtv * (massRatio - 1.0)
 
-  if bodyB.kind == pbStatic:
-    # Translate bodyA out of bodyB.
-    bodyA.center += collision.getMinimumTranslationVector()
-    bodyA.velocity -= impulse * iMassA
-  elif bodyA.kind == pbStatic:
-    # Translate bodyB out of bodyA.
-    bodyB.center -= collision.getMinimumTranslationVector()
-    bodyB.velocity += impulse * iMassB
-  else:
-    # Apply the impulse.
+  # Apply impulses if bodies are not moving away from one another.
+  if bodiesAreNotSeparating:
     bodyA.velocity -= impulse * iMassA
     bodyB.velocity += impulse * iMassB
-    # Translate bodies out of each other.
-    let massRatio = iMassA / totalInverseMass
-    bodyA.center += collision.getMinimumTranslationVector() * massRatio
-    bodyB.center += collision.getMinimumTranslationVector() * (massRatio - 1.0)
 
 template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
   # TODO: Implement broad collision phase.
   for i, bodyA in this.physicsBodyChildren:
-    if bodyA.collisionShape == nil or bodyA.collisionShape.mass <= 0:
-      # Static bodies do not need to be checked,
-      # but other bodies may collide with them.
+    if bodyA.collisionShape == nil:
       continue
 
     for j in countup(i + 1, this.physicsBodyChildren.high):
@@ -95,11 +88,10 @@ template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
       if 
         bodyA == bodyB or
         bodyB.collisionShape == nil or
-        bodyB.collisionShape.mass <= 0 or
         bodyA.kind == pbStatic and bodyB.kind == pbStatic:
         # Don't collide with self,
         # objects without collision shapes,
-        # or massless objects.
+        # or check for static vs. static collisions.
         continue
 
       let collision = collides(
@@ -114,18 +106,17 @@ template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
 
       collision.resolve(bodyA, bodyB)
 
-      # TODO: Some circle collisions don't bounce,
-      # and invoke a "fireOnce" callback multiple times.
-      # This ALSO happens consistently when two dynamic bodies collide.
       bodyA.notifyCollisionListeners(bodyB, collision)
       bodyB.notifyCollisionListeners(bodyA, collision)
 
 template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
   for body in this.physicsBodyChildren:
-    if body.kind != pbStatic:
-      # Apply forces to all non-static bodies.
-      for force in body.forces:
-        body.velocity += force * deltaTime
+    if body.kind == pbStatic:
+      continue
+
+    # Apply forces to all non-static bodies.
+    for force in body.forces:
+      body.velocity += force * deltaTime
 
     # Clear forces every frame.
     if body.kind == pbDynamic and this.gravity != VECTOR_ZERO:
@@ -135,16 +126,13 @@ template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
     else:
       body.forces.setLen(0)
 
-# TODO: Make this configurable,
-# and changed CollisionShape so we can cache polygon projection axes.
-const iterations = 32
-
 method update*(this: PhysicsLayer, deltaTime: float) =
   procCall Layer(this).update(deltaTime)
 
-  for i in 1..iterations:
-    this.handleCollisions(deltaTime / iterations)
-
+  let subdividedDeltaTime = deltaTime / COLLISION_ITERATIONS
+  for i in 1..COLLISION_ITERATIONS:
+    this.handleCollisions(subdividedDeltaTime)
+    
   this.applyForcesToBodies(deltaTime)
 
 PhysicsLayer.renderAsChildOf(Layer):

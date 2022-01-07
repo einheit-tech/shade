@@ -65,7 +65,7 @@ template mass*(this: CollisionShape): float =
   else:
     1.0 / this.inverseMass
 
-template `mass=`(this: CollisionShape, mass: float) =
+template `mass=`*(this: CollisionShape, mass: float) =
   ## Sets the mass of the object.
   ## Should be for internal use only, for calculations.
   if mass == 0:

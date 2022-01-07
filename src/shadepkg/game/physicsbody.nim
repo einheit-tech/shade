@@ -23,12 +23,8 @@ type
     pbKinematic
 
   PhysicsBody* = ref object of Node
-    collisionShape*: CollisionShape
+    collisionShape: CollisionShape
     velocity*: Vector
-
-    ## Forces applied to the center of mass, this frame.
-    forces*: seq[Vector]
-
     # TODO:
     # angularVelocity*: float
 
@@ -36,6 +32,8 @@ type
       of pbDynamic, pbKinematic:
         isOnGround*: bool
         isOnWall*: bool
+        ## Forces applied to the center of mass, this frame.
+        forces*: seq[Vector]
       of pbStatic:
         discard
 
@@ -60,6 +58,14 @@ proc newPhysicsBody*(
   ## Creates a new PhysicsBody.
   result = PhysicsBody(kind: kind)
   initPhysicsBody(result, flags)
+
+template collisionShape*(this: PhysicsBody): CollisionShape =
+  this.collisionShape
+
+template `collisionShape=`*(this: PhysicsBody, shape: CollisionShape) =
+  this.collisionShape = shape
+  if this.kind == pbStatic:
+    this.collisionShape.mass = 0
 
 template width*(this: PhysicsBody): float =
   if this.collisionShape != nil:
@@ -125,7 +131,7 @@ proc notifyCollisionListeners*(this, other: PhysicsBody, collisionResult: Collis
       listener(this, other, collisionResult)
 
 proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult) =
-  echo "wallAndGroundSetter"
+  discard
 
 method update*(this: PhysicsBody, deltaTime: float) =
   procCall Node(this).update(deltaTime)
