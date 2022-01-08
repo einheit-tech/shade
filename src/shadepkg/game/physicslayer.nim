@@ -5,6 +5,8 @@ import
   ../math/collision/sat,
   ../math/collision/collisionresult
 
+import ../util/timer
+
 export
   layer,
   physicsbody
@@ -57,20 +59,23 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
     relVelocity = bodyB.velocity - bodyA.velocity
     velAlongNormal = relVelocity.dotProduct(collision.normal)
     bodiesAreNotSeparating = velAlongNormal > 0.0
-
-  template iMassA: float = bodyA.collisionShape.inverseMass
-  template iMassB: float = bodyB.collisionShape.inverseMass
-  let totalInverseMass = iMassA + iMassB
-
-  let
-    restitution = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
-    impulse = collision.normal * ((-(1.0 + restitution) * velAlongNormal) / totalInverseMass)
-    massRatio = iMassA / totalInverseMass
     mtv = collision.getMinimumTranslationVector()
 
   # Translate bodies out of each other.
-  bodyA.center += mtv * massRatio
-  bodyB.center += mtv * (massRatio - 1.0)
+  if bodyA.kind == pbStatic:
+    bodyB.center -= mtv
+  elif bodyB.kind == pbStatic:
+    bodyA.center += mtv
+  else:
+    bodyA.center += mtv * 0.5
+    bodyB.center += mtv * -0.5
+
+  template iMassA: float = bodyA.collisionShape.inverseMass
+  template iMassB: float = bodyB.collisionShape.inverseMass
+
+  let
+    restitution = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
+    impulse = collision.normal * ((-(1.0 + restitution) * velAlongNormal) / (iMassA + iMassB))
 
   # Apply impulses if bodies are not moving away from one another.
   if bodiesAreNotSeparating:
@@ -80,18 +85,9 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
 template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
   # TODO: Implement broad collision phase.
   for i, bodyA in this.physicsBodyChildren:
-    if bodyA.collisionShape == nil:
-      continue
-
     for j in countup(i + 1, this.physicsBodyChildren.high):
       let bodyB = this.physicsBodyChildren[j]
-      if 
-        bodyA == bodyB or
-        bodyB.collisionShape == nil or
-        bodyA.kind == pbStatic and bodyB.kind == pbStatic:
-        # Don't collide with self,
-        # objects without collision shapes,
-        # or check for static vs. static collisions.
+      if bodyA.kind == pbStatic and bodyB.kind == pbStatic:
         continue
 
       let collision = collides(
@@ -132,7 +128,7 @@ method update*(this: PhysicsLayer, deltaTime: float) =
   let subdividedDeltaTime = deltaTime / COLLISION_ITERATIONS
   for i in 1..COLLISION_ITERATIONS:
     this.handleCollisions(subdividedDeltaTime)
-    
+
   this.applyForcesToBodies(deltaTime)
 
 PhysicsLayer.renderAsChildOf(Layer):

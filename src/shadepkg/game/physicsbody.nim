@@ -23,10 +23,9 @@ type
     pbKinematic
 
   PhysicsBody* = ref object of Node
+    # TODO: Make collisionShape required.
     collisionShape: CollisionShape
     velocity*: Vector
-    # TODO:
-    # angularVelocity*: float
 
     case kind*: PhysicsBodyKind:
       of pbDynamic, pbKinematic:
