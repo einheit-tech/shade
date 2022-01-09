@@ -14,7 +14,7 @@ export
 # TODO: Tune and make configurable.
 const
   DEFAULT_GRAVITY* = vector(0, 577)
-  COLLISION_ITERATIONS* = 16
+  COLLISION_ITERATIONS* = 20
 
 type
   PhysicsLayer* = ref object of Layer
@@ -73,12 +73,11 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
   template iMassA: float = bodyA.collisionShape.inverseMass
   template iMassB: float = bodyB.collisionShape.inverseMass
 
-  let
-    restitution = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
-    impulse = collision.normal * ((-(1.0 + restitution) * velAlongNormal) / (iMassA + iMassB))
-
   # Apply impulses if bodies are not moving away from one another.
   if bodiesAreNotSeparating:
+    let
+      restitution = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
+      impulse = collision.normal * (-(1.0 + restitution) * velAlongNormal / (iMassA + iMassB))
     bodyA.velocity -= impulse * iMassA
     bodyB.velocity += impulse * iMassB
 

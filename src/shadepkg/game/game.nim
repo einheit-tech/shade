@@ -13,21 +13,21 @@ import
   ../render/color
 
 const
-  # TODO: Get hz of monitor or allow this to be configurable.
-  fps = 60
   oneBillion = 1000000000
   oneMillion = 1000000
-  sleepNanos = round(oneBillion / fps).int
+  DEFAULT_REFRESH_RATE = 60
 
 type 
   Engine* = ref object of RootObj
-    shouldExit: bool
     screen*: Target
-
     scene: Scene
-
     # The color to fill the screen with to clear it every frame.
-    clearColor: Color
+    clearColor*: Color
+    shouldExit: bool
+
+    refreshRate: int
+    deltaTime: float
+    sleepNanos: int
 
 proc update*(this: Engine, deltaTime: float)
 proc render*(this: Engine, screen: Target)
@@ -59,6 +59,20 @@ proc initEngineSingleton*(
   Game.scene = scene
   Game.clearColor = clearColor
 
+  # Determine display's refresh rate.
+  # var mode: ptr DisplayMode
+  # TODO: Why the hell am I getting a nil access error for context here?
+  # discard getWindowFromID(target[].context.windowID).getWindowDisplayMode(mode)
+  # Game.refreshRate =
+  #   if mode != nil and mode.refreshRate > 0:
+  #     mode.refreshRate
+  #   else:
+  #     DEFAULT_REFRESH_RATE
+  Game.refreshRate = 60
+
+  Game.deltaTime = 1.0 / Game.refreshRate.float
+  Game.sleepNanos = round(oneBillion / Game.refreshRate).int
+
   gamestate.resolutionPixels = vector(gameWidth.float, gameHeight.float)
   gamestate.resolutionMeters = gamestate.resolutionPixels
 
@@ -85,20 +99,16 @@ proc loop(this: Engine) =
     elapsedNanos: int64 = 0
 
   while not this.shouldExit:
-    # Determine elapsed time in seconds
-
-    let deltaTime: float = elapsedNanos.float64 / oneBillion.float64
-
     this.shouldExit = this.handleEvents()
-    this.update(deltaTime)
+    this.update(this.deltaTime)
     this.render(this.screen)
 
-    Input.update(deltaTime)
+    Input.update(this.deltaTime)
 
     # Calculate sleep time
     elapsedNanos = getMonoTime().ticks - startTimeNanos
     let sleepMilis =
-      round(max(0, sleepNanos - elapsedNanos).float64 / oneMillion.float64).int
+      round(max(0, this.sleepNanos - elapsedNanos).float64 / oneMillion.float64).int
     sleep(sleepMilis)
 
     let time = getMonoTime().ticks
