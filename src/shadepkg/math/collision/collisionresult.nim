@@ -25,3 +25,6 @@ template getMinimumTranslationVector*(this: CollisionResult): Vector =
   ## This vector may be seen abbreviated as `mtv`.
   this.normal * this.intrusion
 
+template invert*(this: CollisionResult): CollisionResult =
+  newCollisionResult(this.intrusion, this.normal.negate())
+

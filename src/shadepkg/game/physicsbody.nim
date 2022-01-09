@@ -11,7 +11,7 @@ export
   collisionresult
 
 type
-  CollisionListener* = proc(this, other: PhysicsBody, result: CollisionResult)
+  CollisionListener* = proc(this, other: PhysicsBody, result: CollisionResult, gravityNormal: Vector)
   PhysicsBodyKind* = enum
     ## A body controlled by applied forces.
     pbDynamic,
@@ -43,12 +43,13 @@ type
 
 proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false)
 proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener)
-proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult)
+proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult, gravityNormal: Vector)
 
 proc initPhysicsBody*(physicsBody: var PhysicsBody, flags: set[LayerObjectFlags] = {loUpdate, loRender}) =
   initNode(Node(physicsBody), flags)
   initLock(physicsBody.collisionListenersLock)
-  physicsBody.addCollisionListener(wallAndGroundSetter, true)
+  if physicsBody.kind != pbStatic:
+    physicsBody.addCollisionListener(wallAndGroundSetter)
 
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
@@ -93,8 +94,8 @@ template `velocityY=`*(this: PhysicsBody, y: float) =
 proc addCollisionListenerNow*(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false) =
   if fireOnce:
     var onceListener: CollisionListener
-    onceListener = proc(a, b: PhysicsBody, collisionResult: CollisionResult) =
-      listener(a, b, collisionResult)
+    onceListener = proc(a, b: PhysicsBody, collisionResult: CollisionResult, gravityNormal: Vector) =
+      listener(a, b, collisionResult, gravityNormal)
       this.removeCollisionListener(onceListener)
     this.collisionListeners.add(onceListener)
   else:
@@ -124,13 +125,25 @@ proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener) =
   else:
     this.collisionListenersToRemove.addLast(listener)
 
-proc notifyCollisionListeners*(this, other: PhysicsBody, collisionResult: CollisionResult) =
+proc notifyCollisionListeners*(
+  this, other: PhysicsBody,
+  collisionResult: CollisionResult,
+  gravityNormal: Vector
+) =
   withLock(this.collisionListenersLock):
     for listener in this.collisionListeners:
-      listener(this, other, collisionResult)
+      listener(this, other, collisionResult, gravityNormal)
 
-proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult) =
-  discard
+proc wallAndGroundSetter(
+  this, other: PhysicsBody,
+  collisionResult: CollisionResult,
+  gravityNormal: Vector
+) =
+  if collisionResult.normal.dotProduct(gravityNormal) <= 0.0:
+    this.isOnGround = true
+
+  if abs(collisionResult.normal.crossProduct(gravityNormal)) > 0.5:
+    this.isOnWall = true
 
 method update*(this: PhysicsBody, deltaTime: float) =
   procCall Node(this).update(deltaTime)
@@ -144,6 +157,11 @@ method update*(this: PhysicsBody, deltaTime: float) =
     while this.collisionListenersToAdd.len > 0:
       let (listener, fireOnce) = this.collisionListenersToAdd.popFirst()
       this.addCollisionListenerNow(listener, fireOnce)
+
+  if this.kind != pbStatic:
+    # Reset the state every update.
+    this.isOnGround = false
+    this.isOnWall = false
 
 PhysicsBody.renderAsNodeChild:
   when defined(collisionoutlines):

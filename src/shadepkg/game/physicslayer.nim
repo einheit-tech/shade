@@ -18,8 +18,16 @@ const
 
 type
   PhysicsLayer* = ref object of Layer
-    gravity*: Vector
+    gravity: Vector
+    gravityNormal: Vector
     physicsBodyChildren: seq[PhysicsBody]
+
+template gravity*(this: PhysicsLayer): Vector =
+  this.gravity
+
+template `gravity=`*(this: PhysicsLayer, gravity: Vector) =
+  this.gravity = gravity
+  this.gravityNormal = this.gravity.normalize()
 
 proc initPhysicsLayer*(
   layer: PhysicsLayer,
@@ -101,8 +109,8 @@ template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
 
       collision.resolve(bodyA, bodyB)
 
-      bodyA.notifyCollisionListeners(bodyB, collision)
-      bodyB.notifyCollisionListeners(bodyA, collision)
+      bodyA.notifyCollisionListeners(bodyB, collision, this.gravityNormal)
+      bodyB.notifyCollisionListeners(bodyA, collision.invert(), this.gravityNormal)
 
 template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
   for body in this.physicsBodyChildren:
