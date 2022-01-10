@@ -24,8 +24,8 @@ task animations, "Runs the animation player example":
 task physics, "Runs the physics example":
   exec "nim r -d:release --threads:on --multimethods:on -d:collisionoutlines -d:inputdebug examples/physics/physics_example.nim"
 
-task platformer, "Runs the plateformer example":
-  exec "nim r --threads:on --multimethods:on -d:collisionoutlines -d:inputdebug examples/physics/platformer_example.nim"
+task platformer, "Runs the platformer example":
+  exec "nim r -d:release --threads:on --multimethods:on -d:collisionoutlines -d:inputdebug examples/platformer/platformer_example.nim"
 
 task runtests, "Runs all tests":
   exec "cd tests && nim r --hints:off testrunner.nim"

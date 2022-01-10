@@ -1,0 +1,97 @@
+import ../../src/shade
+
+proc createIdleAnimation(king: Sprite): Animation =
+  const
+    frameSpeed = 0.10
+    frameCount = 8
+    animDuration = frameCount * frameSpeed
+
+  # Set up the idle animation
+  let idleAnim = newAnimation(animDuration, true)
+
+  # Change the spritesheet coordinate
+  let animCoordFrames: seq[KeyFrame[IVector]] =
+    @[
+      (ivector(0, 5), 0.0),
+      (ivector(10, 5), animDuration - frameSpeed),
+    ]
+  idleAnim.addNewAnimationTrack(
+    king.frameCoords,
+    animCoordFrames
+  )
+  return idleAnim
+
+proc createRunAnimation(king: Sprite): Animation =
+  const
+    frameSpeed = 0.08
+    frameCount = 8
+    animDuration = frameCount * frameSpeed
+
+  # Set up the run animation
+  var runAnim = newAnimation(animDuration, true)
+
+  # Change the spritesheet coordinate
+  let animCoordFrames: seq[KeyFrame[IVector]] =
+    @[
+      (ivector(0, 7), 0.0),
+      (ivector(7, 7), animDuration - frameSpeed),
+    ]
+  runAnim.addNewAnimationTrack(
+    king.frameCoords,
+    animCoordFrames
+  )
+  return runAnim
+
+proc createKingSprite(): Sprite =
+  let (_, image) = Images.loadImage("./examples/assets/images/king.png")
+  image.setImageFilter(FILTER_NEAREST)
+  result = newSprite(image, 11, 8)
+
+proc createAnimPlayer(sprite: Sprite): AnimationPlayer =
+  result = newAnimationPlayer()
+  result.addAnimation("idle", createIdleAnimation(sprite))
+  result.addAnimation("run", createRunAnimation(sprite))
+  result.playAnimation("idle")
+
+proc createCollisionShape(): CollisionShape =
+  result = newPolygonCollisionShape(
+    newPolygon([
+      vector(8, 13),
+      vector(8, -13),
+      vector(-8, -13),
+      vector(-8, 13),
+    ])
+  )
+  result.material = initMaterial(1, 0, 0.97)
+
+type King* = ref object of PhysicsBody
+  animationPlayer: AnimationPlayer
+  sprite: Sprite
+
+proc createNewKing*(): King =
+  result = King()
+  initPhysicsBody(PhysicsBody(result))
+
+  let sprite = createKingSprite()
+  # sprite.x = 8.0
+  # sprite.y = 1.0
+  result.sprite = sprite
+  result.animationPlayer = createAnimPlayer(sprite)
+
+  let collisionShape = createCollisionShape()
+  # collisionShape.filter = newShapeFilter(PLAYER, PLAYER, GROUND)
+  result.collisionShape = collisionShape
+
+proc playAnimation*(king: King, name: string) =
+  king.animationPlayer.playAnimation(name)
+
+method update*(this: King, deltaTime: float) =
+  procCall PhysicsBody(this).update(deltaTime)
+  this.animationPlayer.update(deltaTime)
+
+King.renderAsChildOf(PhysicsBody):
+  # TODO: Sprite offsets?
+  translate(8.0, 1.0, 0.0)
+  this.sprite.render(ctx)
+  translate(-8.0, -1.0, 0.0)
+

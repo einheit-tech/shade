@@ -35,7 +35,7 @@ proc initPhysicsLayer*(
   z: float = 1.0
 ) =
   initLayer(layer, z)
-  layer.gravity = gravity
+  `gravity=`(layer, gravity)
 
 proc newPhysicsLayer*(gravity: Vector = DEFAULT_GRAVITY, z: float = 1.0): PhysicsLayer =
   result = PhysicsLayer()

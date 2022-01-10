@@ -139,7 +139,7 @@ proc wallAndGroundSetter(
   collisionResult: CollisionResult,
   gravityNormal: Vector
 ) =
-  if collisionResult.normal.dotProduct(gravityNormal) <= 0.0:
+  if collisionResult.normal.negate.dotProduct(gravityNormal) > 0.5:
     this.isOnGround = true
 
   if abs(collisionResult.normal.crossProduct(gravityNormal)) > 0.5:
