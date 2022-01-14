@@ -1,6 +1,6 @@
 type BinaryTree*[T] = ref object 
-  left, right: BinaryTree[T]
-  value: T
+  left*, right*: BinaryTree[T]
+  value*: T
 
 proc newNode*[T](value: T): BinaryTree[T] =
   new(result)
@@ -20,27 +20,43 @@ iterator preorder*[T](this: BinaryTree[T]): BinaryTree[T] =
       stack.add(n.right)  
       n = n.left          
 
+iterator preorderValues*[T](this: BinaryTree[T]): T =
+  for n in preorder(this):
+    yield n.value
+
 template doWhile(condition, body: untyped): untyped =
   body
   while condition:
     body
 
+template peek[T](arr: openArray[T]): T =
+  arr[arr.high]
+
 iterator postorder*[T](this: BinaryTree[T]): BinaryTree[T] =
   ## Postorder traversal of a binary tree.
   ## Left, root, then right (depth-first search, bottom to top).
-  var stack: seq[BinaryTree[T]] = @[this]
-  doWhile stack.len > 0:
-    let n = stack.pop()
-    if n.isLeafNode():
-      yield n
-    else:
-      if n.right != nil:
-        stack.add(n.right)
+  var stack: seq[BinaryTree[T]]
+  var root: BinaryTree[T] = this
+  while true:
+    while root != nil:
+      stack.add(root)
+      stack.add(root)
+      root = root.left
 
-      if n.left != nil:
-        stack.add(n.left)
-      
-  yield this
+    if stack.len == 0:
+      break
+
+    root = stack.pop()
+    
+    if stack.len > 0 and stack.peek() == root:
+      root = root.right
+    else:
+      yield root
+      root = nil
+
+iterator postorderValues*[T](this: BinaryTree[T]): T =
+  for n in postorder(this):
+    yield n.value
 
 proc add*[T](this: var BinaryTree[T], n: BinaryTree[T]) =
   ## Inserts a node into the tree.
