@@ -1,5 +1,5 @@
 type BinaryTree*[T] = ref object 
-  left*, right*: BinaryTree[T]
+  parent*, left*, right*: BinaryTree[T]
   value*: T
 
 proc newNode*[T](value: T): BinaryTree[T] =
@@ -8,6 +8,30 @@ proc newNode*[T](value: T): BinaryTree[T] =
 
 template isLeafNode*[T](node: BinaryTree[T]): bool =
   node.left.isNil and node.right.isNil
+
+template peek[T](arr: openArray[T]): T =
+  arr[arr.high]
+
+proc setLeaf*[T](leaf: BinaryTree[T], value: T) =
+  ## Makes `leaf` a leaf node with nil children and the given value.
+  ## This does not affect the leaf's parent.
+  leaf.value = value
+  leaf.left = nil
+  leaf.right = nil
+
+proc setBranch*(branch, left, right: BinaryTree) =
+  ## Makes `branch` a branch node with the given children.
+  left.parent = branch
+  right.parent = branch
+  branch.left = left
+  branch.right = right
+
+proc getSibling*(this: BinaryTree): BinaryTree =
+  ## Retrieves the sibling of the given node.
+  if this == this.parent.left:
+    return this.parent.left
+  else:
+    return this.parent.right
 
 iterator preorder*[T](this: BinaryTree[T]): BinaryTree[T] =
   ## Preorder traversal of a binary tree.
@@ -23,14 +47,6 @@ iterator preorder*[T](this: BinaryTree[T]): BinaryTree[T] =
 iterator preorderValues*[T](this: BinaryTree[T]): T =
   for n in preorder(this):
     yield n.value
-
-template doWhile(condition, body: untyped): untyped =
-  body
-  while condition:
-    body
-
-template peek[T](arr: openArray[T]): T =
-  arr[arr.high]
 
 iterator postorder*[T](this: BinaryTree[T]): BinaryTree[T] =
   ## Postorder traversal of a binary tree.
@@ -81,10 +97,4 @@ proc add*[T](this: var BinaryTree[T], n: BinaryTree[T]) =
 
 template add*[T](this: var BinaryTree[T], value: T) =
   this.add(newNode(value))
-
-# TODO:
-# See:
-# https://www.geeksforgeeks.org/tree-traversals-inorder-preorder-and-postorder/
-# https://www.geeksforgeeks.org/level-order-tree-traversal/
-# https://www.azurefromthetrenches.com/introductory-guide-to-aabb-tree-collision-detection/
 

@@ -4,20 +4,28 @@ import
   ../render/color
 
 type Rectangle* = ref object
-  left*: float
-  top*: float
-  right*: float
-  bottom*: float
+  topLeft*: Vector
+  bottomRight*: Vector
 
 proc initRectangle*(rect: Rectangle, left, top, right, bottom: float) =
-  rect.left = left
-  rect.top = top
-  rect.right = right
-  rect.bottom = bottom
+  rect.topLeft = vector(left, top)
+  rect.bottomRight = vector(right, bottom)
 
 proc newRectangle*(left, top, right, bottom: float): Rectangle =
   result = Rectangle()
   initRectangle(result, left, top, right, bottom)
+
+template left*(this: Rectangle): float =
+  this.topLeft.x
+
+template top*(this: Rectangle): float =
+  this.topLeft.y
+
+template right*(this: Rectangle): float =
+  this.bottomRight.x
+
+template bottom*(this: Rectangle): float =
+  this.bottomRight.y
 
 template width*(this: Rectangle): float =
   this.right - this.left
@@ -46,6 +54,15 @@ template intersects*(this: Rectangle, rect: Rectangle): bool =
     rect.left <= this.right and
     this.top <= rect.right and
     rect.top <= this.right
+
+template `+`*(r1, r2: Rectangle): Rectangle =
+  newRectangle(
+    min(r1.topLeft.x, r2.topLeft.x),
+    min(r1.topLeft.y, r2.topLeft.y),
+    max(r1.bottomRight.x, r2.bottomRight.x),
+    max(r1.bottomRight.y, r2.bottomRight.y)
+  )
+
 
 proc stroke*(this: Rectangle, ctx: Target, color: Color = RED) =
   ctx.rectangle(
