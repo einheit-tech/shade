@@ -33,6 +33,9 @@ template width*(this: Rectangle): float =
 template height*(this: Rectangle): float =
   this.bottom - this.top
 
+template area*(this: Rectangle): float =
+  this.width * this.height
+
 proc getScaledInstance*(this: Rectangle, scale: Vector): Rectangle =
   if scale.x == 0 or scale.y == 0:
     raise newException(Exception, "Scaled size cannot be 0!")

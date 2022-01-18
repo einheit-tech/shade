@@ -52,7 +52,8 @@ type AABBTree*[T] = ref object
   # nodeCapacity: Natural
   # growthSize: Positive
 
-proc insertLeaf(this: AABBTree, index: Natural)
+proc insertLeaf(this: AABBTree, leafNodeIndex: Natural)
+proc fixUpwardsTree(this: AABBTree, index: Natural)
 
 proc newAABBTree*(): AABBTree =
   result = AABBTree(
@@ -117,17 +118,17 @@ proc queryOverlaps(this: AABBTree, obj: CollisionShape): seq[Rectangle] =
         stack.push(node.leftNodeIndex)
         stack.push(node.rightNodeIndex)
 
-proc insertLeaf(this: AABBTree, index: Natural) =
-  let node = this.nodes[index]
+proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
+  let leafNode = this.nodes[leafNodeIndex]
 
   # Must be a leaf node
-  assert node.parentNodeIndex == AABB_NULL_NODE
-  assert node.leftNodeIndex == AABB_NULL_NODE
-  assert node.rightNodeIndex == AABB_NULL_NODE
+  assert leafNode.parentNodeIndex == AABB_NULL_NODE
+  assert leafNode.leftNodeIndex == AABB_NULL_NODE
+  assert leafNode.rightNodeIndex == AABB_NULL_NODE
 
   if this.rootNodeIndex == AABB_NULL_NODE:
     # If the tree is empty, make the root the new leaf.
-    this.rootNodeIndex = index
+    this.rootNodeIndex = leafNodeIndex
     return
   
   # Search for the best place to insert the new leaf.
@@ -136,10 +137,114 @@ proc insertLeaf(this: AABBTree, index: Natural) =
   let treeNodeIndex = this.rootNodeIndex
 
   while this.nodes[treeNodeIndex].isBranch():
-    discard
+    let
+      treeNode = this.nodes[treeNodeIndex]
+      leftNodeIndex = treeNode.leftNodeIndex
+      rightNodeIndex = treeNode.rightNodeIndex
+      leftNode = this.nodes[leftNodeIndex]
+      rightNode = this.nodes[rightNodeIndex]
+      combinedAABB = treeNode.aabb + leafNode.aabb
+      combinedArea = combinedAABB.area()
+      newParentNodeCost = combinedArea * 2.0
+      minimumPushDownCost = (combinedArea - treeNode.aabb.area()) * 2.0
 
-proc removeLeaf(this: AABBTree, index: Natural) =
-  discard
+    # Use costs to determine if a new parent should be created
+    var costLeft, costRight: float
+    if leftNode.isLeaf():
+      costLeft = (leafNode.aabb + leftNode.aabb).area() + minimumPushDownCost
+    else:
+      let newLeftAABB = leafNode.aabb + leftNode.aabb
+      costLeft = newLeftAABB.getArea() - leftNode.aabb.getArea() + minimumPushDownCost
+
+    if rightNode.isLeaf():
+      costRight = (leafNode.aabb + rightNode.aabb).area() + minimumPushDownCost
+    else:
+      let newRightAABB = leafNode.aabb + rightNode.aabb
+      costRight = newRightAABB.getArea() - rightNode.aabb.getArea() + minimumPushDownCost
+
+    # If the cost of creating a new parent node is less than descending other branches in either direction,
+    # we know we need to create a new parent node here and attach the leaf.
+    if newParentNodeCost < costLeft and newParentNodeCost < costRight:
+      break
+    
+    if costLeft < costRight:
+      treeNodeIndex = leftNodeIndex
+    else:
+      treeNodeIndex = rightNodeIndex
+    
+    # The leaf's sibling is going to be the node we found above,
+    # and we are going to create a new parent node and attach the leaf and this item
+    let
+      leafSiblingIndex = treeNodeIndex
+      leafSibling = this.nodes[leafSiblingIndex]
+      oldParentIndex = leafSiblingIndex
+      newParentIndex = this.allocateNode()
+      newParent = this.nodes[newParentIndex]
+
+    newParent.parentNodeIndex = oldParentIndex
+    newParent.leftNodeIndex = leafSiblingIndex
+    newParent.rightNodeIndex = leafNodeIndex
+
+    leafNode.parentNodeIndex = newParentIndex
+    leafSibling.parentNodeIndex = newParentIndex
+    
+    if oldParentIndex == AABB_NULL_NODE:
+      # The old parent was the root, now this should be the new root.
+      this.rootNodeIndex = newParentIndex
+    else:
+      # The old parent was not the root.
+      # Need to patch the left or right index to point to the new node.
+      let oldParent = this.nodes[oldParentIndex]
+      if oldParent.leftNodeIndex == leafSiblingIndex:
+        oldParent.leftNodeIndex = newParentIndex
+      else:
+        oldParent.rightNodeIndex = newParentIndex
+
+    treeNodeIndex = leafNode.parentNodeIndex
+    this.fixUpwardsTree(treeNodeIndex)
+
+proc removeLeaf(this: AABBTree, leafNodeIndex: Natural) =
+  # If the leaf is the root, we can clear the root pointer and return.
+  if leafNodeIndex == this.rootNodeIndex:
+    this.rootNodeIndex = AABB_NULL_NODE
+    return
+  
+  let
+    leafNode = this.nodes[leafNodeIndex]
+    parentNodeIndex = leafNodeIndex.parentNodeIndex
+    parentNode = this.nodes[parentNodeIndex]
+    grandparentNodeIndex = parentNode.parentNodeIndex
+    siblingNodeIndex =
+      if parentNode.leftNodeIndex == leafNodeIndex:
+        parentNode.rightNodeIndex
+      else:
+        parentNode.leftNodeIndex
+
+  assert siblingNodeIndex != AABB_NULL_NODE
+
+  let siblingNode = this.nodes[siblingNodeIndex]
+
+  if grandparentNodeIndex != AABB_NULL_NODE:
+    # If we have a valid grandparent,
+    # destroy the parent and connect the sibling to the grandparent in its place.
+    let grandparentNode = this.nodes[grandparentNodeIndex]
+    if grandparentNode.leftNodeIndex == parentNodeIndex:
+      grandparentNode.leftNodeIndex = siblingNodeIndex
+    else:
+      grandparentNode.rightNodeIndex = siblingNodeIndex
+
+    siblingNode.parentNodeIndex = grandparentNodeIndex
+
+    this.deallocateNode(parentNodeIndex)
+    this.fixUpwardsTree(grandparentNodeIndex)
+  else:
+    # If there's no grandparent, then the parent is the root.
+    # The sibling becomes the root and has its parent removed.
+    this.rootNodeIndex = siblingNodeIndex
+    siblingNode.parentNodeIndex = AABB_NULL_NODE
+    this.deallocateNode(parentNodeIndex)
+
+  leafNode.parentNodeIndex = AABB_NULL_NODE
 
 proc updateLeaf(this: AABBTree, index: Natural, newAABB: Rectangle) =
   let node = this.nodes[index]
