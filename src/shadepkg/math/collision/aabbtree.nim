@@ -49,35 +49,50 @@ type AABBTree*[T] = ref object
   rootNodeIndex: Natural
   allocatedNodeCount: Natural
   nextFreeNodeIndex: Natural
-  # nodeCapacity: Natural
-  # growthSize: Positive
+  nodeCapacity: Natural
+  growthSize: Positive
 
 proc insertLeaf(this: AABBTree, leafNodeIndex: Natural)
 proc fixUpwardsTree(this: AABBTree, index: Natural)
+proc updateLeaf(this: AABBTree, index: Natural, newAABB: Rectangle)
 
-proc newAABBTree*(): AABBTree =
+proc newAABBTree*(initialNodeCount: Natural, growthSize: Positive = 16): AABBTree =
   result = AABBTree(
+    nodes: newSeq[Node](initialNodeCount),
     rootNodeIndex: AABB_NULL_NODE,
-    nextFreeNodeIndex: 0
+    nextFreeNodeIndex: 0,
+    growthSize: growthSize,
   )
 
 proc allocateNode(this: AABBTree): Natural =
   ## Allocates a new node and returns its index in the tree's nodes.
+  if this.nextFreeNodeIndex == AABB_NULL_NODE:
+    assert this.allocatedNodeCount == this.nodeCapacity
+    this.nodeCapacity += this.growthSize
 
-  # TODO: Need grow logic?
+    for i in 1..this.growthSize:
+      let node = newNode()
+      node.nextNodeIndex = this.allocatedNodeCount + i
+      this.nodes.add(node)
+
+    this.nodes[^1].nextNodeIndex = AABB_NULL_NODE
+    this.nextFreeNodeIndex = this.allocateNodeCount
+
   result = this.nextFreeNodeIndex
-  let node = this.nodes[result]
-  node.parentNodeIndex = AABB_NULL_NODE
-  node.leftNodeIndex = AABB_NULL_NODE
-  node.rightNodeIndex = AABB_NULL_NODE
-  this.nextFreeNodeIndex = node.nextNodeIndex
+  let allocateNode = this.nodes[result]
+  allocateNode.parentNodeIndex = AABB_NULL_NODE
+  allocateNode.leftNodeIndex = AABB_NULL_NODE
+  allocateNode.rightNodeIndex = AABB_NULL_NODE
+  this.nextFreeNodeIndex = allocateNode.nextNodeIndex
+  this.allocateNodeCount += 1
 
 proc deallocateNode(this: AABBTree, index: Natural) =
   let node = this.nodes[index]
   node.nextNodeIndex = this.nextFreeNodeIndex
   this.nextFreeNodeIndex = index
+  this.allocateNodeCount -= 1
 
-proc insert(this: AABBTree, shape: CollisionShape) =
+proc insert*(this: AABBTree, shape: CollisionShape) =
   let index = this.allocateNode()
   let node = this.nodes[index]
 
@@ -87,17 +102,17 @@ proc insert(this: AABBTree, shape: CollisionShape) =
   this.insertLeaf(index)
   this.objectIndexMap[node.obj] = index
 
-proc remove(this: AABBTree, obj: CollisionShape) =
+proc remove*(this: AABBTree, obj: CollisionShape) =
   let index = this.objectIndexMap[obj]
   this.removeLeaf(index)
   this.deallocateNode(index)
   this.objectIndexMap.del(obj)
 
-proc update(this: AABBTree, obj: CollisionShape) =
+proc update*(this: AABBTree, obj: CollisionShape) =
   let index = this.objectIndexMap[obj]
   this.updateLeaf(index, obj.getAABB())
 
-proc queryOverlaps(this: AABBTree, obj: CollisionShape): seq[Rectangle] =
+proc queryOverlaps*(this: AABBTree, obj: CollisionShape): seq[Rectangle] =
   let
     stack: seq[Natural]
     testAABB = obj.getAABB()
