@@ -45,9 +45,11 @@ method addChildNow(this: PhysicsLayer, child: Node) =
   procCall Layer(this).addChildNow(child)
   if child of PhysicsBody:
     this.physicsBodyChildren.add((PhysicsBody) child)
+    # TODO: Add to aabb tree as well
 
 method removeChildNow*(this: PhysicsLayer, child: Node) =
   procCall Layer(this).removeChildNow(child)
+  # TODO: Remove from aabb tree as well
   if child of PhysicsBody:
     let body = (PhysicsBody) child
     var index = -1

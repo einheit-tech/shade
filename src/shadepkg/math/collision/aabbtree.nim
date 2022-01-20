@@ -3,8 +3,7 @@ import tables
 import
   ../binarytree,
   ../rectangle,
-  ../vector2,
-  collisionshape
+  ../vector2
 
 # TODO:
 # See:
@@ -19,7 +18,7 @@ const AABB_NULL_NODE = int.high
 
 type Node = ref object
   # Object that owns the AABB
-  obj: CollisionShape
+  obj: Boundable
   aabb: Rectangle
 
   parentNodeIndex: Natural
@@ -92,7 +91,7 @@ proc deallocateNode(this: AABBTree, index: Natural) =
   this.nextFreeNodeIndex = index
   this.allocateNodeCount -= 1
 
-proc insert*(this: AABBTree, shape: CollisionShape) =
+proc insert*(this: AABBTree, shape: Boundable) =
   let index = this.allocateNode()
   let node = this.nodes[index]
 
@@ -102,22 +101,22 @@ proc insert*(this: AABBTree, shape: CollisionShape) =
   this.insertLeaf(index)
   this.objectIndexMap[node.obj] = index
 
-proc remove*(this: AABBTree, obj: CollisionShape) =
+proc remove*(this: AABBTree, obj: Boundable) =
   let index = this.objectIndexMap[obj]
   this.removeLeaf(index)
   this.deallocateNode(index)
   this.objectIndexMap.del(obj)
 
-proc update*(this: AABBTree, obj: CollisionShape) =
+proc update*(this: AABBTree, obj: Boundable) =
   let index = this.objectIndexMap[obj]
   this.updateLeaf(index, obj.getAABB())
 
-proc queryOverlaps*(this: AABBTree, obj: CollisionShape): seq[Rectangle] =
+proc queryOverlaps*(this: AABBTree, obj: Boundable): seq[Rectangle] =
   let
     stack: seq[Natural]
     testAABB = obj.getAABB()
 
-  stack.push(this.rootNodeIndex)
+  stack.add(this.rootNodeIndex)
   
   while stack.len > 0:
     let index = stack.pop()
@@ -128,10 +127,10 @@ proc queryOverlaps*(this: AABBTree, obj: CollisionShape): seq[Rectangle] =
     if node.aabb.overlaps(testAABB):
       if node.isLeaf() and node.obj != obj:
         # TODO: why push_front?
-        result.push(node.obj)
+        result.insert(node.obj, 0)
       else:
-        stack.push(node.leftNodeIndex)
-        stack.push(node.rightNodeIndex)
+        stack.add(node.leftNodeIndex)
+        stack.add(node.rightNodeIndex)
 
 proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
   let leafNode = this.nodes[leafNodeIndex]

@@ -30,11 +30,12 @@ type
     shader*: Shader
     flags*: set[LayerObjectFlags]
 
-    center*: Vector
+    center: Vector
     scale*: Vector
     # Rotation in degrees (clockwise).
     rotation*: float
 
+method `center=`*(this: Node, v: Vector) {.base.}
 method hash*(this: Node): Hash {.base.}
 method update*(this: Node, deltaTime: float) {.base.}
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.}
@@ -47,6 +48,9 @@ proc newNode*(flags: set[LayerObjectFlags] = {loUpdate, loRender}): Node =
   result = Node()
   initNode(result, flags)
 
+template center*(this: Node): Vector =
+  this.center
+
 template x*(this: Node): float =
   this.center.x
 
@@ -58,6 +62,9 @@ template y*(this: Node): float =
 
 template `y=`*(this: Node, y: float) =
   this.center = vector(this.center.x, y)
+
+method `center=`*(this: Node, v: Vector) {.base.} =
+  this.center = v
 
 method hash*(this: Node): Hash {.base.} =
   return hash(this[].unsafeAddr)

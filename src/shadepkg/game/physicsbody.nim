@@ -26,6 +26,7 @@ type
     # TODO: Make collisionShape required.
     collisionShape: CollisionShape
     velocity*: Vector
+    bounds: Rectangle
 
     case kind*: PhysicsBodyKind:
       of pbDynamic, pbKinematic:
@@ -44,6 +45,7 @@ type
 proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false)
 proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener)
 proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult, gravityNormal: Vector)
+proc getBounds*(this: PhysicsBody): Rectangle
 
 proc initPhysicsBody*(physicsBody: var PhysicsBody, flags: set[LayerObjectFlags] = {loUpdate, loRender}) =
   initNode(Node(physicsBody), flags)
@@ -90,6 +92,20 @@ template velocityY*(this: PhysicsBody): float =
 
 template `velocityY=`*(this: PhysicsBody, y: float) =
   this.velocity = vector(this.velocity.x, y)
+
+method `center=`*(this: PhysicsBody, v: Vector) =
+  # Move the bounds accordingly.
+  if this.bounds != nil:
+    let delta = v - this.center
+    this.bounds.topLeft += delta
+    this.bounds.bottomRight += delta
+
+  procCall `center=`(Node(this), v)
+
+proc getBounds*(this: PhysicsBody): Rectangle =
+  if this.bounds == nil:
+    this.bounds = this.collisionShape.getBounds().getTranslatedInstance(this.center)
+  return this.bounds
 
 proc addCollisionListenerNow*(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false) =
   if fireOnce:

@@ -3,9 +3,12 @@ import
   ../render/render,
   ../render/color
 
-type Rectangle* = ref object
-  topLeft*: Vector
-  bottomRight*: Vector
+type
+  Boundable* = concept b
+    getBounds(b) is Rectangle
+  Rectangle* = ref object
+    topLeft*: Vector
+    bottomRight*: Vector
 
 proc initRectangle*(rect: Rectangle, left, top, right, bottom: float) =
   rect.topLeft = vector(left, top)
@@ -35,6 +38,14 @@ template height*(this: Rectangle): float =
 
 template area*(this: Rectangle): float =
   this.width * this.height
+
+proc getTranslatedInstance*(this: Rectangle, offset: Vector): Rectangle =
+  newRectangle(
+    this.left + offset.x,
+    this.top + offset.y,
+    this.right + offset.x,
+    this.bottom + offset.y
+  )
 
 proc getScaledInstance*(this: Rectangle, scale: Vector): Rectangle =
   if scale.x == 0 or scale.y == 0:
