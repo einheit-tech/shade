@@ -36,7 +36,7 @@ template width*(this: Rectangle): float =
 template height*(this: Rectangle): float =
   this.bottom - this.top
 
-template area*(this: Rectangle): float =
+template getArea*(this: Rectangle): float =
   this.width * this.height
 
 proc getTranslatedInstance*(this: Rectangle, offset: Vector): Rectangle =
@@ -58,9 +58,11 @@ proc getScaledInstance*(this: Rectangle, scale: Vector): Rectangle =
   )
 
 template contains*(this: Rectangle, v: Vector): bool =
-  return
-    v.x >= this.left and v.x <= this.right and
-    v.y >= this.top and v.y <= this.bottom
+  v.x >= this.left and v.x <= this.right and
+  v.y >= this.top and v.y <= this.bottom
+
+template contains*(this, r: Rectangle): bool =
+  this.contains(r.topLeft) and this.contains(r.bottomRight)
 
 template intersects*(this: Rectangle, rect: Rectangle): bool =
   return

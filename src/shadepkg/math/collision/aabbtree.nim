@@ -5,6 +5,8 @@ import
   ../rectangle,
   ../vector2
 
+import ../../game/physicsbody
+
 # TODO:
 # See:
 # https://www.geeksforgeeks.org/tree-traversals-inorder-preorder-and-postorder/
@@ -12,13 +14,11 @@ import
 # https://www.azurefromthetrenches.com/introductory-guide-to-aabb-tree-collision-detection/
 # https://github.com/JamesRandall/SimpleVoxelEngine/blob/master/voxelEngine/src/AABBTree.cpp
 
-# NODE
-
 const AABB_NULL_NODE = int.high
 
-type Node = ref object
+type TreeNode[T: Boundable] = ref object
   # Object that owns the AABB
-  obj: Boundable
+  obj: T
   aabb: Rectangle
 
   parentNodeIndex: Natural
@@ -26,25 +26,25 @@ type Node = ref object
   rightNodeIndex: Natural
   nextNodeIndex: Natural
 
-proc newNode(): Node =
-  result = Node(
+proc newTreeNode(): TreeNode =
+  result = TreeNode(
     parentNodeIndex: AABB_NULL_NODE,
     leftNodeIndex: AABB_NULL_NODE,
     rightNodeIndex: AABB_NULL_NODE,
     nextNodeIndex: AABB_NULL_NODE
   )
 
-template isLeaf(n: Node): bool =
+template isLeaf(n: TreeNode): bool =
   n.leftNodeIndex == AABB_NULL_NODE
 
-template isBranch(n: Node): bool =
+template isBranch(n: TreeNode): bool =
   not n.isLeaf()
 
 # TREE
 
-type AABBTree*[T] = ref object
+type AABBTree*[T: Boundable] = ref object
   objectIndexMap: Table[T, int]
-  nodes: seq[Node]
+  nodes: seq[TreeNode[T]]
   rootNodeIndex: Natural
   allocatedNodeCount: Natural
   nextFreeNodeIndex: Natural
@@ -55,12 +55,12 @@ proc insertLeaf(this: AABBTree, leafNodeIndex: Natural)
 proc fixUpwardsTree(this: AABBTree, index: Natural)
 proc updateLeaf(this: AABBTree, index: Natural, newAABB: Rectangle)
 
-proc newAABBTree*(initialNodeCount: Natural, growthSize: Positive = 16): AABBTree =
-  result = AABBTree(
-    nodes: newSeq[Node](initialNodeCount),
+proc newAABBTree*[T: Boundable](initialNodeCount: Natural, growthSize: Positive = 16): AABBTree[T] =
+  result = AABBTree[T](
+    nodes: newSeq[TreeNode[T]](initialNodeCount),
     rootNodeIndex: AABB_NULL_NODE,
     nextFreeNodeIndex: 0,
-    growthSize: growthSize,
+    growthSize: growthSize
   )
 
 proc allocateNode(this: AABBTree): Natural =
@@ -70,12 +70,12 @@ proc allocateNode(this: AABBTree): Natural =
     this.nodeCapacity += this.growthSize
 
     for i in 1..this.growthSize:
-      let node = newNode()
+      let node = newTreeNode()
       node.nextNodeIndex = this.allocatedNodeCount + i
       this.nodes.add(node)
 
     this.nodes[^1].nextNodeIndex = AABB_NULL_NODE
-    this.nextFreeNodeIndex = this.allocateNodeCount
+    this.nextFreeNodeIndex = this.allocatedNodeCount
 
   result = this.nextFreeNodeIndex
   let allocateNode = this.nodes[result]
@@ -83,13 +83,13 @@ proc allocateNode(this: AABBTree): Natural =
   allocateNode.leftNodeIndex = AABB_NULL_NODE
   allocateNode.rightNodeIndex = AABB_NULL_NODE
   this.nextFreeNodeIndex = allocateNode.nextNodeIndex
-  this.allocateNodeCount += 1
+  this.allocatedNodeCount += 1
 
 proc deallocateNode(this: AABBTree, index: Natural) =
   let node = this.nodes[index]
   node.nextNodeIndex = this.nextFreeNodeIndex
   this.nextFreeNodeIndex = index
-  this.allocateNodeCount -= 1
+  this.allocatedNodeCount -= 1
 
 proc insert*(this: AABBTree, shape: Boundable) =
   let index = this.allocateNode()
@@ -148,7 +148,7 @@ proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
   # Search for the best place to insert the new leaf.
   # Using surface area and depth as search heuristics.
 
-  let treeNodeIndex = this.rootNodeIndex
+  var treeNodeIndex = this.rootNodeIndex
 
   while this.nodes[treeNodeIndex].isBranch():
     let
@@ -158,20 +158,20 @@ proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
       leftNode = this.nodes[leftNodeIndex]
       rightNode = this.nodes[rightNodeIndex]
       combinedAABB = treeNode.aabb + leafNode.aabb
-      combinedArea = combinedAABB.area()
+      combinedArea = combinedAABB.getArea()
       newParentNodeCost = combinedArea * 2.0
-      minimumPushDownCost = (combinedArea - treeNode.aabb.area()) * 2.0
+      minimumPushDownCost = (combinedArea - treeNode.aabb.getArea()) * 2.0
 
     # Use costs to determine if a new parent should be created
     var costLeft, costRight: float
     if leftNode.isLeaf():
-      costLeft = (leafNode.aabb + leftNode.aabb).area() + minimumPushDownCost
+      costLeft = (leafNode.aabb + leftNode.aabb).getArea() + minimumPushDownCost
     else:
       let newLeftAABB = leafNode.aabb + leftNode.aabb
       costLeft = newLeftAABB.getArea() - leftNode.aabb.getArea() + minimumPushDownCost
 
     if rightNode.isLeaf():
-      costRight = (leafNode.aabb + rightNode.aabb).area() + minimumPushDownCost
+      costRight = (leafNode.aabb + rightNode.aabb).getArea() + minimumPushDownCost
     else:
       let newRightAABB = leafNode.aabb + rightNode.aabb
       costRight = newRightAABB.getArea() - rightNode.aabb.getArea() + minimumPushDownCost
@@ -225,7 +225,7 @@ proc removeLeaf(this: AABBTree, leafNodeIndex: Natural) =
   
   let
     leafNode = this.nodes[leafNodeIndex]
-    parentNodeIndex = leafNodeIndex.parentNodeIndex
+    parentNodeIndex = leafNode.parentNodeIndex
     parentNode = this.nodes[parentNodeIndex]
     grandparentNodeIndex = parentNode.parentNodeIndex
     siblingNodeIndex =
@@ -270,8 +270,9 @@ proc updateLeaf(this: AABBTree, index: Natural, newAABB: Rectangle) =
   this.insertLeaf(index)
 
 proc fixUpwardsTree(this: AABBTree, index: Natural) =
-  while index != AABB_NULL_NODE:
-    let node = this.nodes[index]
+  var treeNodeIndex = index
+  while treeNodeIndex != AABB_NULL_NODE:
+    let node = this.nodes[treeNodeIndex]
     
     # Every node should be a parent.
     assert node.leftNodeIndex != AABB_NULL_NODE and node.rightNodeIndex != AABB_NULL_NODE
@@ -281,5 +282,5 @@ proc fixUpwardsTree(this: AABBTree, index: Natural) =
     let rightNode = this.nodes[node.rightNodeIndex]
     node.aabb = leftNode.aabb + rightNode.aabb
     
-    index = node.parentNodeIndex
+    treeNodeIndex = node.parentNodeIndex
 

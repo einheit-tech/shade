@@ -3,9 +3,8 @@ import
   physicsbody,
   ../math/mathutils,
   ../math/collision/sat,
-  ../math/collision/collisionresult
-
-import ../util/timer
+  ../math/collision/collisionresult,
+  ../math/collision/aabbtree
 
 export
   layer,
@@ -21,6 +20,7 @@ type
     gravity: Vector
     gravityNormal: Vector
     physicsBodyChildren: seq[PhysicsBody]
+    aabbTree: AABBTree[PhysicsBody]
 
 template gravity*(this: PhysicsLayer): Vector =
   this.gravity
@@ -36,6 +36,7 @@ proc initPhysicsLayer*(
 ) =
   initLayer(layer, z)
   `gravity=`(layer, gravity)
+  layer.aabbTree = newAABBTree[PhysicsBody](16)
 
 proc newPhysicsLayer*(gravity: Vector = DEFAULT_GRAVITY, z: float = 1.0): PhysicsLayer =
   result = PhysicsLayer()
