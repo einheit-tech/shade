@@ -40,7 +40,6 @@ let groundShape = newPolygonCollisionShape(
     vector(-halfGroundWidth, halfGroundHeight)
   ])
 )
-# groundShape.filter = newShapeFilter(GROUND, GROUND, PLAYER)
 groundShape.material = PLATFORM
 
 let ground = newPhysicsBody(
@@ -49,9 +48,6 @@ let ground = newPhysicsBody(
 
 ground.x = resolutionMeters.x / 2
 ground.y = resolutionMeters.y - groundShape.getBounds().height / 2
-
-# ground.addChild(newSprite(groundImage))
-# ground.addChild(groundShape)
 
 ground.collisionShape = groundShape
 let groundSprite = newSprite(groundImage)
@@ -150,7 +146,7 @@ let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.o
 if err == nil:
   discard capture fadeInMusic(someSong, 2.0, 0.15)
 else:
-  echo "Error playing music: " & repr err
+  echo "Error playing music: " & err.msg
 
 Game.start()
 

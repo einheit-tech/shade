@@ -1,5 +1,3 @@
-import std/decls
-
 import tables
 
 import
@@ -55,10 +53,10 @@ type AABBTree*[T: Boundable] = ref object
   growthSize: Positive
 
 proc allocateNode[T: Boundable](this: AABBTree[T]): Natural
-proc insertLeaf(this: AABBTree, leafNodeIndex: Natural)
-proc removeLeaf(this: AABBTree, leafNodeIndex: Natural)
-proc fixUpwardsTree(this: AABBTree, index: Natural)
-proc updateLeaf(this: AABBTree, index: Natural, newAABB: Rectangle)
+proc insertLeaf[T: Boundable](this: AABBTree[T], leafNodeIndex: Natural)
+proc removeLeaf[T: Boundable](this: AABBTree[T], leafNodeIndex: Natural)
+proc fixUpwardsTree[T: Boundable](this: AABBTree[T], index: Natural)
+proc updateLeaf[T: Boundable](this: AABBTree[T], index: Natural, newAABB: Rectangle)
 
 proc newAABBTree*[T: Boundable](initialNodeCount: Natural, growthSize: Positive = 16): AABBTree[T] =
   result = AABBTree[T](
@@ -69,8 +67,7 @@ proc newAABBTree*[T: Boundable](initialNodeCount: Natural, growthSize: Positive 
   )
 
   for i in 0..<initialNodeCount:
-    var node {.byaddr.} = result.nodes[i]
-    node.nextNodeIndex = i + 1
+    result.nodes[i].nextNodeIndex = i + 1
 
   result.nodes[initialNodeCount - 1].nextNodeIndex = AABB_NULL_NODE
 
@@ -89,22 +86,22 @@ proc allocateNode[T: Boundable](this: AABBTree[T]): Natural =
     this.nextFreeNodeIndex = this.allocatedNodeCount
 
   result = this.nextFreeNodeIndex
-  var allocatedNode {.byaddr.} = this.nodes[result]
+  template allocatedNode: TreeNode[T] = this.nodes[result]
   allocatedNode.parentNodeIndex = AABB_NULL_NODE
   allocatedNode.leftNodeIndex = AABB_NULL_NODE
   allocatedNode.rightNodeIndex = AABB_NULL_NODE
   this.nextFreeNodeIndex = allocatedNode.nextNodeIndex
   this.allocatedNodeCount += 1
 
-proc deallocateNode(this: AABBTree, index: Natural) =
-  var node {.byaddr.} = this.nodes[index]
+proc deallocateNode[T: Boundable](this: AABBTree[T], index: Natural) =
+  template node: TreeNode[T] = this.nodes[index]
   node.nextNodeIndex = this.nextFreeNodeIndex
   this.nextFreeNodeIndex = index
   this.allocatedNodeCount -= 1
 
-proc insert*(this: AABBTree, shape: Boundable) =
+proc insert*[T: Boundable](this: AABBTree, shape: T) =
   let index = this.allocateNode()
-  var node {.byaddr.} = this.nodes[index]
+  template node: TreeNode[T] = this.nodes[index]
 
   node.obj = shape
   node.aabb = node.obj.getBounds()
@@ -134,17 +131,16 @@ proc queryOverlaps*(this: AABBTree, obj: Boundable): seq[Rectangle] =
     if index == AABB_NULL_NODE:
       continue
     
-    let node {.byaddr.} = this.nodes[index]
+    template node = this.nodes[index]
     if node.aabb.overlaps(testAABB):
       if node.isLeaf() and node.obj != obj:
-        # TODO: why push_front?
         result.insert(node.obj, 0)
       else:
         stack.add(node.leftNodeIndex)
         stack.add(node.rightNodeIndex)
 
-proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
-  var leafNode {.byaddr.} = this.nodes[leafNodeIndex]
+proc insertLeaf[T: Boundable](this: AABBTree[T], leafNodeIndex: Natural) =
+  template leafNode: TreeNode[T] = this.nodes[leafNodeIndex]
 
   # Must be a leaf node
   assert leafNode.parentNodeIndex == AABB_NULL_NODE
@@ -162,14 +158,13 @@ proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
   var treeNodeIndex = this.rootNodeIndex
 
   while this.nodes[treeNodeIndex].isBranch():
-    var treeNode {.byaddr.} = this.nodes[treeNodeIndex]
+    template treeNode: TreeNode[T] = this.nodes[treeNodeIndex]
     let
       leftNodeIndex = treeNode.leftNodeIndex
       rightNodeIndex = treeNode.rightNodeIndex
 
-    var
-      leftNode {.byaddr.} = this.nodes[leftNodeIndex]
-      rightNode {.byaddr.} = this.nodes[rightNodeIndex]
+    template leftNode: TreeNode[T] = this.nodes[leftNodeIndex]
+    template rightNode: TreeNode[T] = this.nodes[rightNodeIndex]
 
     let
       combinedAABB = treeNode.aabb + leafNode.aabb
@@ -208,9 +203,8 @@ proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
       oldParentIndex = leafSiblingIndex
       newParentIndex = this.allocateNode()
 
-    var
-      leafSibling {.byaddr.} = this.nodes[leafSiblingIndex]
-      newParent {.byaddr.} = this.nodes[newParentIndex]
+    template leafSibling: TreeNode[T] = this.nodes[leafSiblingIndex]
+    template newParent: TreeNode[T] = this.nodes[newParentIndex]
 
     newParent.parentNodeIndex = oldParentIndex
     newParent.leftNodeIndex = leafSiblingIndex
@@ -225,7 +219,7 @@ proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
     else:
       # The old parent was not the root.
       # Need to patch the left or right index to point to the new node.
-      var oldParent {.byaddr.} = this.nodes[oldParentIndex]
+      template oldParent: TreeNode[T] = this.nodes[oldParentIndex]
       if oldParent.leftNodeIndex == leafSiblingIndex:
         oldParent.leftNodeIndex = newParentIndex
       else:
@@ -234,15 +228,15 @@ proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
     treeNodeIndex = leafNode.parentNodeIndex
     this.fixUpwardsTree(treeNodeIndex)
 
-proc removeLeaf(this: AABBTree, leafNodeIndex: Natural) =
+proc removeLeaf[T: Boundable](this: AABBTree[T], leafNodeIndex: Natural) =
   # If the leaf is the root, we can clear the root pointer and return.
   if leafNodeIndex == this.rootNodeIndex:
     this.rootNodeIndex = AABB_NULL_NODE
     return
   
-  var leafNode {.byaddr.} = this.nodes[leafNodeIndex]
+  template leafNode: TreeNode[T] = this.nodes[leafNodeIndex]
   let parentNodeIndex = leafNode.parentNodeIndex
-  var parentNode {.byaddr.} = this.nodes[parentNodeIndex]
+  template parentNode: TreeNode[T] = this.nodes[parentNodeIndex]
   
   let
     grandparentNodeIndex = parentNode.parentNodeIndex
@@ -254,12 +248,12 @@ proc removeLeaf(this: AABBTree, leafNodeIndex: Natural) =
 
   assert siblingNodeIndex != AABB_NULL_NODE
 
-  var siblingNode {.byaddr.} = this.nodes[siblingNodeIndex]
+  template siblingNode: TreeNode[T] = this.nodes[siblingNodeIndex]
 
   if grandparentNodeIndex != AABB_NULL_NODE:
     # If we have a valid grandparent,
     # destroy the parent and connect the sibling to the grandparent in its place.
-    var grandparentNode {.byaddr.} = this.nodes[grandparentNodeIndex]
+    template grandparentNode: TreeNode[T] = this.nodes[grandparentNodeIndex]
     if grandparentNode.leftNodeIndex == parentNodeIndex:
       grandparentNode.leftNodeIndex = siblingNodeIndex
     else:
@@ -278,20 +272,19 @@ proc removeLeaf(this: AABBTree, leafNodeIndex: Natural) =
 
   leafNode.parentNodeIndex = AABB_NULL_NODE
 
-proc updateLeaf(this: AABBTree, index: Natural, newAABB: Rectangle) =
-  # let node {.byaddr.} = this.nodes[index]
-  if this.nodes[index].aabb.contains(newAABB):
+proc updateLeaf[T: Boundable](this: AABBTree[T], index: Natural, newAABB: Rectangle) =
+  template node: TreeNode[T] = this.nodes[index]
+  if node.aabb.contains(newAABB):
     return
   
   this.removeLeaf(index)
-  # node.aabb = newAABB
-  this.nodes[index].aabb = newAABB
+  node.aabb = newAABB
   this.insertLeaf(index)
 
-proc fixUpwardsTree(this: AABBTree, index: Natural) =
+proc fixUpwardsTree[T: Boundable](this: AABBTree[T], index: Natural) =
   var treeNodeIndex = index
   while treeNodeIndex != AABB_NULL_NODE:
-    var node {.byaddr.} = this.nodes[treeNodeIndex]
+    template node: TreeNode[T] = this.nodes[treeNodeIndex]
     
     # Every node should be a parent.
     assert node.leftNodeIndex != AABB_NULL_NODE and node.rightNodeIndex != AABB_NULL_NODE
