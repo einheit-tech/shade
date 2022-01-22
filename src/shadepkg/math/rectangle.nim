@@ -5,6 +5,7 @@ import
 
 type
   Boundable* = concept b
+    b is ref object
     getBounds(b) is Rectangle
   Rectangle* = ref object
     topLeft*: Vector

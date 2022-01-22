@@ -1,3 +1,5 @@
+import std/decls
+
 import tables
 
 import
@@ -16,7 +18,7 @@ import ../../game/physicsbody
 
 const AABB_NULL_NODE = int.high
 
-type TreeNode[T: Boundable] = ref object
+type TreeNode[T: Boundable] = object
   # Object that owns the AABB
   obj: T
   aabb: Rectangle
@@ -26,8 +28,9 @@ type TreeNode[T: Boundable] = ref object
   rightNodeIndex: Natural
   nextNodeIndex: Natural
 
-proc newTreeNode(): TreeNode =
-  result = TreeNode(
+proc newTreeNode[T: Boundable](): TreeNode[T] =
+  result = TreeNode[T](
+    obj: nil,
     parentNodeIndex: AABB_NULL_NODE,
     leftNodeIndex: AABB_NULL_NODE,
     rightNodeIndex: AABB_NULL_NODE,
@@ -38,7 +41,7 @@ template isLeaf(n: TreeNode): bool =
   n.leftNodeIndex == AABB_NULL_NODE
 
 template isBranch(n: TreeNode): bool =
-  not n.isLeaf()
+  not isLeaf(n)
 
 # TREE
 
@@ -51,7 +54,9 @@ type AABBTree*[T: Boundable] = ref object
   nodeCapacity: Natural
   growthSize: Positive
 
+proc allocateNode[T: Boundable](this: AABBTree[T]): Natural
 proc insertLeaf(this: AABBTree, leafNodeIndex: Natural)
+proc removeLeaf(this: AABBTree, leafNodeIndex: Natural)
 proc fixUpwardsTree(this: AABBTree, index: Natural)
 proc updateLeaf(this: AABBTree, index: Natural, newAABB: Rectangle)
 
@@ -63,14 +68,20 @@ proc newAABBTree*[T: Boundable](initialNodeCount: Natural, growthSize: Positive 
     growthSize: growthSize
   )
 
-proc allocateNode(this: AABBTree): Natural =
+  for i in 0..<initialNodeCount:
+    var node {.byaddr.} = result.nodes[i]
+    node.nextNodeIndex = i + 1
+
+  result.nodes[initialNodeCount - 1].nextNodeIndex = AABB_NULL_NODE
+
+proc allocateNode[T: Boundable](this: AABBTree[T]): Natural =
   ## Allocates a new node and returns its index in the tree's nodes.
   if this.nextFreeNodeIndex == AABB_NULL_NODE:
     assert this.allocatedNodeCount == this.nodeCapacity
     this.nodeCapacity += this.growthSize
 
     for i in 1..this.growthSize:
-      let node = newTreeNode()
+      var node = newTreeNode[T]()
       node.nextNodeIndex = this.allocatedNodeCount + i
       this.nodes.add(node)
 
@@ -78,22 +89,22 @@ proc allocateNode(this: AABBTree): Natural =
     this.nextFreeNodeIndex = this.allocatedNodeCount
 
   result = this.nextFreeNodeIndex
-  let allocateNode = this.nodes[result]
-  allocateNode.parentNodeIndex = AABB_NULL_NODE
-  allocateNode.leftNodeIndex = AABB_NULL_NODE
-  allocateNode.rightNodeIndex = AABB_NULL_NODE
-  this.nextFreeNodeIndex = allocateNode.nextNodeIndex
+  var allocatedNode {.byaddr.} = this.nodes[result]
+  allocatedNode.parentNodeIndex = AABB_NULL_NODE
+  allocatedNode.leftNodeIndex = AABB_NULL_NODE
+  allocatedNode.rightNodeIndex = AABB_NULL_NODE
+  this.nextFreeNodeIndex = allocatedNode.nextNodeIndex
   this.allocatedNodeCount += 1
 
 proc deallocateNode(this: AABBTree, index: Natural) =
-  let node = this.nodes[index]
+  var node {.byaddr.} = this.nodes[index]
   node.nextNodeIndex = this.nextFreeNodeIndex
   this.nextFreeNodeIndex = index
   this.allocatedNodeCount -= 1
 
 proc insert*(this: AABBTree, shape: Boundable) =
   let index = this.allocateNode()
-  let node = this.nodes[index]
+  var node {.byaddr.} = this.nodes[index]
 
   node.obj = shape
   node.aabb = node.obj.getBounds()
@@ -123,7 +134,7 @@ proc queryOverlaps*(this: AABBTree, obj: Boundable): seq[Rectangle] =
     if index == AABB_NULL_NODE:
       continue
     
-    let node = this.nodes[index]
+    let node {.byaddr.} = this.nodes[index]
     if node.aabb.overlaps(testAABB):
       if node.isLeaf() and node.obj != obj:
         # TODO: why push_front?
@@ -133,7 +144,7 @@ proc queryOverlaps*(this: AABBTree, obj: Boundable): seq[Rectangle] =
         stack.add(node.rightNodeIndex)
 
 proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
-  let leafNode = this.nodes[leafNodeIndex]
+  var leafNode {.byaddr.} = this.nodes[leafNodeIndex]
 
   # Must be a leaf node
   assert leafNode.parentNodeIndex == AABB_NULL_NODE
@@ -151,12 +162,16 @@ proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
   var treeNodeIndex = this.rootNodeIndex
 
   while this.nodes[treeNodeIndex].isBranch():
+    var treeNode {.byaddr.} = this.nodes[treeNodeIndex]
     let
-      treeNode = this.nodes[treeNodeIndex]
       leftNodeIndex = treeNode.leftNodeIndex
       rightNodeIndex = treeNode.rightNodeIndex
-      leftNode = this.nodes[leftNodeIndex]
-      rightNode = this.nodes[rightNodeIndex]
+
+    var
+      leftNode {.byaddr.} = this.nodes[leftNodeIndex]
+      rightNode {.byaddr.} = this.nodes[rightNodeIndex]
+
+    let
       combinedAABB = treeNode.aabb + leafNode.aabb
       combinedArea = combinedAABB.getArea()
       newParentNodeCost = combinedArea * 2.0
@@ -190,10 +205,12 @@ proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
     # and we are going to create a new parent node and attach the leaf and this item
     let
       leafSiblingIndex = treeNodeIndex
-      leafSibling = this.nodes[leafSiblingIndex]
       oldParentIndex = leafSiblingIndex
       newParentIndex = this.allocateNode()
-      newParent = this.nodes[newParentIndex]
+
+    var
+      leafSibling {.byaddr.} = this.nodes[leafSiblingIndex]
+      newParent {.byaddr.} = this.nodes[newParentIndex]
 
     newParent.parentNodeIndex = oldParentIndex
     newParent.leftNodeIndex = leafSiblingIndex
@@ -208,7 +225,7 @@ proc insertLeaf(this: AABBTree, leafNodeIndex: Natural) =
     else:
       # The old parent was not the root.
       # Need to patch the left or right index to point to the new node.
-      let oldParent = this.nodes[oldParentIndex]
+      var oldParent {.byaddr.} = this.nodes[oldParentIndex]
       if oldParent.leftNodeIndex == leafSiblingIndex:
         oldParent.leftNodeIndex = newParentIndex
       else:
@@ -223,10 +240,11 @@ proc removeLeaf(this: AABBTree, leafNodeIndex: Natural) =
     this.rootNodeIndex = AABB_NULL_NODE
     return
   
+  var leafNode {.byaddr.} = this.nodes[leafNodeIndex]
+  let parentNodeIndex = leafNode.parentNodeIndex
+  var parentNode {.byaddr.} = this.nodes[parentNodeIndex]
+  
   let
-    leafNode = this.nodes[leafNodeIndex]
-    parentNodeIndex = leafNode.parentNodeIndex
-    parentNode = this.nodes[parentNodeIndex]
     grandparentNodeIndex = parentNode.parentNodeIndex
     siblingNodeIndex =
       if parentNode.leftNodeIndex == leafNodeIndex:
@@ -236,12 +254,12 @@ proc removeLeaf(this: AABBTree, leafNodeIndex: Natural) =
 
   assert siblingNodeIndex != AABB_NULL_NODE
 
-  let siblingNode = this.nodes[siblingNodeIndex]
+  var siblingNode {.byaddr.} = this.nodes[siblingNodeIndex]
 
   if grandparentNodeIndex != AABB_NULL_NODE:
     # If we have a valid grandparent,
     # destroy the parent and connect the sibling to the grandparent in its place.
-    let grandparentNode = this.nodes[grandparentNodeIndex]
+    var grandparentNode {.byaddr.} = this.nodes[grandparentNodeIndex]
     if grandparentNode.leftNodeIndex == parentNodeIndex:
       grandparentNode.leftNodeIndex = siblingNodeIndex
     else:
@@ -261,18 +279,19 @@ proc removeLeaf(this: AABBTree, leafNodeIndex: Natural) =
   leafNode.parentNodeIndex = AABB_NULL_NODE
 
 proc updateLeaf(this: AABBTree, index: Natural, newAABB: Rectangle) =
-  let node = this.nodes[index]
-  if node.aabb.contains(newAABB):
+  # let node {.byaddr.} = this.nodes[index]
+  if this.nodes[index].aabb.contains(newAABB):
     return
   
   this.removeLeaf(index)
-  node.aabb = newAABB
+  # node.aabb = newAABB
+  this.nodes[index].aabb = newAABB
   this.insertLeaf(index)
 
 proc fixUpwardsTree(this: AABBTree, index: Natural) =
   var treeNodeIndex = index
   while treeNodeIndex != AABB_NULL_NODE:
-    let node = this.nodes[treeNodeIndex]
+    var node {.byaddr.} = this.nodes[treeNodeIndex]
     
     # Every node should be a parent.
     assert node.leftNodeIndex != AABB_NULL_NODE and node.rightNodeIndex != AABB_NULL_NODE
