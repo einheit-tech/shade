@@ -30,12 +30,12 @@ type
     shader*: Shader
     flags*: set[LayerObjectFlags]
 
-    center: Vector
+    location: Vector
     scale*: Vector
     # Rotation in degrees (clockwise).
     rotation*: float
 
-method `center=`*(this: Node, v: Vector) {.base.}
+method setLocation*(this: Node, x, y: float) {.base.}
 method hash*(this: Node): Hash {.base.}
 method update*(this: Node, deltaTime: float) {.base.}
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.}
@@ -48,23 +48,33 @@ proc newNode*(flags: set[LayerObjectFlags] = {loUpdate, loRender}): Node =
   result = Node()
   initNode(result, flags)
 
-template center*(this: Node): Vector =
-  this.center
+template getLocation*(this: Node): Vector =
+  this.location
 
 template x*(this: Node): float =
-  this.center.x
+  this.location.x
 
 template `x=`*(this: Node, x: float) =
-  this.center = vector(x, this.center.y)
+  this.setLocation(x, this.y)
 
 template y*(this: Node): float =
-  this.center.y
+  this.location.y
 
 template `y=`*(this: Node, y: float) =
-  this.center = vector(this.center.x, y)
+  this.setLocation(this.x, y)
 
-method `center=`*(this: Node, v: Vector) {.base.} =
-  this.center = v
+method setLocation*(this: Node, x, y: float) {.base.} =
+  this.location.x = x
+  this.location.y = y
+
+template setLocation*(this: Node, v: Vector) =
+  this.setLocation(v.x, v.y)
+
+template move*(this: Node, x, y: float) =
+  this.setLocation(this.x + x, this.y + y)
+
+template move*(this: Node, v: Vector) =
+  this.setLocation(this.x + v.x, this.y + v.y)
 
 method hash*(this: Node): Hash {.base.} =
   return hash(this[].unsafeAddr)
@@ -75,8 +85,8 @@ method update*(this: Node, deltaTime: float) {.base.} =
 
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   ## Renders the node with its given position, rotation, and scale.
-  if this.center != VECTOR_ZERO:
-    translate(this.center.x, this.center.y, 0)
+  if this.location != VECTOR_ZERO:
+    translate(this.location.x, this.location.y, 0)
 
   if this.rotation != 0:
     rotate(this.rotation, 0, 0, 1)
@@ -102,6 +112,6 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   if this.rotation != 0:
     rotate(this.rotation, 0, 0, -1)
 
-  if this.center != VECTOR_ZERO:
-    translate(-this.center.x, -this.center.y, 0)
+  if this.location != VECTOR_ZERO:
+    translate(-this.location.x, -this.location.y, 0)
 

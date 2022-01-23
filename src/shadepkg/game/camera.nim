@@ -59,13 +59,13 @@ proc confineToBounds(this: Camera) =
   let halfResSize = resolutionMeters * 0.5
   this.x = clamp(
     this.bounds.left + halfResSize.x,
-    this.center.x,
+    this.x,
     this.bounds.right - halfResSize.x
   )
 
   this.y = clamp(
     this.bounds.top + halfResSize.y,
-    this.center.y,
+    this.y,
     this.bounds.bottom - halfResSize.y
   )
 
@@ -77,12 +77,14 @@ method update*(this: Camera, deltaTime: float) =
     return
 
   if this.easingFunction == nil:
-    this.center = this.trackedNode.center
+    this.setLocation(this.trackedNode.getLocation())
   else:
-    this.center = this.easingFunction(
-      this.center,
-      this.trackedNode.center + this.offset,
-      this.completionRatioPerFrame
+    this.setLocation(
+      this.easingFunction(
+        this.getLocation(),
+        this.trackedNode.getLocation() + this.offset,
+        this.completionRatioPerFrame
+      )
     )
 
   this.confineToBounds()

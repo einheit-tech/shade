@@ -113,7 +113,7 @@ proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeLis
   this.zChangeListeners.add(onceListener)
   return onceListener
 
-method update*(this: Layer, deltaTime: float) {.base.} =
+method update*(this: Layer, deltaTime: float, onChildUpdate: proc(child: Node) = nil) {.base.} =
   if this.onUpdate != nil:
     this.onUpdate(this, deltaTime)
 
@@ -129,6 +129,8 @@ method update*(this: Layer, deltaTime: float) {.base.} =
     for child in this.children:
       if loUpdate in child.flags:
         child.update(deltaTime)
+        if onChildUpdate != nil:
+          onChildUpdate(child)
 
 Layer.renderAsParent:
   for child in this.children:

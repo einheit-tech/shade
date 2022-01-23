@@ -117,21 +117,18 @@ proc remove*(this: AABBTree, obj: Boundable) =
 
 proc update*(this: AABBTree, obj: Boundable) =
   let index = this.objectIndexMap[obj]
-  this.updateLeaf(index, obj.getAABB())
+  this.updateLeaf(index, obj.getBounds())
 
-proc queryOverlaps*(this: AABBTree, obj: Boundable): seq[Rectangle] =
-  let
-    stack: seq[Natural]
-    testAABB = obj.getAABB()
-
-  stack.add(this.rootNodeIndex)
+proc queryOverlaps*[T: Boundable](this: AABBTree[T], obj: T): seq[T] =
+  let testAABB = obj.getBounds()
+  var stack: seq[Natural] = @[this.rootNodeIndex]
   
   while stack.len > 0:
     let index = stack.pop()
     if index == AABB_NULL_NODE:
       continue
     
-    template node = this.nodes[index]
+    template node: TreeNode[T] = this.nodes[index]
     if node.aabb.overlaps(testAABB):
       if node.isLeaf() and node.obj != obj:
         result.insert(node.obj, 0)

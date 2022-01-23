@@ -65,6 +65,16 @@ template contains*(this: Rectangle, v: Vector): bool =
 template contains*(this, r: Rectangle): bool =
   this.contains(r.topLeft) and this.contains(r.bottomRight)
 
+template overlaps*(this, r: Rectangle): bool =
+  # One rect is left of the other
+  if this.topLeft.x >= r.bottomRight.x or r.topLeft.x >= this.bottomRight.x:
+    false
+  # One rect is above the other
+  elif this.topLeft.y <= r.bottomRight.y or r.topLeft.y <= this.bottomRight.y:
+    false
+  else:
+    true
+
 template intersects*(this: Rectangle, rect: Rectangle): bool =
   return
     this.left <= rect.right and

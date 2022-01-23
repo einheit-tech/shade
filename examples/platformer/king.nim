@@ -73,13 +73,10 @@ proc createNewKing*(): King =
   initPhysicsBody(PhysicsBody(result))
 
   let sprite = createKingSprite()
-  # sprite.x = 8.0
-  # sprite.y = 1.0
   result.sprite = sprite
   result.animationPlayer = createAnimPlayer(sprite)
 
   let collisionShape = createCollisionShape()
-  # collisionShape.filter = newShapeFilter(PLAYER, PLAYER, GROUND)
   result.collisionShape = collisionShape
 
 proc playAnimation*(king: King, name: string) =

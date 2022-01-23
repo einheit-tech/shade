@@ -93,18 +93,19 @@ template velocityY*(this: PhysicsBody): float =
 template `velocityY=`*(this: PhysicsBody, y: float) =
   this.velocity = vector(this.velocity.x, y)
 
-method `center=`*(this: PhysicsBody, v: Vector) =
+method setLocation*(this: PhysicsBody, x, y: float) =
   # Move the bounds accordingly.
   if this.bounds != nil:
-    let delta = v - this.center
+    let delta = vector(x, y) - this.getLocation()
     this.bounds.topLeft += delta
     this.bounds.bottomRight += delta
+    echo this.bounds.topLeft.y
 
-  procCall `center=`(Node(this), v)
+  procCall setLocation((Node) this, x, y)
 
 proc getBounds*(this: PhysicsBody): Rectangle =
   if this.bounds == nil:
-    this.bounds = this.collisionShape.getBounds().getTranslatedInstance(this.center)
+    this.bounds = this.collisionShape.getBounds().getTranslatedInstance(this.getLocation())
   return this.bounds
 
 proc addCollisionListenerNow*(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false) =
@@ -163,7 +164,9 @@ proc wallAndGroundSetter(
 
 method update*(this: PhysicsBody, deltaTime: float) =
   procCall Node(this).update(deltaTime)
-  this.center += this.velocity * deltaTime
+
+  if this.velocity != VECTOR_ZERO:
+    this.move(this.velocity * deltaTime)
 
   withLock(this.collisionListenersLock):
     while this.collisionListenersToRemove.len > 0:

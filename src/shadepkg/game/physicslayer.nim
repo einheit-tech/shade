@@ -74,12 +74,12 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
 
   # Translate bodies out of each other.
   if bodyA.kind == pbStatic:
-    bodyB.center -= mtv
+    bodyB.move(mtv.negate())
   elif bodyB.kind == pbStatic:
-    bodyA.center += mtv
+    bodyA.move(mtv)
   else:
-    bodyA.center += mtv * 0.5
-    bodyB.center += mtv * -0.5
+    bodyA.move(mtv * 0.5)
+    bodyB.move(mtv * -0.5)
 
   template iMassA: float = bodyA.collisionShape.inverseMass
   template iMassB: float = bodyB.collisionShape.inverseMass
@@ -93,17 +93,16 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
     bodyB.velocity += impulse * iMassB
 
 template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
-  # TODO: Implement broad collision phase.
   for i, bodyA in this.physicsBodyChildren:
-    for j in countup(i + 1, this.physicsBodyChildren.high):
-      let bodyB = this.physicsBodyChildren[j]
+    let bodies = this.aabbTree.queryOverlaps(bodyA)
+    for bodyB in bodies:
       if bodyA.kind == pbStatic and bodyB.kind == pbStatic:
         continue
 
       let collision = collides(
-        bodyA.center,
+        bodyA.getLocation(),
         bodyA.collisionShape,
-        bodyB.center,
+        bodyB.getLocation(),
         bodyB.collisionShape
       )
 
@@ -132,8 +131,10 @@ template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
     else:
       body.forces.setLen(0)
 
-method update*(this: PhysicsLayer, deltaTime: float) =
-  procCall Layer(this).update(deltaTime)
+method update*(this: PhysicsLayer, deltaTime: float, onChildUpdate: proc(child: Node) = nil) =
+  procCall Layer(this).update(deltaTime, proc(child: Node) =
+    this.aabbTree.update((PhysicsBody) child)
+  )
 
   let subdividedDeltaTime = deltaTime / COLLISION_ITERATIONS
   for i in 1..COLLISION_ITERATIONS:

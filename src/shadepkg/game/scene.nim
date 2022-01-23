@@ -58,7 +58,7 @@ proc renderWithCamera(this: Scene, ctx: Target) =
         this.camera.viewport.height
       ) * 0.5
 
-      let trans = (this.camera.center) * inversedScalar - halfViewportSize
+      let trans = (this.camera.getLocation()) * inversedScalar - halfViewportSize
       translate(
         -trans.x,
         -trans.y,
