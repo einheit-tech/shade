@@ -76,11 +76,10 @@ template overlaps*(this, r: Rectangle): bool =
     true
 
 template intersects*(this: Rectangle, rect: Rectangle): bool =
-  return
-    this.left <= rect.right and
-    rect.left <= this.right and
-    this.top <= rect.right and
-    rect.top <= this.right
+  this.left <= rect.right and
+  rect.left <= this.right and
+  this.top <= rect.right and
+  rect.top <= this.right
 
 template `+`*(r1, r2: Rectangle): Rectangle =
   newRectangle(

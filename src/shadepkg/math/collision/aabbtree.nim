@@ -129,7 +129,7 @@ proc queryOverlaps*[T: Boundable](this: AABBTree[T], obj: T): seq[T] =
       continue
     
     template node: TreeNode[T] = this.nodes[index]
-    if node.aabb.overlaps(testAABB):
+    if node.aabb.intersects(testAABB):
       if node.isLeaf() and node.obj != obj:
         result.insert(node.obj, 0)
       else:
