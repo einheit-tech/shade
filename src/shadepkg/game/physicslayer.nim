@@ -1,3 +1,5 @@
+import macros
+
 import
   layer,
   physicsbody,
@@ -36,7 +38,7 @@ proc initPhysicsLayer*(
 ) =
   initLayer(layer, z)
   `gravity=`(layer, gravity)
-  layer.aabbTree = newAABBTree[PhysicsBody](16)
+  layer.aabbTree = newAABBTree[PhysicsBody]()
 
 proc newPhysicsLayer*(gravity: Vector = DEFAULT_GRAVITY, z: float = 1.0): PhysicsLayer =
   result = PhysicsLayer()
@@ -46,7 +48,7 @@ method addChildNow(this: PhysicsLayer, child: Node) =
   procCall Layer(this).addChildNow(child)
   if child of PhysicsBody:
     this.physicsBodyChildren.add((PhysicsBody) child)
-    this.aabbTree.insert((PhysicsBody) child)
+    this.aabbTree.addObject((PhysicsBody) child)
 
 method removeChildNow*(this: PhysicsLayer, child: Node) =
   procCall Layer(this).removeChildNow(child)
@@ -59,7 +61,7 @@ method removeChildNow*(this: PhysicsLayer, child: Node) =
         break
     
     if index >= 0:
-      this.aabbTree.remove((PhysicsBody) child)
+      this.aabbTree.removeObject((PhysicsBody) child)
       this.physicsBodyChildren.delete(index)
 
 template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
@@ -94,11 +96,16 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
 
 template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
   for i, bodyA in this.physicsBodyChildren:
-    let bodies = this.aabbTree.queryOverlaps(bodyA)
-    for bodyB in bodies:
+
+    # TODO: Left half of objects not seen as colliding?
+    # let bodies = this.aabbTree.findOverlappingObjects(bodyA.getBounds())
+    # for bodyB in bodies:
+    for j in countup(i + 1, this.physicsBodyChildren.len - 1):
+      let bodyB = this.physicsBodyChildren[j]
+
       if bodyA.kind == pbStatic and bodyB.kind == pbStatic:
         continue
-
+      
       let collision = collides(
         bodyA.getLocation(),
         bodyA.collisionShape,
@@ -132,9 +139,7 @@ template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
       body.forces.setLen(0)
 
 method update*(this: PhysicsLayer, deltaTime: float, onChildUpdate: proc(child: Node) = nil) =
-  procCall Layer(this).update(deltaTime, proc(child: Node) =
-    this.aabbTree.update((PhysicsBody) child)
-  )
+  procCall Layer(this).update(deltaTime)
 
   let subdividedDeltaTime = deltaTime / COLLISION_ITERATIONS
   for i in 1..COLLISION_ITERATIONS:
@@ -142,7 +147,7 @@ method update*(this: PhysicsLayer, deltaTime: float, onChildUpdate: proc(child: 
 
   this.applyForcesToBodies(deltaTime)
 
-PhysicsLayer.renderAsChildOf(Layer):
-  for body in this.physicsBodyChildren:
-    body.render(ctx)
+when defined(aabbtreeOutlines):
+  PhysicsLayer.renderAsChildOf(Layer):
+    this.aabbTree.render(ctx)
 

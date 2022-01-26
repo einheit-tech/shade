@@ -46,3 +46,15 @@ describe "Rectangle":
       assertEquals(rect1.intersects(rect2), false)
       assertEquals(rect2.intersects(rect1), false)
 
+  describe "createBoundsAround":
+
+    it "returns the outer bounds of two rectangles":
+      let
+        rect1 = newRectangle(0, 0, 100, 100)
+        rect2 = newRectangle(-30, 30, 110, 280)
+
+      let sum = createBoundsAround(rect1, rect2)
+      assertEquals(sum.topLeft, vector(-30, 0))
+      assertEquals(sum.bottomRight, vector(110, 280))
+
+

@@ -81,14 +81,13 @@ template intersects*(this: Rectangle, rect: Rectangle): bool =
   this.top <= rect.right and
   rect.top <= this.right
 
-template `+`*(r1, r2: Rectangle): Rectangle =
+template createBoundsAround*(r1, r2: Rectangle): Rectangle =
   newRectangle(
     min(r1.topLeft.x, r2.topLeft.x),
     min(r1.topLeft.y, r2.topLeft.y),
     max(r1.bottomRight.x, r2.bottomRight.x),
     max(r1.bottomRight.y, r2.bottomRight.y)
   )
-
 
 proc stroke*(this: Rectangle, ctx: Target, color: Color = RED) =
   ctx.rectangle(

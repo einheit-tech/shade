@@ -66,11 +66,8 @@ let wallSprite = newSprite(wallImage)
 proc createWall(): PhysicsBody =
   # Left wall
   let wallShape = newPolygonCollisionShape(wallShapePolygon)
-  # wallShape.filter = newShapeFilter(GROUND, GROUND, PLAYER)
   wallShape.material = PLATFORM
   result = newPhysicsBody(kind = pbStatic)
-  # result.addChild(newSprite(wallImage))
-  # result.addChild(wallShape)
   result.collisionShape = wallShape
   
   result.onRender = proc(this: Node, ctx: Target) =
@@ -142,11 +139,11 @@ player.onUpdate = physicsProcess
 rightWall.scale = vector(-1, 1)
 
 # Play some music
-let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")
-if err == nil:
-  discard capture fadeInMusic(someSong, 2.0, 0.15)
-else:
-  echo "Error playing music: " & err.msg
+# let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")
+# if err == nil:
+#   discard capture fadeInMusic(someSong, 2.0, 0.15)
+# else:
+#   echo "Error playing music: " & err.msg
 
 Game.start()
 

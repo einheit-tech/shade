@@ -137,3 +137,6 @@ Layer.renderAsParent:
     if loRender in child.flags:
       child.render(ctx)
 
+  if callback != nil:
+    callback()
+

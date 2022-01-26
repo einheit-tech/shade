@@ -99,7 +99,6 @@ method setLocation*(this: PhysicsBody, x, y: float) =
     let delta = vector(x, y) - this.getLocation()
     this.bounds.topLeft += delta
     this.bounds.bottomRight += delta
-    echo this.bounds.topLeft.y
 
   procCall setLocation((Node) this, x, y)
 
