@@ -76,10 +76,12 @@ template overlaps*(this, r: Rectangle): bool =
     true
 
 template intersects*(this: Rectangle, rect: Rectangle): bool =
-  this.left <= rect.right and
-  rect.left <= this.right and
-  this.top <= rect.right and
-  rect.top <= this.right
+  not (
+    rect.left > this.right or
+    rect.right < this.left or
+    rect.top > this.bottom or
+    rect.bottom < this.top
+  )
 
 template createBoundsAround*(r1, r2: Rectangle): Rectangle =
   newRectangle(
@@ -88,6 +90,11 @@ template createBoundsAround*(r1, r2: Rectangle): Rectangle =
     max(r1.bottomRight.x, r2.bottomRight.x),
     max(r1.bottomRight.y, r2.bottomRight.y)
   )
+
+proc `$`*(this: Rectangle): string =
+  return
+    "Top Left: (" & $this.left & ", " & $this.top & ")" & "\n" &
+    "Bottom Right: (" & $this.right & ", " & $this.bottom & ")"
 
 proc stroke*(this: Rectangle, ctx: Target, color: Color = RED) =
   ctx.rectangle(

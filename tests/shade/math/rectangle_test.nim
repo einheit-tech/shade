@@ -40,9 +40,14 @@ describe "Rectangle":
       assertEquals(rect1.intersects(rect2), true)
 
     it "returns false when rect1 and rect2 are not overlapping at all":
-      let
+      var
         rect1 = newRectangle(300, 300, 80, 80)
         rect2 = newRectangle(0, 0, 100, 100)
+      assertEquals(rect1.intersects(rect2), false)
+      assertEquals(rect2.intersects(rect1), false)
+
+      rect1 = newRectangle(952, 627, 968, 653)
+      rect2 = newRectangle(480, 920, 1440, 1080)
       assertEquals(rect1.intersects(rect2), false)
       assertEquals(rect2.intersects(rect1), false)
 
