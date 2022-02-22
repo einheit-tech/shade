@@ -8,8 +8,7 @@ initEngineSingleton("Animation Player Example", width, height)
 let layer = newLayer()
 Game.scene.addLayer(layer)
 
-let (_, image) = Images.loadImage("./examples/assets/images/king.png")
-image.setImageFilter(FILTER_NEAREST)
+let (_, image) = Images.loadImage("./examples/assets/images/king.png", FILTER_NEAREST)
 
 let king = newNode({loUpdate, loRender})
 let kingSprite = newSprite(image, 11, 8)
@@ -56,7 +55,7 @@ king.onUpdate = proc(this: Node, deltaTime: float) =
 king.onRender = proc(this: Node, ctx: Target) =
   kingSprite.render(ctx)
 
-king.center = vector(200, 200)
+king.setLocation(vector(200, 200))
 layer.addChild king
 
 Game.start()

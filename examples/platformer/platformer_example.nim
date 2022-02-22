@@ -21,11 +21,9 @@ let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
 camera.z = 0.55
 Game.scene.camera = camera
 
-let (_, groundImage) = Images.loadImage("./examples/assets/images/ground.png")
-groundImage.setImageFilter(FILTER_NEAREST)
-
-let (_, wallImage) = Images.loadImage("./examples/assets/images/wall.png")
-wallImage.setImageFilter(FILTER_NEAREST)
+let
+  (_, groundImage) = Images.loadImage("./examples/assets/images/ground.png", FILTER_NEAREST)
+  (_, wallImage) = Images.loadImage("./examples/assets/images/wall.png", FILTER_NEAREST)
 
 # Ground
 let

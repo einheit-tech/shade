@@ -28,6 +28,10 @@ proc loadImage*(this: ImageAtlas, imagePath: string): tuple[id: int, image: Imag
 
   result.id = this.registerImage(result.image)
 
+proc loadImage*(this: ImageAtlas, imagePath: string, filter: Filter): tuple[id: int, image: Image] =
+  result = this.loadImage(imagePath)
+  result.image.setImageFilter(filter)
+
 template `[]`*(this: ImageAtlas, imageID: int): Image =
   this.images[imageID]
 

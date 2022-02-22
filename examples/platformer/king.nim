@@ -43,8 +43,7 @@ proc createRunAnimation(king: Sprite): Animation =
   return runAnim
 
 proc createKingSprite(): Sprite =
-  let (_, image) = Images.loadImage("./examples/assets/images/king.png")
-  image.setImageFilter(FILTER_NEAREST)
+  let (_, image) = Images.loadImage("./examples/assets/images/king.png", FILTER_NEAREST)
   result = newSprite(image, 11, 8)
 
 proc createAnimPlayer(sprite: Sprite): AnimationPlayer =
