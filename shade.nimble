@@ -22,10 +22,10 @@ task animations, "Runs the animation player example":
   exec "nim r --threads:on --multimethods:on -d:inputdebug examples/basic/animationplayer_example.nim"
 
 task physics, "Runs the physics example":
-  exec "nim r -d:release --threads:on --multimethods:on -d:collisionoutlines -d:inputdebug examples/physics/physics_example.nim"
+  exec "nim r -d:release --threads:on --multimethods:on -d:inputdebug examples/physics/physics_example.nim"
 
 task platformer, "Runs the platformer example":
-  exec "nim r -d:release --threads:on --multimethods:on -d:aabbtreeOutlines -d:inputdebug examples/platformer/platformer_example.nim"
+  exec "nim r -d:release --threads:on --multimethods:on -d:inputdebug examples/platformer/platformer_example.nim"
 
 task platformerd, "Runs the platformer example":
   exec "nim r -d:debug --threads:on --multimethods:on -d:inputdebug examples/platformer/platformer_example.nim"

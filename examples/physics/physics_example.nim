@@ -28,7 +28,7 @@ let platformHull = newPolygonCollisionShape(newPolygon([
   vector(-platformWidth / 2, 100)
 ]))
 platform.collisionShape = platformHull
-platform.center = vector(width / 2, 800)
+platform.setLocation(width / 2, 800)
 layer.addChild(platform)
 
 const colors = [ RED, GREEN, BLUE, PURPLE, ORANGE ]
@@ -60,7 +60,7 @@ proc addRandomBodyToLayer(mouseButton: int) =
   let body = newPhysicsBody(pbDynamic)
 
   body.collisionShape = createRandomCollisionShape(mouseButton)
-  body.center = Input.mouseLocation
+  body.setLocation(Input.mouseLocation)
 
   let randColor = getRandomColor()
   body.onRender = proc(this: Node, ctx: Target) =

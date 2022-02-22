@@ -8,8 +8,6 @@ import
 
 import ../../game/physicsbody
 
-const AABB_NULL_NODE = int.high
-
 type TreeNode[T: Boundable] = ref object
   aabb: Rectangle
   # Object that owns the AABB
@@ -109,10 +107,9 @@ proc addObject*[T: Boundable](this: AABBTree[T], obj: T) =
   let newChild = newTreeNode[T](
     currentNode.aabb,
     currentNode.obj,
-    # TODO: Why currentNode as parent, and left and right are flipped?
     currentNode,
-    currentNode.rightNode,
-    currentNode.leftNode
+    currentNode.leftNode,
+    currentNode.rightNode
   )
   
   if newChild.obj != nil:
@@ -132,8 +129,6 @@ proc addObject*[T: Boundable](this: AABBTree[T], obj: T) =
 proc removeObject*[T: Boundable](this: AABBTree[T], obj: T) =
   var node: TreeNode[T]
   if this.objToNodeMap.pop(obj, node):
-    # TODO: Make sure removeNode doesn't require the node
-    # to still be in the table.
     this.removeNode(node)
 
 proc findOverlappingObjects*[T: Boundable](this: AABBTree[T], rect: Rectangle): seq[T] =

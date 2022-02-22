@@ -48,7 +48,7 @@ method addChildNow(this: PhysicsLayer, child: Node) =
   procCall Layer(this).addChildNow(child)
   if child of PhysicsBody:
     this.physicsBodyChildren.add((PhysicsBody) child)
-    this.aabbTree.addObject((PhysicsBody) child)
+    # this.aabbTree.addObject((PhysicsBody) child)
 
 method removeChildNow*(this: PhysicsLayer, child: Node) =
   procCall Layer(this).removeChildNow(child)
@@ -61,7 +61,7 @@ method removeChildNow*(this: PhysicsLayer, child: Node) =
         break
     
     if index >= 0:
-      this.aabbTree.removeObject((PhysicsBody) child)
+      # this.aabbTree.removeObject((PhysicsBody) child)
       this.physicsBodyChildren.delete(index)
 
 template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
