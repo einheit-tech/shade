@@ -75,7 +75,7 @@ proc addRandomBodyToLayer(mouseButton: int) =
   layer.addChild(body)
 
 # Add random shapes on click.
-Input.addMousePressEventListener(addRandomBodyToLayer)
+Input.addMousePressedEventListener(addRandomBodyToLayer)
 
 Game.start()
 

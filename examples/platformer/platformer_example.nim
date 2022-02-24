@@ -92,8 +92,9 @@ const
 
 proc physicsProcess(this: Node, deltaTime: float) =
   let
-    leftPressed = Input.isKeyPressed(K_LEFT)
-    rightPressed = Input.isKeyPressed(K_RIGHT)
+    leftStickX = Input.leftStickX()
+    leftPressed = Input.isKeyPressed(K_LEFT) or leftStickX < -0.01
+    rightPressed = Input.isKeyPressed(K_RIGHT) or leftStickX > 0.01
 
   var
     x: float = player.velocityX
@@ -106,18 +107,21 @@ proc physicsProcess(this: Node, deltaTime: float) =
       return
 
     if rightPressed:
-      x = min(player.velocityX + acceleration, maxSpeed)
-      if Input.wasKeyJustPressed(K_RIGHT):
+      # TODO: Can't use * leftStickX for keyboard
+      x = min(player.velocityX + acceleration * leftStickX, maxSpeed)
+      if player.scale.x < 0.0:
         player.scale = vector(abs(player.scale.x), player.scale.y)
     else:
-      x = max(player.velocityX - acceleration, -maxSpeed)
-      if Input.wasKeyJustPressed(K_LEFT):
+      x = max(player.velocityX + acceleration * leftStickX, -maxSpeed)
+      if player.scale.y > 0.0:
         player.scale = vector(-1 * abs(player.scale.x), player.scale.y)
 
     player.playAnimation("run")
 
   proc jump() =
-    if player.isOnGround and Input.wasKeyJustPressed(K_SPACE):
+    if player.isOnGround and (
+      Input.wasKeyJustPressed(K_SPACE) or Input.wasControllerButtonJustPressed(CONTROLLER_BUTTON_A)
+    ):
       y += jumpForce
 
   proc friction() =
@@ -136,12 +140,13 @@ player.onUpdate = physicsProcess
 # Use a negative x scale to flip the image
 rightWall.scale = vector(-1, 1)
 
-# Play some music
-# let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")
-# if err == nil:
-#   discard capture fadeInMusic(someSong, 2.0, 0.15)
-# else:
-#   echo "Error playing music: " & err.msg
+when not defined(debug):
+  # Play some music
+  let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")
+  if err == nil:
+    discard capture fadeInMusic(someSong, 2.0, 0.15)
+  else:
+    echo "Error playing music: " & err.msg
 
 Game.start()
 

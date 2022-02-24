@@ -99,6 +99,8 @@ proc loop(this: Engine) =
     elapsedNanos: int64 = 0
 
   while not this.shouldExit:
+    # TODO: This is dumb.
+    # Just set up a callback on the event listener
     this.shouldExit = this.handleEvents()
     this.update(this.deltaTime)
     this.render(this.screen)
