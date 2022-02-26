@@ -44,13 +44,11 @@ proc newShader*(vertShaderPath, fragShaderPath: string): Shader =
 proc updateTimeUniform*(this: Shader, time: float) =
   setUniformf(this.timeUniformID, cfloat time)
 
-proc updateResolutionUniform*(this: Shader, screenResolution: var Vector) =
+proc updateResolutionUniform(this: Shader, screenResolution: var Vector) =
   setUniformfv(this.resolutionUniformID, 2, 1, cast[ptr cfloat](screenResolution.addr))
 
 proc render*(this: Shader, time: float, screenResolution: var Vector) =
   activateShaderProgram(this.programID, this.shaderBlock.addr)
-  # TODO: Only do this on callback?
-  # Can create our own vector and provide the addr.
   this.updateTimeUniform(time)
   this.updateResolutionUniform(screenResolution)
 

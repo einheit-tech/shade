@@ -17,16 +17,12 @@ type
     completionRatioPerFrame*: CompletionRatio
     easingFunction*: EasingFunction[Vector]
 
+proc updateViewportSize*(this: Camera)
+
 proc initCamera*(camera: Camera) =
   initNode(Node(camera), {loUpdate})
   camera.bounds = newRectangle(float.low, float.low, float.high, float.high)
-  camera.viewport =
-    newRectangle(
-      camera.x - gamestate.resolution.x * 0.5,
-      camera.y - gamestate.resolution.y * 0.5,
-      camera.x + gamestate.resolution.x * 0.5,
-      camera.y + gamestate.resolution.y * 0.5
-    )
+  camera.updateViewportSize()
 
 proc newCamera*(): Camera =
   result = Camera()
@@ -49,6 +45,25 @@ proc newCamera*(
   result.completionRatioPerFrame = completionRatioPerFrame
   result.easingFunction = easingFunction
 
+proc updateViewportSize*(this: Camera) =
+  ## Updates the camera's viewport to fit the gamestate's resolution.
+  if this.viewport == nil:
+    this.viewport = newRectangle(
+      this.x - gamestate.resolution.x * 0.5,
+      this.y - gamestate.resolution.y * 0.5,
+      this.x + gamestate.resolution.x * 0.5,
+      this.y + gamestate.resolution.y * 0.5
+    )
+  else:
+    this.viewport.topLeft = vector(
+      this.x - gamestate.resolution.x * 0.5,
+      this.y - gamestate.resolution.y * 0.5,
+    )
+    this.viewport.bottomRight = vector(
+      this.x + gamestate.resolution.x * 0.5,
+      this.y + gamestate.resolution.y * 0.5
+    )
+
 proc setTrackingEasingFunction*(this: Camera, easingFunction: EasingFunction[Vector]) =
   this.easingFunction = easingFunction
 
@@ -56,17 +71,20 @@ proc setTrackedNode*(this: Camera, n: Node) =
   this.trackedNode = n
 
 proc confineToBounds(this: Camera) =
-  let halfResSize = resolution * 0.5
+  let
+    halfViewportWidth = this.viewport.width * 0.5
+    halfViewportHeight = this.viewport.height * 0.5
+
   this.x = clamp(
-    this.bounds.left + halfResSize.x,
+    this.bounds.left + halfViewportWidth,
     this.x,
-    this.bounds.right - halfResSize.x
+    this.bounds.right - halfViewportWidth
   )
 
   this.y = clamp(
-    this.bounds.top + halfResSize.y,
+    this.bounds.top + halfViewportHeight,
     this.y,
-    this.bounds.bottom - halfResSize.y
+    this.bounds.bottom - halfViewportHeight
   )
 
 method update*(this: Camera, deltaTime: float) =

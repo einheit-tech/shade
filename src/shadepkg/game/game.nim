@@ -10,7 +10,8 @@ import
   gamestate,
   ../input/inputhandler,
   ../audio/audioplayer,
-  ../render/color
+  ../render/color,
+  ../math/rectangle
 
 const
   oneBillion = 1000000000
@@ -41,7 +42,8 @@ proc initEngineSingleton*(
   title: string,
   gameWidth, gameHeight: int,
   scene: Scene = newScene(),
-  windowFlags: int = WINDOW_FULLSCREEN_DESKTOP or WINDOW_ALLOW_HIGHDPI,
+  # windowFlags: int = WINDOW_FULLSCREEN_DESKTOP or WINDOW_ALLOW_HIGHDPI,
+  windowFlags: int = WINDOW_ALLOW_HIGHDPI,
   clearColor: Color = BLACK
 ) =
   if Game != nil:
@@ -59,21 +61,26 @@ proc initEngineSingleton*(
   Game.scene = scene
   Game.clearColor = clearColor
 
-  # Determine display's refresh rate.
-  # var mode: ptr DisplayMode
-  # TODO: Why the hell am I getting a nil access error for context here?
-  # discard getWindowFromID(target[].context.windowID).getWindowDisplayMode(mode)
-  # Game.refreshRate =
-  #   if mode != nil and mode.refreshRate > 0:
-  #     mode.refreshRate
-  #   else:
-  #     DEFAULT_REFRESH_RATE
-  Game.refreshRate = 60
+  # TODO: Determine display's refresh rate.
+  Game.refreshRate = DEFAULT_REFRESH_RATE
 
   Game.deltaTime = 1.0 / Game.refreshRate.float
   Game.sleepNanos = round(oneBillion / Game.refreshRate).int
 
-  gamestate.resolution = vector(gameWidth.float, gameHeight.float)
+  gamestate.updateResolution(gameWidth.float, gameHeight.float)
+
+  gamestate.onResolutionChanged:
+      Game.screen.setVirtualResolution(uint16 gamestate.resolution.x, uint16 gamestate.resolution.y)
+
+      if Game.scene.camera != nil:
+        Game.screen.setViewport(
+          (
+            cfloat 0,
+            cfloat 0,
+            cfloat Game.scene.camera.viewport.width,
+            cfloat Game.scene.camera.viewport.height
+          )
+        )
 
   initInputHandlerSingleton()
   initAudioPlayerSingleton()
@@ -89,9 +96,7 @@ proc handleEvents(this: Engine): bool =
   var event: Event
   while pollEvent(event.addr) != 0:
     if event.kind == WINDOWEVENT and event.window.event == WINDOWEVENT_RESIZED:
-      echo event.window.data1, ", ", event.window.data2
-      gamestate.resolution.x = float event.window.data1
-      gamestate.resolution.y = float event.window.data2
+      gamestate.updateResolution(float event.window.data1, float event.window.data2)
 
     if Input.processEvent(event):
       return true

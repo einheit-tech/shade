@@ -3,8 +3,10 @@ import king
 
 initEngineSingleton(
   "Physics Example",
-  1920,
-  1080,
+  # 1920,
+  # 1080,
+  800,
+  600,
   clearColor = newColor(91, 188, 228)
 )
 
@@ -13,11 +15,13 @@ Game.scene.addLayer layer
 
 # King
 let player = createNewKing()
-player.x = resolution.x / 2
+player.x = 1920 / 2
 player.y = 640
 
 # Track the player with the camera.
-let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
+# let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
+let camera = newCamera()
+camera.setTrackedNode(player)
 camera.z = 0.55
 Game.scene.camera = camera
 
@@ -44,8 +48,8 @@ let ground = newPhysicsBody(
   kind = pbStatic
 )
 
-ground.x = resolution.x / 2
-ground.y = resolution.y - groundShape.getBounds().height / 2
+ground.x = 1920 / 2
+ground.y = 1080 - groundShape.getBounds().height / 2
 
 ground.collisionShape = groundShape
 let groundSprite = newSprite(groundImage)

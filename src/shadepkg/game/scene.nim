@@ -14,7 +14,9 @@ type Scene* = ref object
 
 proc initScene*(scene: Scene) =
   scene.isLayerOrderValid = true
-  gamestate.addResolutionChangedCallback(proc = echo "!!!")
+  gamestate.onResolutionChanged:
+    if scene.camera != nil:
+      scene.camera.updateViewportSize()
 
 proc newScene*(): Scene = 
   result = Scene()
@@ -45,7 +47,7 @@ proc update*(this: Scene, deltaTime: float) =
     layer.update(deltaTime)
 
 proc renderWithCamera(this: Scene, ctx: Target) =
-  # Subtract half the screen resolution to center the camera.
+  # Subtract half the viewport to center the camera.
   var
     relativeZ: float
     inversedScalar: float
@@ -60,7 +62,7 @@ proc renderWithCamera(this: Scene, ctx: Target) =
         this.camera.viewport.height
       ) * 0.5
 
-      let trans = (this.camera.getLocation()) * inversedScalar - halfViewportSize
+      let trans = this.camera.getLocation() * inversedScalar - halfViewportSize
       translate(
         -trans.x,
         -trans.y,
