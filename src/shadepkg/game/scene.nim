@@ -2,7 +2,8 @@ import algorithm
 
 import
   layer,
-  camera
+  camera,
+  gamestate
 
 export layer
 
@@ -13,6 +14,7 @@ type Scene* = ref object
 
 proc initScene*(scene: Scene) =
   scene.isLayerOrderValid = true
+  gamestate.addResolutionChangedCallback(proc = echo "!!!")
 
 proc newScene*(): Scene = 
   result = Scene()

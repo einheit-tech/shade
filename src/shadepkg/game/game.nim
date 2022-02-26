@@ -73,8 +73,7 @@ proc initEngineSingleton*(
   Game.deltaTime = 1.0 / Game.refreshRate.float
   Game.sleepNanos = round(oneBillion / Game.refreshRate).int
 
-  gamestate.resolutionPixels = vector(gameWidth.float, gameHeight.float)
-  gamestate.resolutionMeters = gamestate.resolutionPixels
+  gamestate.resolution = vector(gameWidth.float, gameHeight.float)
 
   initInputHandlerSingleton()
   initAudioPlayerSingleton()
@@ -89,6 +88,11 @@ proc handleEvents(this: Engine): bool =
   ## Returns if the application should exit.
   var event: Event
   while pollEvent(event.addr) != 0:
+    if event.kind == WINDOWEVENT and event.window.event == WINDOWEVENT_RESIZED:
+      echo event.window.data1, ", ", event.window.data2
+      gamestate.resolution.x = float event.window.data1
+      gamestate.resolution.y = float event.window.data2
+
     if Input.processEvent(event):
       return true
   return false

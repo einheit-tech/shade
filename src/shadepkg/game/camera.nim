@@ -22,10 +22,10 @@ proc initCamera*(camera: Camera) =
   camera.bounds = newRectangle(float.low, float.low, float.high, float.high)
   camera.viewport =
     newRectangle(
-      camera.x - gamestate.resolutionMeters.x * 0.5,
-      camera.y - gamestate.resolutionMeters.y * 0.5,
-      camera.x + gamestate.resolutionMeters.x * 0.5,
-      camera.y + gamestate.resolutionMeters.y * 0.5
+      camera.x - gamestate.resolution.x * 0.5,
+      camera.y - gamestate.resolution.y * 0.5,
+      camera.x + gamestate.resolution.x * 0.5,
+      camera.y + gamestate.resolution.y * 0.5
     )
 
 proc newCamera*(): Camera =
@@ -56,7 +56,7 @@ proc setTrackedNode*(this: Camera, n: Node) =
   this.trackedNode = n
 
 proc confineToBounds(this: Camera) =
-  let halfResSize = resolutionMeters * 0.5
+  let halfResSize = resolution * 0.5
   this.x = clamp(
     this.bounds.left + halfResSize.x,
     this.x,

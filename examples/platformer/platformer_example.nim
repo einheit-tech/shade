@@ -13,7 +13,7 @@ Game.scene.addLayer layer
 
 # King
 let player = createNewKing()
-player.x = resolutionMeters.x / 2
+player.x = resolution.x / 2
 player.y = 640
 
 # Track the player with the camera.
@@ -44,8 +44,8 @@ let ground = newPhysicsBody(
   kind = pbStatic
 )
 
-ground.x = resolutionMeters.x / 2
-ground.y = resolutionMeters.y - groundShape.getBounds().height / 2
+ground.x = resolution.x / 2
+ground.y = resolution.y - groundShape.getBounds().height / 2
 
 ground.collisionShape = groundShape
 let groundSprite = newSprite(groundImage)
@@ -86,9 +86,9 @@ layer.addChild(player)
 
 # Custom physics handling for the player
 const
-  maxSpeed = 400
-  acceleration = 100
-  jumpForce = -350
+  maxSpeed = 400.0
+  acceleration = 100.0
+  jumpForce = -350.0
 
 proc physicsProcess(this: Node, deltaTime: float) =
   let
@@ -106,13 +106,18 @@ proc physicsProcess(this: Node, deltaTime: float) =
       player.playAnimation("idle")
       return
 
+    let accel =
+      if leftStickX == 0.0:
+        acceleration
+      else:
+        acceleration * abs(leftStickX)
+
     if rightPressed:
-      # TODO: Can't use * leftStickX for keyboard
-      x = min(player.velocityX + acceleration * leftStickX, maxSpeed)
+      x = min(player.velocityX + accel, maxSpeed)
       if player.scale.x < 0.0:
         player.scale = vector(abs(player.scale.x), player.scale.y)
     else:
-      x = max(player.velocityX + acceleration * leftStickX, -maxSpeed)
+      x = max(player.velocityX - accel, -maxSpeed)
       if player.scale.y > 0.0:
         player.scale = vector(-1 * abs(player.scale.x), player.scale.y)
 

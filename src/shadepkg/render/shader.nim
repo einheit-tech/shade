@@ -49,6 +49,8 @@ proc updateResolutionUniform*(this: Shader, screenResolution: var Vector) =
 
 proc render*(this: Shader, time: float, screenResolution: var Vector) =
   activateShaderProgram(this.programID, this.shaderBlock.addr)
+  # TODO: Only do this on callback?
+  # Can create our own vector and provide the addr.
   this.updateTimeUniform(time)
   this.updateResolutionUniform(screenResolution)
 
