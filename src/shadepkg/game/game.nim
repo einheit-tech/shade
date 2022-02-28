@@ -42,8 +42,7 @@ proc initEngineSingleton*(
   title: string,
   gameWidth, gameHeight: int,
   scene: Scene = newScene(),
-  # windowFlags: int = WINDOW_FULLSCREEN_DESKTOP or WINDOW_ALLOW_HIGHDPI,
-  windowFlags: int = WINDOW_ALLOW_HIGHDPI,
+  windowFlags: int = WINDOW_FULLSCREEN_DESKTOP or WINDOW_ALLOW_HIGHDPI,
   clearColor: Color = BLACK
 ) =
   if Game != nil:
