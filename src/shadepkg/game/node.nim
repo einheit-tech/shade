@@ -95,7 +95,7 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
     scale(this.scale.x, this.scale.y, 1.0)
 
   if this.shader != nil:
-    this.shader.render(time, resolutionPixels)
+    this.shader.render(time, gamestate.resolution)
 
   if callback != nil:
     callback()

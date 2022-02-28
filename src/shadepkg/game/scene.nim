@@ -2,7 +2,8 @@ import algorithm
 
 import
   layer,
-  camera
+  camera,
+  gamestate
 
 export layer
 
@@ -13,6 +14,9 @@ type Scene* = ref object
 
 proc initScene*(scene: Scene) =
   scene.isLayerOrderValid = true
+  gamestate.onResolutionChanged:
+    if scene.camera != nil:
+      scene.camera.updateViewportSize()
 
 proc newScene*(): Scene = 
   result = Scene()
@@ -43,7 +47,7 @@ proc update*(this: Scene, deltaTime: float) =
     layer.update(deltaTime)
 
 proc renderWithCamera(this: Scene, ctx: Target) =
-  # Subtract half the screen resolution to center the camera.
+  # Subtract half the viewport to center the camera.
   var
     relativeZ: float
     inversedScalar: float
@@ -53,12 +57,9 @@ proc renderWithCamera(this: Scene, ctx: Target) =
     if relativeZ > 0:
 
       inversedScalar = 1.0 / relativeZ
-      let halfViewportSize = vector(
-        this.camera.viewport.width,
-        this.camera.viewport.height
-      ) * 0.5
+      let halfViewportSize = this.camera.viewport.getSize() * 0.5
 
-      let trans = (this.camera.getLocation()) * inversedScalar - halfViewportSize
+      let trans = this.camera.getLocation() * inversedScalar - halfViewportSize
       translate(
         -trans.x,
         -trans.y,

@@ -40,6 +40,9 @@ template height*(this: Rectangle): float =
 template getArea*(this: Rectangle): float =
   this.width * this.height
 
+template getSize*(this: Rectangle): Vector =
+  vector(this.width, this.height)
+
 proc getTranslatedInstance*(this: Rectangle, offset: Vector): Rectangle =
   newRectangle(
     this.left + offset.x,
