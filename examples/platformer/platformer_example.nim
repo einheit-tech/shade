@@ -3,10 +3,8 @@ import king
 
 initEngineSingleton(
   "Physics Example",
-  # 1920,
-  # 1080,
-  800,
-  600,
+  1920,
+  1080,
   clearColor = newColor(91, 188, 228)
 )
 
@@ -19,9 +17,7 @@ player.x = 1920 / 2
 player.y = 640
 
 # Track the player with the camera.
-# let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
-let camera = newCamera()
-camera.setTrackedNode(player)
+let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
 camera.z = 0.55
 Game.scene.camera = camera
 

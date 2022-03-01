@@ -61,6 +61,9 @@ proc newPhysicsBody*(
   result = PhysicsBody(kind: kind)
   initPhysicsBody(result, flags)
 
+proc collisionListenerCount*(this: PhysicsBody): int =
+  this.collisionListeners.len
+
 template collisionShape*(this: PhysicsBody): CollisionShape =
   this.collisionShape
 
@@ -107,12 +110,13 @@ proc getBounds*(this: PhysicsBody): Rectangle =
     this.bounds = this.collisionShape.getBounds().getTranslatedInstance(this.getLocation())
   return this.bounds
 
-proc addCollisionListenerNow*(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false) =
+proc addCollisionListenerNow(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false) =
   if fireOnce:
     var onceListener: CollisionListener
     onceListener = proc(a, b: PhysicsBody, collisionResult: CollisionResult, gravityNormal: Vector) =
       listener(a, b, collisionResult, gravityNormal)
       this.removeCollisionListener(onceListener)
+
     this.collisionListeners.add(onceListener)
   else:
     this.collisionListeners.add(listener)
@@ -124,7 +128,7 @@ proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener, fireO
   else:
     this.collisionListenersToAdd.addLast((listener, fireOnce))
 
-proc removeCollisionListenerNow*(this: PhysicsBody, listener: CollisionListener) =
+proc removeCollisionListenerNow(this: PhysicsBody, listener: CollisionListener) =
   var index = -1
   for i, l in this.collisionListeners:
     if l == listener:
