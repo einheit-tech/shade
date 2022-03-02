@@ -1,4 +1,4 @@
-import 
+import
   locks,
   deques,
   node,
@@ -38,6 +38,7 @@ type
         discard
 
     collisionListenersLock: Lock
+    collisionListenersLockAcquired: bool
     collisionListeners: seq[CollisionListener]
     collisionListenersToAdd: Deque[(CollisionListener, bool)]
     collisionListenersToRemove: Deque[CollisionListener]
@@ -96,6 +97,22 @@ template velocityY*(this: PhysicsBody): float =
 template `velocityY=`*(this: PhysicsBody, y: float) =
   this.velocity = vector(this.velocity.x, y)
 
+template withCollisionLock(this: PhysicsBody, body: untyped) =
+  withLock(this.collisionListenersLock):
+      this.collisionListenersLockAcquired = true
+      try:
+        body
+      finally:
+        this.collisionListenersLockAcquired = false
+
+proc tryAcquireCollision(this: PhysicsBody): bool =
+  if not tryAcquire(this.collisionListenersLock):
+    return false
+  if this.collisionListenersLockAcquired:
+    this.collisionListenersLock.release()
+    return false
+  return true
+
 method setLocation*(this: PhysicsBody, x, y: float) =
   # Move the bounds accordingly.
   if this.bounds != nil:
@@ -122,7 +139,7 @@ proc addCollisionListenerNow(this: PhysicsBody, listener: CollisionListener, fir
     this.collisionListeners.add(listener)
 
 proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false) =
-  if tryAcquire(this.collisionListenersLock):
+  if this.tryAcquireCollision():
     this.addCollisionListenerNow(listener, fireOnce)
     this.collisionListenersLock.release()
   else:
@@ -134,12 +151,12 @@ proc removeCollisionListenerNow(this: PhysicsBody, listener: CollisionListener) 
     if l == listener:
       index = i
       break
-  
+
   if index >= 0:
     this.collisionListeners.delete(index)
 
 proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener) =
-  if tryAcquire(this.collisionListenersLock):
+  if this.tryAcquireCollision():
     this.removeCollisionListenerNow(listener)
     this.collisionListenersLock.release()
   else:
@@ -150,7 +167,7 @@ proc notifyCollisionListeners*(
   collisionResult: CollisionResult,
   gravityNormal: Vector
 ) =
-  withLock(this.collisionListenersLock):
+  this.withCollisionLock:
     for listener in this.collisionListeners:
       listener(this, other, collisionResult, gravityNormal)
 
@@ -171,7 +188,7 @@ method update*(this: PhysicsBody, deltaTime: float) =
   if this.velocity != VECTOR_ZERO:
     this.move(this.velocity * deltaTime)
 
-  withLock(this.collisionListenersLock):
+  this.withCollisionLock:
     while this.collisionListenersToRemove.len > 0:
       let listener = this.collisionListenersToRemove.popFirst()
       this.removeCollisionListenerNow(listener)
