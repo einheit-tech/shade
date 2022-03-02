@@ -124,10 +124,8 @@ template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
       collision.resolve(bodyA, bodyB)
 
       # Register the collision for any existing callbacks.
-      if bodyA.collisionListenerCount > 0:
+      if bodyA.collisionListenerCount > 0 or bodyB.collisionListenerCount > 0:
         this.currentFrameCollisions[(bodyA, bodyB)] = collision
-      if bodyB.collisionListenerCount > 0:
-        this.currentFrameCollisions[(bodyB, bodyA)] = collision.invert()
 
 template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
   for body in this.physicsBodyChildren:
@@ -153,12 +151,14 @@ method update*(this: PhysicsLayer, deltaTime: float, onChildUpdate: proc(child: 
   for i in 1..COLLISION_ITERATIONS:
     this.handleCollisions(subdividedDeltaTime)
 
+  this.applyForcesToBodies(deltaTime)
+
   # Notify the callbacks and clear after the frame.
   for bodies, collision in this.currentFrameCollisions:
     bodies.owner.notifyCollisionListeners(bodies.other, collision, this.gravityNormal)
-  this.currentFrameCollisions.clear()
+    bodies.other.notifyCollisionListeners(bodies.owner, collision.invert(), this.gravityNormal)
 
-  this.applyForcesToBodies(deltaTime)
+  this.currentFrameCollisions.clear()
 
 when defined(aabbtreeOutlines):
   PhysicsLayer.renderAsChildOf(Layer):
