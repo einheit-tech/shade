@@ -8,10 +8,12 @@ type NRLock* = object
 proc initNRLock*(this: var NRLock) {.inline.} =
   ## Initializes the given lock.
   initLock(this.lock)
+  this.hasBeenAcquired = false
 
 proc deinitNRLock*(this: var NRLock) {.inline.} =
   ## Frees the resources associated with the lock.
   deinitLock(this.lock)
+  this.hasBeenAcquired = false
 
 proc tryAcquire*(this: var NRLock): bool {.inline.} =
   ## Tries to acquire the given lock. Returns `true` on success.
@@ -20,24 +22,17 @@ proc tryAcquire*(this: var NRLock): bool {.inline.} =
   elif this.hasBeenAcquired:
     this.lock.release()
     return false
-
+  
+  this.hasBeenAcquired = true
   return true
 
-proc acquire*(this: var NRLock) {.inline.} =
-  ## Acquires the given lock.
-  acquire(this.lock)
-
-proc release*(this: var NRLock) {.inline.} =
-  ## Releases the given lock.
-  release(this.lock)
-
-template withNRLock*(this: var NRLock, code: untyped) =
-  withLock(this.lock):
-    this.hasBeenAcquired = true
+template withNRLock*(this: var NRLock, body: untyped) =
+  if tryAcquire(this):
     try:
-      code
+      body
     finally:
       this.hasBeenAcquired = false
+      this.lock.release()
 
 proc `$`*(this: NRLock): string =
   return $this.lock
