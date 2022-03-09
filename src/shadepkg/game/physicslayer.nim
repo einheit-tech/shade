@@ -49,14 +49,14 @@ proc newPhysicsLayer*(gravity: Vector = DEFAULT_GRAVITY, z: float = 1.0): Physic
   result = PhysicsLayer()
   initPhysicsLayer(result, gravity, z)
 
-method addChildNow(this: PhysicsLayer, child: Node) =
-  procCall Layer(this).addChildNow(child)
+method addChild(this: PhysicsLayer, child: Node) =
+  procCall Layer(this).addChild(child)
   if child of PhysicsBody:
     this.physicsBodyChildren.add((PhysicsBody) child)
     # this.aabbTree.addObject((PhysicsBody) child)
 
-method removeChildNow*(this: PhysicsLayer, child: Node) =
-  procCall Layer(this).removeChildNow(child)
+method removeChild*(this: PhysicsLayer, child: Node) =
+  procCall Layer(this).removeChild(child)
   if child of PhysicsBody:
     let body = (PhysicsBody) child
     var index = -1

@@ -45,4 +45,16 @@ describe "SafeSet":
 
       assertEquals(safeset.len, 0)
 
+  describe "add and remove during iteration":
+    it "remove then add":
+      let safeset = newSafeSet[string]()
+      const elem = "foobar"
+      safeset.add(elem)
+      assertEquals(safeset.len, 1)
+
+      for item in safeset:
+        safeset.remove(elem)
+        safeset.add(elem)
+
+      assertEquals(safeset.len, 1)
 
