@@ -72,14 +72,10 @@ proc addRandomBodyToLayer(mouseButton: int, state: ButtonState) =
     if this.y > height + 200:
       layer.removeChild(this)
 
-  body.addCollisionListener(
-    (proc(this, other: PhysicsBody, result: CollisionResult, gravityNormal: Vector) =
-      if this.collisionShape.kind == chkCircle and other.collisionShape.kind == chkCircle:
-        echo "Circle collisions!"
-        # TODO: This doesn't fire if first object rolls into a new one?
-    ),
-    true
-  )
+  body.buildCollisionListener:
+    if this.collisionShape.kind == chkCircle and other.collisionShape.kind == chkCircle:
+      echo "Circle collisions!"
+      return true
 
   layer.addChild(body)
 

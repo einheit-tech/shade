@@ -1,3 +1,5 @@
+import macros
+
 import
   node,
   ../math/collision/collisionshape,
@@ -10,7 +12,9 @@ export
   collisionresult
 
 type
-  CollisionListener* = proc(this, other: PhysicsBody, result: CollisionResult, gravityNormal: Vector)
+  CollisionListener* = proc(this, other: PhysicsBody, result: CollisionResult, gravityNormal: Vector): bool
+  ## Return true if we should remove the listener after it's been invoked.
+
   PhysicsBodyKind* = enum
     ## A body controlled by applied forces.
     pbDynamic,
@@ -38,9 +42,9 @@ type
 
     collisionListeners: SafeSet[CollisionListener]
 
-proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false)
+proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener)
 proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener)
-proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult, gravityNormal: Vector)
+proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult, gravityNormal: Vector): bool
 proc getBounds*(this: PhysicsBody): Rectangle
 
 proc initPhysicsBody*(physicsBody: var PhysicsBody, flags: set[LayerObjectFlags] = {loUpdate, loRender}) =
@@ -106,18 +110,21 @@ proc getBounds*(this: PhysicsBody): Rectangle =
     this.bounds = this.collisionShape.getBounds().getTranslatedInstance(this.getLocation())
   return this.bounds
 
-proc addCollisionListener(this: PhysicsBody, listener: CollisionListener, fireOnce: bool = false) =
-  if fireOnce:
-    var onceListener: CollisionListener
-    onceListener = proc(a, b: PhysicsBody, collisionResult: CollisionResult, gravityNormal: Vector) =
-      listener(a, b, collisionResult, gravityNormal)
-      this.removeCollisionListener(onceListener)
+proc addCollisionListener(this: PhysicsBody, listener: CollisionListener) =
+  this.collisionListeners.add(listener)
 
-    this.collisionListeners.add(onceListener)
-  else:
-    this.collisionListeners.add(listener)
+template buildCollisionListener*(thisBody: PhysicsBody, body: untyped) =
+  let listener: CollisionListener =
+    proc(
+      this {.inject.}, other {.inject.}: PhysicsBody,
+      collisionResult {.inject.}: CollisionResult,
+      gravityNormal {.inject.}: Vector
+    ): bool =
+      body
 
-proc removeCollisionListener(this: PhysicsBody, listener: CollisionListener) =
+  thisBody.addCollisionListener(listener)
+
+proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener) =
   this.collisionListeners.remove(listener)
 
 proc notifyCollisionListeners*(
@@ -126,13 +133,14 @@ proc notifyCollisionListeners*(
   gravityNormal: Vector
 ) =
   for listener in this.collisionListeners:
-    listener(this, other, collisionResult, gravityNormal)
+    if listener(this, other, collisionResult, gravityNormal):
+      this.collisionListeners.remove(listener)
 
 proc wallAndGroundSetter(
   this, other: PhysicsBody,
   collisionResult: CollisionResult,
   gravityNormal: Vector
-) =
+): bool =
   if collisionResult.normal.negate.dotProduct(gravityNormal) > 0.5:
     this.isOnGround = true
 
