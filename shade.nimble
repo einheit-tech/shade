@@ -26,7 +26,8 @@ task setup, "Runs the shader example":
     withDir "submodules/sdl-gpu":
       mkDir "build"
       withDir "build":
-        exec fmt"cmake .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
+        exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
+        exec "make"
         exec "make -j install"
 
 task shaders, "Runs the shader example":
