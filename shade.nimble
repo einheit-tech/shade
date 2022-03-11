@@ -18,12 +18,13 @@ bin           = @["shade"]
 requires "nim >= 1.6.2"
 requires "sdl2_nim >= 2.0.14.3"
 
-let
-  localUsrPath = absolutePath(".usr")
-  libPath = absolutePath(".usr/lib")
+when defined(linux):
+  let
+    localUsrPath = absolutePath(".usr")
+    libPath = absolutePath(".usr/lib")
 
-putEnv("PATH", getEnv("PATH") & PathSep & libPath)
-putEnv("LD_LIBRARY_PATH", getEnv("LD_LIBRARY_PATH") & PathSep & libPath)
+  putEnv("PATH", getEnv("PATH") & PathSep & libPath)
+  putEnv("LD_LIBRARY_PATH", getEnv("LD_LIBRARY_PATH") & PathSep & libPath)
 
 # Tasks
 task setup, "Runs the shader example":
