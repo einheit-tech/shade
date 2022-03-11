@@ -1,4 +1,4 @@
-import 
+import
   std/os,
   strformat
 
@@ -57,7 +57,8 @@ task platformerd, "Runs the platformer example in debug mode":
   exec "nim r -d:debug --threads:on --multimethods:on -d:inputdebug examples/platformer/platformer_example.nim"
 
 task runtests, "Runs all tests":
-  exec "cd tests && nim r -d:debug testrunner.nim"
+  withDir "tests":
+    exec "nim r -d:debug testrunner.nim"
 
 task release, "Builds a release shade executable":
   exec "nim c -d:release --threads:on --multimethods:on src/shade.nim"
