@@ -1,3 +1,7 @@
+import
+  std/os,
+  strformat
+
 # Package
 
 version       = "0.1.0"
@@ -15,6 +19,17 @@ requires "nim >= 1.6.2"
 requires "sdl2_nim >= 2.0.14.3"
 
 # Tasks
+task setup, "Runs the shader example":
+  exec "git submodule update --init"
+  when defined(linux):
+    let localUsrPath = joinPath(thisDir(), ".usr")
+    withDir "submodules/sdl-gpu":
+      mkDir "build"
+      withDir "build":
+        exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
+        exec "make -j install"
+  exec "nimble install -dy"
+
 task shaders, "Runs the shader example":
   exec "nim r --threads:on --multimethods:on -d:inputdebug examples/shaders/simple.nim"
 
@@ -34,7 +49,8 @@ task platformerd, "Runs the platformer example in debug mode":
   exec "nim r -d:debug --threads:on --multimethods:on -d:inputdebug examples/platformer/platformer_example.nim"
 
 task runtests, "Runs all tests":
-  exec "cd tests && nim r --hints:off testrunner.nim"
+  withDir "tests":
+    exec "nim r -d:debug testrunner.nim"
 
 task release, "Builds a release shade executable":
   exec "nim c -d:release --threads:on --multimethods:on src/shade.nim"
