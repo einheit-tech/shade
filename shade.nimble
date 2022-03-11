@@ -29,10 +29,7 @@ when defined(linux):
 # Tasks
 task setup, "Runs the shader example":
   when defined(linux):
-    let
-      localUsrPath = absolutePath(".usr")
-      libPath = absolutePath(".usr/lib")
-
+    let localUsrPath = absolutePath(".usr")
     exec "git submodule update --init"
     withDir "submodules/sdl-gpu":
       exec fmt"cmake -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
