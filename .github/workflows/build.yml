@@ -19,19 +19,16 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install libsdl2-dev
 
-      - name: Build sdl_gpu
-        run: |
-          cd submodules/sdl-gpu 
-          cmake -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX=/usr
-          make
-          sudo make install
-
       - uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: '1.6.4'
 
+      - name: Build sdl_gpu
+        run: nimble setup
+
       - name: Install nim package dependencies
         run: "nimble install -dy"
+
       - name: Build Shade
         run: "nimble release"
 

@@ -1,3 +1,7 @@
+import 
+  std/os,
+  strformat
+
 # Package
 
 version       = "0.1.0"
@@ -15,6 +19,23 @@ requires "nim >= 1.6.2"
 requires "sdl2_nim >= 2.0.14.3"
 
 # Tasks
+task setup, "Runs the shader example":
+  when defined(linux):
+    let
+      localUsrPath = absolutePath(".usr")
+      includePath = absolutePath(".usr/include")
+      libPath = absolutePath(".usr/lib")
+
+    exec "git submodule update --init"
+    withDir "submodules/sdl-gpu":
+      exec fmt"cmake -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
+      exec "make"
+      exec "make install"
+      exec fmt"export LD_LIBRARY_PATH='$LD_LIBRARY_PATH:{libPath}'"
+      exec fmt"export PATH='$PATH:{libPath}'"
+  else:
+    echo "No setup prepared for your operating system."
+
 task shaders, "Runs the shader example":
   exec "nim r --threads:on --multimethods:on -d:inputdebug examples/shaders/simple.nim"
 
