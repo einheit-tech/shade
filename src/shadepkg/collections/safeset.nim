@@ -38,7 +38,7 @@ proc remove*[T](this: SafeSet[T], t: T) =
 iterator items*[T](this: SafeSet[T]): T =
   ## Safely iterates over the items in the set.
   ## You may attempt to add and remove items during this iteration;
-  ## however, additions/removals will not take effect until the next iteration.
+  ## however, additions/removals will not take effect until the iteration completes.
   try:
     # Lock the elements
     this.iterationDepth += 1
