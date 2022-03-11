@@ -24,7 +24,7 @@ task setup, "Runs the shader example":
   when defined(linux):
     let localUsrPath = joinPath(thisDir(), ".usr")
     withDir "submodules/sdl-gpu":
-      createDir "build"
+      mkDir "build"
       withDir "build":
         exec fmt"cmake .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
         exec "make -j install"
