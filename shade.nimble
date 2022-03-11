@@ -18,12 +18,18 @@ bin           = @["shade"]
 requires "nim >= 1.6.2"
 requires "sdl2_nim >= 2.0.14.3"
 
+let
+  localUsrPath = absolutePath(".usr")
+  libPath = absolutePath(".usr/lib")
+
+putEnv("PATH", getEnv("PATH") & PathSep & libPath)
+putEnv("LD_LIBRARY_PATH", getEnv("LD_LIBRARY_PATH") & PathSep & libPath)
+
 # Tasks
 task setup, "Runs the shader example":
   when defined(linux):
     let
       localUsrPath = absolutePath(".usr")
-      includePath = absolutePath(".usr/include")
       libPath = absolutePath(".usr/lib")
 
     exec "git submodule update --init"
@@ -31,8 +37,6 @@ task setup, "Runs the shader example":
       exec fmt"cmake -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
       exec "make"
       exec "make install"
-      exec fmt"export LD_LIBRARY_PATH='$LD_LIBRARY_PATH:{libPath}'"
-      exec fmt"export PATH='$PATH:{libPath}'"
   else:
     echo "No setup prepared for your operating system."
 
