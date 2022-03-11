@@ -24,9 +24,10 @@ task setup, "Runs the shader example":
   when defined(linux):
     let localUsrPath = joinPath(thisDir(), ".usr")
     withDir "submodules/sdl-gpu":
-      exec fmt"cmake -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
-      exec "make"
-      exec "make install"
+      createDir "build"
+      withDir "build":
+        exec fmt"cmake .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
+        exec "make -j install"
 
 task shaders, "Runs the shader example":
   exec "nim r --threads:on --multimethods:on -d:inputdebug examples/shaders/simple.nim"
