@@ -18,25 +18,15 @@ bin           = @["shade"]
 requires "nim >= 1.6.2"
 requires "sdl2_nim >= 2.0.14.3"
 
-when defined(linux):
-  let
-    localUsrPath = absolutePath(".usr")
-    libPath = absolutePath(".usr/lib")
-
-  putEnv("PATH", getEnv("PATH") & PathSep & libPath)
-  putEnv("LD_LIBRARY_PATH", getEnv("LD_LIBRARY_PATH") & PathSep & libPath)
-
 # Tasks
 task setup, "Runs the shader example":
+  exec "git submodule update --init"
   when defined(linux):
-    let localUsrPath = absolutePath(".usr")
-    exec "git submodule update --init"
+    let localUsrPath = joinPath(thisDir(), ".usr")
     withDir "submodules/sdl-gpu":
       exec fmt"cmake -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
       exec "make"
       exec "make install"
-  else:
-    echo "No setup prepared for your operating system."
 
 task shaders, "Runs the shader example":
   exec "nim r --threads:on --multimethods:on -d:inputdebug examples/shaders/simple.nim"
