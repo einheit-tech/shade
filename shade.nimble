@@ -27,7 +27,6 @@ task setup, "Runs the shader example":
       mkDir "build"
       withDir "build":
         exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
-        exec "make"
         exec "make -j install"
 
 task shaders, "Runs the shader example":
