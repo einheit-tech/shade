@@ -2,19 +2,13 @@
 
 2D Game Engine using sdl2
 
-## Clone
+## Clone and setup
 
 ```shell
 git clone git@github.com:avahe-kellenberger/shade.git
 cd shade
 nimble setup
 ```
-
-## Install dependencies
-
-`nimble install -dy`
-
-### Setting up sdl_gpu
 
 ## Examples
 
