@@ -1,4 +1,6 @@
-import macros
+import
+  macros,
+  tables
 
 import
   layer,
@@ -23,6 +25,9 @@ type
     gravityNormal: Vector
     physicsBodyChildren: seq[PhysicsBody]
     aabbTree: AABBTree[PhysicsBody]
+    # Collisions that happened this frame.
+    # Only tracks collisions for PhysicsBodies that have collision callbacks.
+    currentFrameCollisions: Table[tuple[owner: PhysicsBody, other: PhysicsBody], CollisionResult]
 
 template gravity*(this: PhysicsLayer): Vector =
   this.gravity
@@ -44,14 +49,14 @@ proc newPhysicsLayer*(gravity: Vector = DEFAULT_GRAVITY, z: float = 1.0): Physic
   result = PhysicsLayer()
   initPhysicsLayer(result, gravity, z)
 
-method addChildNow(this: PhysicsLayer, child: Node) =
-  procCall Layer(this).addChildNow(child)
+method addChild(this: PhysicsLayer, child: Node) =
+  procCall Layer(this).addChild(child)
   if child of PhysicsBody:
     this.physicsBodyChildren.add((PhysicsBody) child)
     # this.aabbTree.addObject((PhysicsBody) child)
 
-method removeChildNow*(this: PhysicsLayer, child: Node) =
-  procCall Layer(this).removeChildNow(child)
+method removeChild*(this: PhysicsLayer, child: Node) =
+  procCall Layer(this).removeChild(child)
   if child of PhysicsBody:
     let body = (PhysicsBody) child
     var index = -1
@@ -118,8 +123,9 @@ template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
 
       collision.resolve(bodyA, bodyB)
 
-      bodyA.notifyCollisionListeners(bodyB, collision, this.gravityNormal)
-      bodyB.notifyCollisionListeners(bodyA, collision.invert(), this.gravityNormal)
+      # Register the collision for any existing callbacks.
+      if bodyA.collisionListenerCount > 0 or bodyB.collisionListenerCount > 0:
+        this.currentFrameCollisions[(bodyA, bodyB)] = collision
 
 template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
   for body in this.physicsBodyChildren:
@@ -146,6 +152,13 @@ method update*(this: PhysicsLayer, deltaTime: float, onChildUpdate: proc(child: 
     this.handleCollisions(subdividedDeltaTime)
 
   this.applyForcesToBodies(deltaTime)
+
+  # Notify the callbacks and clear after the frame.
+  for bodies, collision in this.currentFrameCollisions:
+    bodies.owner.notifyCollisionListeners(bodies.other, collision, this.gravityNormal)
+    bodies.other.notifyCollisionListeners(bodies.owner, collision.invert(), this.gravityNormal)
+
+  this.currentFrameCollisions.clear()
 
 when defined(aabbtreeOutlines):
   PhysicsLayer.renderAsChildOf(Layer):

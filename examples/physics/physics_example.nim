@@ -56,7 +56,7 @@ proc createRandomCollisionShape(mouseButton: int): CollisionShape =
         vector(-halfWidth, halfHeight)
       ]))
 
-proc addRandomBodyToLayer(mouseButton: int) =
+proc addRandomBodyToLayer(mouseButton: int, state: ButtonState) =
   let body = newPhysicsBody(pbDynamic)
 
   body.collisionShape = createRandomCollisionShape(mouseButton)
@@ -71,6 +71,11 @@ proc addRandomBodyToLayer(mouseButton: int) =
     # Remove the body if off screen
     if this.y > height + 200:
       layer.removeChild(this)
+
+  body.buildCollisionListener:
+    if this.collisionShape.kind == chkCircle and other.collisionShape.kind == chkCircle:
+      echo "Circle collisions!"
+      return true
 
   layer.addChild(body)
 
