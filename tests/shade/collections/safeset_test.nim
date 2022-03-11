@@ -2,6 +2,9 @@ import
   ../../testutils,
   shade
 
+import
+  sequtils
+
 describe "SafeSet":
 
   describe "add":
@@ -57,4 +60,24 @@ describe "SafeSet":
         safeset.add(elem)
 
       assertEquals(safeset.len, 1)
+
+    it "double loops":
+      let safeset = newSafeSet[string]()
+      const elem = "foobar"
+      safeset.add(elem)
+      assertEquals(safeset.len, 1)
+
+      for item in safeset:
+        safeset.add("aoeu")
+
+      safeset.add("something")
+
+      for item in safeset:
+        safeset.add("htns")
+
+      let items = safeset.items.toSeq()
+      assertEquals(
+        items,
+        @["foobar", "aoeu", "something", "htns"]
+      )
 
