@@ -1,0 +1,4 @@
+[submodule "sdl-gpu"]
+  path = submodules/sdl-gpu
+  url = git@github.com:grimfang4/sdl-gpu.git
+
