@@ -2,11 +2,13 @@
 
 2D Game Engine using sdl2
 
-## Cloning shade
+## Clone
 
-- `git clone git@github.com:avahe-kellenberger/shade.git`
-- `git submodule update`
-
+```shell
+git clone git@github.com:avahe-kellenberger/shade.git
+cd shade
+nimble setup
+```
 
 ## Install dependencies
 
