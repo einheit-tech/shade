@@ -1,0 +1,34 @@
+name: build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Install sdl
+        run: "DEBIAN_FRONTEND='noninteractive' apt-get -y install libsdl2-dev"
+
+      - name: Build sdl_gpu
+        run: "cd submodules/sdl-gpu && cmake -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX=/usr && make && make install"
+
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: '1.6.4'
+
+      - name: Install nim package dependencies
+        run: "nimble install -dy"
+      - name: Build Shade
+        run: "nimble release"
+
+      - name: Run Tests
+        run: "nimble develop && nimble runtests"
+
