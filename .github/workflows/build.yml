@@ -15,10 +15,10 @@ jobs:
           submodules: true
 
       - name: Install sdl
-        run: "DEBIAN_FRONTEND='noninteractive' apt-get -y install libsdl2-dev"
+        run: "sudo apt-get -y install libsdl2-dev"
 
       - name: Build sdl_gpu
-        run: "cd submodules/sdl-gpu && cmake -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX=/usr && make && make install"
+        run: "cd submodules/sdl-gpu && cmake -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX=/usr && make && sudo make install"
 
       - uses: jiro4989/setup-nim-action@v1
         with:
