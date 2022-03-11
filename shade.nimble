@@ -28,6 +28,7 @@ task setup, "Runs the shader example":
       withDir "build":
         exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
         exec "make -j install"
+  exec "nimble install -dy"
 
 task shaders, "Runs the shader example":
   exec "nim r --threads:on --multimethods:on -d:inputdebug examples/shaders/simple.nim"

@@ -23,11 +23,8 @@ jobs:
         with:
           nim-version: '1.6.4'
 
-      - name: Build sdl_gpu
+      - name: Install Shade dependencies
         run: nimble setup
-
-      - name: Install nim package dependencies
-        run: "nimble install -dy"
 
       - name: Build Shade
         run: "nimble release"
