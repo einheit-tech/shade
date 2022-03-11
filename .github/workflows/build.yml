@@ -21,14 +21,15 @@ jobs:
 
       - uses: jiro4989/setup-nim-action@v1
         with:
-          nim-version: '1.6.4'
+          nim-version: "1.6.4"
 
       - name: Install Shade dependencies
         run: nimble setup
 
       - name: Build Shade
-        run: "nimble release"
+        run: nimble release
 
       - name: Run Tests
-        run: "nimble develop && nimble runtests"
-
+        run: |
+          nimble develop
+          nimble runtests
