@@ -23,10 +23,15 @@ task setup, "Runs the shader example":
   exec "git submodule update --init"
   when defined(linux):
     let localUsrPath = joinPath(thisDir(), ".usr")
+    withDir "submodules/sdl":
+      mkDir "build"
+      withDir "build":
+        exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath} -DSDL_STATIC=on -DSDL_SHARED=off"
+        exec "make -j install"
     withDir "submodules/sdl-gpu":
       mkDir "build"
       withDir "build":
-        exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
+        exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath} -DBUILD_STATIC=on -DBUILD_SHARED=off"
         exec "make -j install"
   exec "nimble install -dy"
 
