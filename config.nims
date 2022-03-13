@@ -20,9 +20,11 @@ when defined(linux):
 
   # Static link SDL2
 
+  #--dynlibOverride:opengl
   --dynlibOverride:SDL2
   --dynlibOverride:SDL2_gpu
 
+  switch("passL", "-static")
   switch("passL", joinPath(libPath, "libSDL2.a"))
   switch("passL", joinPath(libPath, "libSDL2_gpu.a"))
 
