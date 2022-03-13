@@ -23,13 +23,5 @@ when defined(linux):
 --dynlibOverride:SDL2
 --dynlibOverride:SDL2_gpu
 
-# switch("passL", "-L '.usr/lib' -lSDL2 -lSDL2_gpu")
-
-let sdl2Path = joinPath(libPath, "libSDL2.a")
-let sdlgpuPath = joinPath(libPath, "libSDL2_gpu.a")
-
-# --passL:sdl2Path
-# --passL:sdlgpuPath
-
-switch("passC", sdl2Path)
-switch("passC", sdlgpuPath)
+switch("passL", joinPath(libPath, "libSDL2.a"))
+switch("passL", joinPath(libPath, "libSDL2_gpu.a"))
