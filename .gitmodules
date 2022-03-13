@@ -2,3 +2,6 @@
   path = submodules/sdl-gpu
   url = git@github.com:grimfang4/sdl-gpu.git
   shallow = true
+[submodule "submodules/sdl"]
+	path = submodules/sdl
+	url = git@github.com:libsdl-org/SDL.git
