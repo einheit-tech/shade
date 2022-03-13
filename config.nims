@@ -20,7 +20,7 @@ when defined(linux):
 
   # Static link SDL2
 
-  #--dynlibOverride:opengl
+  --dynlibOverride:opengl
   --dynlibOverride:SDL2
   --dynlibOverride:SDL2_gpu
 
