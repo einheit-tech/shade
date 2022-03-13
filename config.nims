@@ -1,6 +1,5 @@
 import os
 
-switch("threads", "on")
 switch("multimethods", "on")
 
 var
