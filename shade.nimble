@@ -31,27 +31,27 @@ task setup, "Runs the shader example":
   exec "nimble install -dy"
 
 task shaders, "Runs the shader example":
-  exec "nim r --threads:on --multimethods:on -d:inputdebug examples/shaders/simple.nim"
+  exec "nim r --multimethods:on -d:inputdebug examples/shaders/simple.nim"
 
 task animations, "Runs the animation player example":
-  exec "nim r --threads:on --multimethods:on -d:inputdebug examples/basic/animationplayer_example.nim"
+  exec "nim r --multimethods:on -d:inputdebug examples/basic/animationplayer_example.nim"
 
 task physics, "Runs the physics example":
-  exec "nim r -d:release --threads:on --multimethods:on -d:inputdebug examples/physics/physics_example.nim"
+  exec "nim r -d:release --multimethods:on -d:inputdebug examples/physics/physics_example.nim"
 
 task physicsd, "Runs the physics example in debug mode":
-  exec "nim r -d:debug --threads:on --multimethods:on -d:inputdebug examples/physics/physics_example.nim"
+  exec "nim r -d:debug --multimethods:on -d:inputdebug examples/physics/physics_example.nim"
 
 task platformer, "Runs the platformer example":
-  exec "nim r -d:release --threads:on --multimethods:on -d:inputdebug examples/platformer/platformer_example.nim"
+  exec "nim r -d:release --multimethods:on -d:inputdebug examples/platformer/platformer_example.nim"
 
 task platformerd, "Runs the platformer example in debug mode":
-  exec "nim r -d:debug --threads:on --multimethods:on -d:inputdebug examples/platformer/platformer_example.nim"
+  exec "nim r -d:debug --multimethods:on -d:inputdebug examples/platformer/platformer_example.nim"
 
 task runtests, "Runs all tests":
   withDir "tests":
     exec "nim r -d:debug testrunner.nim"
 
 task release, "Builds a release shade executable":
-  exec "nim c -d:release --threads:on --multimethods:on src/shade.nim"
+  exec "nim c -d:release --multimethods:on src/shade.nim"
 
