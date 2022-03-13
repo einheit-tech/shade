@@ -61,6 +61,4 @@ when defined(emscripten):
   when defined(opengl):
     --dynlibOverride:opengl
 
-  --define:emscripten
-
   switch("passL", "-o shade.html --shell-file shell_minimal.html")

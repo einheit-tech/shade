@@ -26,12 +26,12 @@ task setup, "Runs the shader example":
     withDir "submodules/sdl":
       mkDir "build"
       withDir "build":
-        exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath} -DSDL_STATIC=on -DSDL_SHARED=off"
+        exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DEMSCRIPTEN=on -DCMAKE_INSTALL_PREFIX={localUsrPath} -DSDL_STATIC=on -DSDL_SHARED=off" 
         exec "make -j install"
     withDir "submodules/sdl-gpu":
       mkDir "build"
       withDir "build":
-        exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath} -DBUILD_STATIC=on -DBUILD_SHARED=off"
+        exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DEMSCRIPTEN=on -DCMAKE_INSTALL_PREFIX={localUsrPath} -DBUILD_STATIC=on -DBUILD_SHARED=off"
         exec "make -j install"
   exec "nimble install -dy"
 
