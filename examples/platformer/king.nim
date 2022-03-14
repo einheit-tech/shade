@@ -87,7 +87,6 @@ method update*(this: King, deltaTime: float) =
 
 King.renderAsChildOf(PhysicsBody):
   # TODO: Sprite offsets?
-  translate(8.0, 1.0, 0.0)
-  this.sprite.render(ctx)
-  translate(-8.0, -1.0, 0.0)
+  translate(ctx, 8.0, 1.0):
+    this.sprite.render(ctx)
 
