@@ -53,7 +53,7 @@ proc createAnimPlayer(sprite: Sprite): AnimationPlayer =
   result.playAnimation("idle")
 
 proc createCollisionShape(): CollisionShape =
-  result = newPolygonCollisionShape(
+  result = newCollisionShape(
     newPolygon([
       vector(8, 13),
       vector(8, -13),

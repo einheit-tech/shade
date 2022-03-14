@@ -21,7 +21,7 @@ Game.scene.addLayer(layer)
 # Create and add the platform.
 const platformWidth = width - 200
 let platform = newPhysicsBody(pbStatic)
-let platformHull = newPolygonCollisionShape(newPolygon([
+let platformHull = newCollisionShape(newPolygon([
   vector(-platformWidth / 2, -100),
   vector(platformWidth / 2, -100),
   vector(platformWidth / 2, 100),
@@ -37,10 +37,10 @@ template getRandomColor(): Color = colors[rand(colors.high)]
 proc createRandomCollisionShape(mouseButton: int): CollisionShape =
   case mouseButton:
     of BUTTON_LEFT:
-      result = newCircleCollisionShape(newCircle(VECTOR_ZERO, 30.0 + rand(20.0)))
+      result = newCollisionShape(newCircle(VECTOR_ZERO, 30.0 + rand(20.0)))
     of BUTTON_RIGHT:
       let size = rand(15..45)
-      result = newPolygonCollisionShape(newPolygon([
+      result = newCollisionShape(newPolygon([
         vector(0, -size),
         vector(-size, size),
         vector(size, size),
@@ -49,7 +49,7 @@ proc createRandomCollisionShape(mouseButton: int): CollisionShape =
       let
         halfWidth = rand(15..45)
         halfHeight = rand(15..45)
-      result = newPolygonCollisionShape(newPolygon([
+      result = newCollisionShape(newPolygon([
         vector(halfWidth, halfHeight),
         vector(halfWidth, -halfHeight),
         vector(-halfWidth, -halfHeight),

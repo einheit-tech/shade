@@ -21,6 +21,7 @@ export
 const DEFAULT_MATERIAL* = METAL
 
 type
+  Shape = Circle|Polygon
   CollisionShapeKind* = enum
     chkCircle
     chkPolygon
@@ -92,24 +93,26 @@ template friction*(this: CollisionShape): float =
 template `friction=`*(this: CollisionShape, friction: CompletionRatio) =
   this.material.friction = friction
 
+proc initCollisionShape*(collisionShape: CollisionShape, shape: Shape, material = DEFAULT_MATERIAL) =
+  when shape is Circle:
+    collisionShape.circle = shape
+  elif shape is Polygon:
+    collisionShape.polygon = shape
+  else:
+    raise newException(Exception, "Unsupported shape: ", typeof shape)
 
-proc initPolygonCollisionShape*(shape: CollisionShape, polygon: Polygon, material = DEFAULT_MATERIAL) =
-  shape.polygon = polygon
-  shape.material = material
-  shape.mass = shape.calculateMass()
+  collisionShape.material = material
+  collisionShape.mass = collisionShape.calculateMass()
 
-proc newPolygonCollisionShape*(polygon: Polygon, material = DEFAULT_MATERIAL): CollisionShape =
-  result = CollisionShape(kind: chkPolygon)
-  initPolygonCollisionShape(result, polygon, material)
+proc newCollisionShape*(shape: Shape, material = DEFAULT_MATERIAL): CollisionShape =
+  when shape is Circle:
+    result = CollisionShape(kind: chkCircle)
+  elif shape is Polygon:
+    result = CollisionShape(kind: chkPolygon)
+  else:
+    raise newException(Exception, "Unsupported shape: ", typeof shape)
 
-proc initCircleCollisionShape*(shape: CollisionShape, circle: Circle, material = DEFAULT_MATERIAL) =
-  shape.circle = circle
-  shape.material = material
-  shape.mass = shape.calculateMass()
-
-proc newCircleCollisionShape*(circle: Circle, material  = DEFAULT_MATERIAL): CollisionShape =
-  result = CollisionShape(kind: chkCircle)
-  initCircleCollisionShape(result, circle, material)
+  initCollisionShape(result, shape, material)
 
 proc getBounds*(this: CollisionShape): Rectangle =
   if this.bounds == nil:
