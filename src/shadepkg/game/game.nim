@@ -68,38 +68,45 @@ proc initEngineSingleton*(
 
   gamestate.updateResolution(gameWidth.float, gameHeight.float)
 
-  gamestate.onResolutionChanged:
-      Game.screen.setVirtualResolution(uint16 gamestate.resolution.x, uint16 gamestate.resolution.y)
-
-      if Game.scene.camera != nil:
-        Game.screen.setViewport(
-          (
-            cfloat 0,
-            cfloat 0,
-            cfloat Game.scene.camera.viewport.width,
-            cfloat Game.scene.camera.viewport.height
-          )
-        )
-
   initInputHandlerSingleton()
   initAudioPlayerSingleton()
+
+  gamestate.onResolutionChanged:
+    Game.screen.setVirtualResolution(uint16 gamestate.resolution.x, uint16 gamestate.resolution.y)
+
+    if Game.scene.camera != nil:
+      Game.screen.setViewport(
+        (
+          cfloat 0,
+          cfloat 0,
+          cfloat Game.scene.camera.viewport.width,
+          cfloat Game.scene.camera.viewport.height
+        )
+      )
+
+  # Input event handlers
+
+  proc handleWindowEvents(e: Event): bool =
+    if e.window.event == WINDOWEVENT_RESIZED:
+      gamestate.updateResolution(float e.window.data1, float e.window.data2)
+
+  Input.addEventListener(WINDOWEVENT, handleWindowEvents)
+  Input.addEventListener(QUIT,
+    proc(e: Event): bool =
+      Game.shouldExit = true
+  )
 
 template time*(this: Engine): float = this.time
 template screen*(this: Engine): Target = this.screen
 template scene*(this: Engine): Scene = this.scene
 template `scene=`*(this: Engine, scene: Scene) = this.scene = scene
 
-proc handleEvents(this: Engine): bool =
+proc handleEvents(this: Engine) =
   ## Passes all pending events to the inputhandler singleton.
   ## Returns if the application should exit.
   var event: Event
   while pollEvent(event.addr) != 0:
-    if event.kind == WINDOWEVENT and event.window.event == WINDOWEVENT_RESIZED:
-      gamestate.updateResolution(float event.window.data1, float event.window.data2)
-
-    if Input.processEvent(event):
-      return true
-  return false
+    Input.processEvent(event)
     
 proc loop(this: Engine) =
   var
@@ -107,9 +114,7 @@ proc loop(this: Engine) =
     elapsedNanos: int64 = 0
 
   while not this.shouldExit:
-    # TODO: This is dumb.
-    # Just set up a callback on the event listener
-    this.shouldExit = this.handleEvents()
+    this.handleEvents()
     this.update(this.deltaTime)
     this.render(this.screen)
 
@@ -135,6 +140,7 @@ proc stop*(this: Engine) =
   this.shouldExit = true
 
 proc teardown(this: Engine) =
+  # TODO: Should tear down the running scene here
   sdl_gpu.quit()
   logInfo(LogCategoryApplication, "SDL shutdown completed")
 
@@ -146,10 +152,7 @@ proc update*(this: Engine, deltaTime: float) =
 proc render*(this: Engine, screen: Target) =
   if this.scene == nil:
     return
-
   clearColor(this.screen, this.clearColor)
-
   this.scene.render(screen)
-
   flip(this.screen)
 

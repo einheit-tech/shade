@@ -91,6 +91,10 @@ const
   jumpForce = -350.0
 
 proc physicsProcess(this: Node, deltaTime: float) =
+  if Input.wasKeyJustPressed(K_ESCAPE):
+    Game.stop()
+    return
+
   let
     leftStickX = Input.leftStickX()
     leftPressed = Input.isKeyPressed(K_LEFT) or leftStickX < -0.01

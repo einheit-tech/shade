@@ -3,7 +3,8 @@ import
   tables
 
 import 
-  ../math/mathutils
+  ../math/mathutils,
+  ../collections/safeset
 
 export Scancode, Keycode
 
@@ -59,10 +60,14 @@ type
     buttonPressedEventListeners: seq[ButtonEventListener]
     buttonReleasedEventListeners: seq[ButtonEventListener]
 
-type InputHandler* = ref object
-  mouse: Mouse
-  keyboard: Keyboard
-  controller: Controller
+type
+  EventListener* = proc(e: Event): bool
+  ## Return true to remove the listener from the InputHandler.
+  InputHandler* = ref object
+    eventListeners: Table[EventKind, SafeSet[EventListener]]
+    mouse: Mouse
+    keyboard: Keyboard
+    controller: Controller
 
 # InputHandler singleton
 var Input*: InputHandler
@@ -78,6 +83,15 @@ proc initInputHandlerSingleton*() =
 
   if init(INIT_GAMECONTROLLER) != 0:
     raise newException(Exception, "Unable to init controller support")
+
+proc addEventListener*(this: InputHandler, eventKind: EventKind, listener: EventListener) =
+  if not this.eventListeners.hasKey(eventKind):
+    this.eventListeners[eventKind] = newSafeSet[EventListener]()
+  this.eventListeners[eventKind].add(listener)
+
+proc removeEventListener*(this: InputHandler, eventKind: EventKind, listener: EventListener) =
+  if this.eventListeners.hasKey(eventKind):
+    this.eventListeners[eventKind].remove(listener)
 
 proc addMousePressedEventListener*(this: InputHandler, listener: ButtonEventListener) =
   this.mouse.buttonPressedEventListeners.add(listener)
@@ -102,12 +116,13 @@ proc setController(this: InputHandler, id: JoystickID) =
     # TODO: Need some sort of better logging for non-fatal errors.
     echo "Error opening newly connected controller"
 
-proc processEvent*(this: InputHandler, event: Event): bool =
+proc processEvent*(this: InputHandler, event: Event) =
   ## Processes events.
   ## Returns if the user wants to exit the application.
   case event.kind:
     of QUIT:
-      return true
+      # TODO
+      discard
 
     # Mouse
     of MOUSEMOTION:
@@ -188,7 +203,12 @@ proc processEvent*(this: InputHandler, event: Event): bool =
       this.controller.axes[e.axis] = floatVal
 
     else:
-      return false
+      discard
+
+  if this.eventListeners.hasKey(event.kind):
+    for listener in this.eventListeners[event.kind]:
+      if listener(event):
+        this.eventListeners[event.kind].remove(listener)
 
 # Mouse
 
