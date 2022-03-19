@@ -11,7 +11,7 @@ import
   ../input/inputhandler,
   ../audio/audioplayer,
   ../render/color,
-  ../math/rectangle
+  ../math/aabb
 
 const
   oneBillion = 1000000000

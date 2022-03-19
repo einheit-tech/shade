@@ -1,15 +1,15 @@
 import
   node,
-  ../math/rectangle,
+  ../math/aabb,
   ../game/gamestate
 
-export rectangle
+export aabb
 
 type
   Camera* = ref object of Node
     z*: float
-    bounds*: Rectangle
-    viewport*: Rectangle
+    bounds*: AABB
+    viewport*: AABB
 
     # For node tracking
     offset*: Vector
@@ -21,7 +21,7 @@ proc updateViewportSize*(this: Camera)
 
 proc initCamera*(camera: Camera) =
   initNode(Node(camera), {loUpdate})
-  camera.bounds = newRectangle(float.low, float.low, float.high, float.high)
+  camera.bounds = newAABB(float.low, float.low, float.high, float.high)
   camera.updateViewportSize()
 
 proc newCamera*(): Camera =
@@ -48,7 +48,7 @@ proc newCamera*(
 proc updateViewportSize*(this: Camera) =
   ## Updates the camera's viewport to fit the gamestate's resolution.
   if this.viewport == nil:
-    this.viewport = newRectangle(
+    this.viewport = newAABB(
       this.x - gamestate.resolution.x * 0.5,
       this.y - gamestate.resolution.y * 0.5,
       this.x + gamestate.resolution.x * 0.5,

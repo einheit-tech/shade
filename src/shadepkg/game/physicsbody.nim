@@ -29,7 +29,7 @@ type
     # TODO: Make collisionShape required.
     collisionShape: CollisionShape
     velocity*: Vector
-    bounds: Rectangle
+    bounds: AABB
 
     case kind*: PhysicsBodyKind:
       of pbDynamic, pbKinematic:
@@ -45,7 +45,7 @@ type
 proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener)
 proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener)
 proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult, gravityNormal: Vector): bool
-proc getBounds*(this: PhysicsBody): Rectangle
+proc getBounds*(this: PhysicsBody): AABB
 
 proc initPhysicsBody*(physicsBody: var PhysicsBody, flags: set[LayerObjectFlags] = {loUpdate, loRender}) =
   initNode(Node(physicsBody), flags)
@@ -105,7 +105,7 @@ method setLocation*(this: PhysicsBody, x, y: float) =
 
   procCall setLocation((Node) this, x, y)
 
-proc getBounds*(this: PhysicsBody): Rectangle =
+proc getBounds*(this: PhysicsBody): AABB =
   if this.bounds == nil:
     this.bounds = this.collisionShape.getBounds().getTranslatedInstance(this.getLocation())
   return this.bounds

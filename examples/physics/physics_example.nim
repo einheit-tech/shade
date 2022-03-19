@@ -47,14 +47,9 @@ proc createRandomCollisionShape(mouseButton: int): CollisionShape =
       ]))
     else:
       let
-        halfWidth = rand(15..45)
-        halfHeight = rand(15..45)
-      result = newCollisionShape(newPolygon([
-        vector(halfWidth, halfHeight),
-        vector(halfWidth, -halfHeight),
-        vector(-halfWidth, -halfHeight),
-        vector(-halfWidth, halfHeight)
-      ]))
+        halfWidth = float rand(15..45)
+        halfHeight = float rand(15..45)
+      result = newCollisionShape(newAABB(-halfWidth, -halfHeight, halfHeight, halfWidth))
 
 proc addRandomBodyToLayer(mouseButton: int, state: ButtonState) =
   let body = newPhysicsBody(pbDynamic)
@@ -73,7 +68,8 @@ proc addRandomBodyToLayer(mouseButton: int, state: ButtonState) =
       layer.removeChild(this)
 
   body.buildCollisionListener:
-    if this.collisionShape.kind == chkCircle and other.collisionShape.kind == chkCircle:
+    if this.collisionShape.kind == CollisionShapeKind.CIRCLE and
+       other.collisionShape.kind == CollisionShapeKind.CIRCLE:
       echo "Circle collisions!"
       return true
 

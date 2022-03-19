@@ -5,15 +5,15 @@ import
   sdl2_nim/sdl_gpu
 
 import
-  rectangle,
+  aabb,
   mathutils,
   ../render/color
 
-export rectangle
+export aabb
 
 type Polygon* = ref object
   vertices*: seq[Vector]
-  bounds: Rectangle
+  bounds: AABB
   center: Option[Vector]
   clockwise: Option[bool]
   area: Option[float]
@@ -101,7 +101,7 @@ func getAverage*(this: Polygon): Vector =
   let d = 1.0 / this.len.float;
   return vector(x * d, y * d)
 
-func getBounds*(this: Polygon): Rectangle =
+func getBounds*(this: Polygon): AABB =
   ## Gets the bounds of the polygon.
   ## Bounds are lazy initialized.
   if this.bounds != nil:
@@ -118,7 +118,7 @@ func getBounds*(this: Polygon): Rectangle =
     maxY = max(maxY, v.y)
 
   this.bounds =
-    newRectangle(
+    newAABB(
       minX,
       minY,
       maxX,
