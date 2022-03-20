@@ -24,7 +24,7 @@ import shadepkg / [
   math/mathutils,
   math/binarytree,
   math/polygon,
-  math/rectangle,
+  math/aabb,
   math/circle,
   math/collision/collisionshape,
   math/collision/sat
@@ -57,7 +57,7 @@ export
   mathutils,
   binarytree,
   polygon,
-  rectangle,
+  aabb,
   circle,
   collisionshape,
   sat

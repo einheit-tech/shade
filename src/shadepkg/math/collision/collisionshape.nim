@@ -11,6 +11,7 @@ import
   ../../game/material,
   ../circle,
   ../polygon,
+  ../aabb,
   ../mathutils,
   ../../render/color
 
@@ -18,35 +19,43 @@ export
   circle,
   polygon
 
-const DEFAULT_MATERIAL* = METAL
+const
+  DEFAULT_MATERIAL* = METAL
+  # TODO: Need to check that we don't need vectors pointing in all 4 directions.
+  aabbProjectionAxes = @[vector(1, 0), vector(0, 1)]
 
 type
-  Shape = Circle|Polygon
-  CollisionShapeKind* = enum
-    chkCircle
-    chkPolygon
+  Shape = Circle|Polygon|AABB
+  CollisionShapeKind* {.pure.} = enum
+    CIRCLE
+    POLYGON
+    AABB
 
   CollisionShape* = ref object
     inverseMass: float
 
     material*: Material
-    bounds: Rectangle
+    bounds: AABB
 
     case kind*: CollisionShapeKind:
-    of chkCircle:
+    of CollisionShapeKind.CIRCLE:
       circle*: Circle
-    of chkPolygon:
+    of CollisionShapeKind.POLYGON:
       polygon*: Polygon
-      projectionAxes: seq[Vector]
+      polyProjectionAxes: seq[Vector]
+    of CollisionShapeKind.AABB:
+      aabb*: AABB
 
-proc getBounds*(this: CollisionShape): Rectangle
+proc getBounds*(this: CollisionShape): AABB
 
 template area*(this: CollisionShape): float =
   case this.kind:
-    of chkPolygon:
+    of CollisionShapeKind.POLYGON:
       this.polygon.area
-    of chkCircle:
+    of CollisionShapeKind.CIRCLE:
       this.circle.area
+    of CollisionShapeKind.AABB:
+      this.aabb.getArea()
 
 template width*(this: CollisionShape): float =
   this.getBounds().width
@@ -98,6 +107,8 @@ proc initCollisionShape*(collisionShape: CollisionShape, shape: Shape, material 
     collisionShape.circle = shape
   elif shape is Polygon:
     collisionShape.polygon = shape
+  elif shape is AABB:
+    collisionShape.aabb = shape
   else:
     raise newException(Exception, "Unsupported shape: ", typeof shape)
 
@@ -106,28 +117,35 @@ proc initCollisionShape*(collisionShape: CollisionShape, shape: Shape, material 
 
 proc newCollisionShape*(shape: Shape, material = DEFAULT_MATERIAL): CollisionShape =
   when shape is Circle:
-    result = CollisionShape(kind: chkCircle)
+    result = CollisionShape(kind: CollisionShapeKind.CIRCLE)
   elif shape is Polygon:
-    result = CollisionShape(kind: chkPolygon)
+    result = CollisionShape(kind: CollisionShapeKind.POLYGON)
+  elif shape is AABB:
+    result = CollisionShape(kind: CollisionShapeKind.AABB)
   else:
     raise newException(Exception, "Unsupported shape: ", typeof shape)
 
   initCollisionShape(result, shape, material)
 
-proc getBounds*(this: CollisionShape): Rectangle =
+proc newCollisionShape*(vertices: openArray[Vector], material = DEFAULT_MATERIAL): CollisionShape =
+  return newCollisionShape(newPolygon(vertices), material)
+
+proc getBounds*(this: CollisionShape): AABB =
   if this.bounds == nil:
     case this.kind:
-      of chkPolygon:
+      of CollisionShapeKind.POLYGON:
         this.bounds = this.polygon.getBounds()
-      of chkCircle:
+      of CollisionShapeKind.CIRCLE:
         this.bounds = this.circle.calcBounds()
+      of CollisionShapeKind.AABB:
+        this.bounds = this.aabb
   return this.bounds
 
 template projectOnAxis*(circ: Circle, location, axis: Vector): Vector =
   let centerDot = axis.dotProduct(circ.center + location)
   vector(centerDot - circ.radius, centerDot + circ.radius)
 
-template projectOnAxis*(this: Polygon, location, axis: Vector): Vector =
+template projectOnAxis*(this: openArray[Vector], location, axis: Vector): Vector =
   let startLoc = this[0] + location
   var
     dotProduct = axis.dotProduct(startLoc)
@@ -142,6 +160,12 @@ template projectOnAxis*(this: Polygon, location, axis: Vector): Vector =
       projection.y = dotProduct
 
   projection
+
+template projectOnAxis*(this: Polygon, location, axis: Vector): Vector =
+  this.vertices.projectOnAxis(location, axis)
+
+template projectOnAxis*(this: AABB, location, axis: Vector): Vector =
+  this.vertices.projectOnAxis(location, axis)
 
 func getCircleToCircleProjectionAxes*(circleA, circleB: Circle, relativeLoc: Vector): seq[Vector] =
   result.add(
@@ -176,6 +200,14 @@ func getCircleToPolygonProjectionAxes*(
   for v in poly:
     result.add(normalize(v - circle.center + circleToPoly))
 
+func getCircleToAABBProjectionAxes*(
+  circle: Circle,
+  aabb: AABB,
+  circleToAABB: Vector
+): seq[Vector] =
+  for v in aabb:
+    result.add(normalize(v - circle.center + circleToAABB))
+
 func getProjectionAxes*(
   this: CollisionShape,
   otherShape: CollisionShape,
@@ -186,38 +218,49 @@ func getProjectionAxes*(
   ## @param toOther A vector from this shape's reference frame to the other shape's reference frame.
   ## @return The array of axes.
   case this.kind:
-    of chkCircle:
+    of CollisionShapeKind.CIRCLE:
       case otherShape.kind:
-      of chkCircle:
+      of CollisionShapeKind.CIRCLE:
         return this.circle.getCircleToCircleProjectionAxes(otherShape.circle, toOther)
-      of chkPolygon:
+      of CollisionShapeKind.POLYGON:
         return this.circle.getCircleToPolygonProjectionAxes(otherShape.polygon, toOther)
+      of CollisionShapeKind.AABB:
+        return this.circle.getCircleToAABBProjectionAxes(otherShape.aabb, toOther)
 
-    of chkPolygon:
-      if this.projectionAxes.len == 0:
-        this.projectionAxes = this.polygon.getPolygonProjectionAxes()
-      return this.projectionAxes
+    of CollisionShapeKind.POLYGON:
+      if this.polyProjectionAxes.len == 0:
+        this.polyProjectionAxes = this.polygon.getPolygonProjectionAxes()
+      return this.polyProjectionAxes
+
+    of CollisionShapeKind.AABB:
+      return aabbProjectionAxes
 
 template project*(this: CollisionShape, relativeLoc, axis: Vector): Vector =
   case this.kind:
-  of chkPolygon:
+  of CollisionShapeKind.POLYGON:
     this.polygon.projectOnAxis(relativeLoc, axis)
-  of chkCircle:
+  of CollisionShapeKind.CIRCLE:
     this.circle.projectOnAxis(relativeLoc, axis)
+  of CollisionShapeKind.AABB:
+    this.aabb.projectOnAxis(relativeLoc, axis)
 
 proc stroke*(this: CollisionShape, ctx: Target, color: Color = RED) =
   case this.kind:
-  of chkPolygon:
+  of CollisionShapeKind.POLYGON:
     this.polygon.stroke(ctx, color)
-  of chkCircle:
+  of CollisionShapeKind.CIRCLE:
     this.circle.stroke(ctx, color)
+  of CollisionShapeKind.AABB:
+    this.aabb.stroke(ctx, color)
 
 proc fill*(this: CollisionShape, ctx: Target, color: Color) =
   case this.kind:
-  of chkPolygon:
+  of CollisionShapeKind.POLYGON:
     this.polygon.fill(ctx, color)
-  of chkCircle:
+  of CollisionShapeKind.CIRCLE:
     this.circle.fill(ctx, color)
+  of CollisionShapeKind.AABB:
+    this.aabb.fill(ctx, color)
 
 render(CollisionShape):
   this.stroke(ctx)

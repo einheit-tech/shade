@@ -5,7 +5,7 @@ import
 
 import
   mathutils,
-  rectangle,
+  aabb,
   ../render/color
 
 type Circle* = ref object
@@ -32,8 +32,8 @@ proc getScaledInstance*(this: Circle, scale: Vector): Circle =
     raise newException(Exception, "Scaled size cannot be 0!")
   return newCircle(this.center, this.radius * max(scale.x, scale.y))
 
-func calcBounds*(circ: Circle): Rectangle =
-  return newRectangle(
+func calcBounds*(circ: Circle): AABB =
+  return newAABB(
     circ.center.x - circ.radius,
     circ.center.y - circ.radius,
     circ.radius * 2,

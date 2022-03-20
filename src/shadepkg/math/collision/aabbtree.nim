@@ -2,14 +2,13 @@ import tables
 
 import
   ../binarytree,
-  ../rectangle,
-  ../vector2,
-  ../../render/color
+  ../aabb,
+  ../vector2
 
 import ../../game/physicsbody
 
 type TreeNode[T: Boundable] = ref object
-  aabb: Rectangle
+  aabb: AABB
   # Object that owns the AABB
   obj: T
 
@@ -18,7 +17,7 @@ type TreeNode[T: Boundable] = ref object
   rightNode: TreeNode[T]
 
 proc newTreeNode[T: Boundable](
-  aabb: Rectangle,
+  aabb: AABB,
   obj: T = nil,
   parentNode, leftNode, rightNode: TreeNode[T] = nil
 ): TreeNode[T] =
@@ -131,7 +130,7 @@ proc removeObject*[T: Boundable](this: AABBTree[T], obj: T) =
   if this.objToNodeMap.pop(obj, node):
     this.removeNode(node)
 
-proc findOverlappingObjects*[T: Boundable](this: AABBTree[T], rect: Rectangle): seq[T] =
+proc findOverlappingObjects*[T: Boundable](this: AABBTree[T], aabb: AABB): seq[T] =
   if this.rootNode == nil:
     return
 
@@ -147,16 +146,16 @@ proc findOverlappingObjects*[T: Boundable](this: AABBTree[T], rect: Rectangle): 
     # TODO: Move this out of the loop so we don't have to check every iteration
     if nodesToCheck[index] == this.rootNode and
        this.rootNode.obj != nil and
-       this.rootNode.aabb.intersects(rect):
+       this.rootNode.aabb.intersects(aabb):
          result.add(this.rootNode.obj)
 
-    if leftNode != nil and leftNode.aabb.intersects(rect):
+    if leftNode != nil and leftNode.aabb.intersects(aabb):
       if not leftNode.isLeaf():
         nodesToCheck.add(leftNode)
       else:
         result.add(leftNode.obj)
 
-    if rightNode != nil and rightNode.aabb.intersects(rect):
+    if rightNode != nil and rightNode.aabb.intersects(aabb):
       if not rightNode.isLeaf():
         nodesToCheck.add(rightNode)
       else:

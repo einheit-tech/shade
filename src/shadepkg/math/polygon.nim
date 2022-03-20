@@ -5,15 +5,15 @@ import
   sdl2_nim/sdl_gpu
 
 import
-  rectangle,
+  aabb,
   mathutils,
   ../render/color
 
-export rectangle
+export aabb
 
 type Polygon* = ref object
   vertices*: seq[Vector]
-  bounds: Rectangle
+  bounds: AABB
   center: Option[Vector]
   clockwise: Option[bool]
   area: Option[float]
@@ -22,6 +22,17 @@ proc newPolygon*(vertices: openArray[Vector]): Polygon =
   if vertices.len < 3:
     raise newException(Exception, "Polygon must have at least 3 vertices.")
   result = Polygon(vertices: @vertices)
+
+proc newRectangularPolygon*(topLeft, size: Vector): Polygon =
+  ## Creates a polygon in the shape of a rectangle.
+  result = Polygon(
+    vertices: @[
+      topLeft,
+      vector(topLeft.x + size.x, topLeft.y),
+      topLeft + size,
+      vector(topLeft.x, topLeft.y + size.y)
+    ]
+  )
 
 func len*(this: Polygon): int = this.vertices.len
 
@@ -101,7 +112,7 @@ func getAverage*(this: Polygon): Vector =
   let d = 1.0 / this.len.float;
   return vector(x * d, y * d)
 
-func getBounds*(this: Polygon): Rectangle =
+func getBounds*(this: Polygon): AABB =
   ## Gets the bounds of the polygon.
   ## Bounds are lazy initialized.
   if this.bounds != nil:
@@ -118,7 +129,7 @@ func getBounds*(this: Polygon): Rectangle =
     maxY = max(maxY, v.y)
 
   this.bounds =
-    newRectangle(
+    newAABB(
       minX,
       minY,
       maxX,
