@@ -21,7 +21,8 @@ export
 
 const
   DEFAULT_MATERIAL* = METAL
-  aabbProjectionAxes = [vector(1, 0), vector(0, 1)]
+  # TODO: Need to check that we don't need vectors pointing in all 4 directions.
+  aabbProjectionAxes = @[vector(1, 0), vector(0, 1)]
 
 type
   Shape = Circle|Polygon|AABB
@@ -44,7 +45,6 @@ type
       polyProjectionAxes: seq[Vector]
     of CollisionShapeKind.AABB:
       aabb*: AABB
-      aabbProjectionAxes: seq[Vector]
 
 proc getBounds*(this: CollisionShape): AABB
 
@@ -189,10 +189,6 @@ func getPolygonProjectionAxes*(poly: Polygon): seq[Vector] =
     i.inc
     j.inc
 
-func getAABBProjectionAxes*(aabb: AABB): array[2, Vector] =
-  # TODO: Need to check that we don't need vectors pointing in all 4 directions.
-  return aabbProjectionAxes
-
 func getCircleToPolygonProjectionAxes*(
   circle: Circle,
   poly: Polygon,
@@ -234,7 +230,7 @@ func getProjectionAxes*(
       return this.polyProjectionAxes
 
     of CollisionShapeKind.AABB:
-      return this.aabbProjectionAxes
+      return aabbProjectionAxes
 
 template project*(this: CollisionShape, relativeLoc, axis: Vector): Vector =
   case this.kind:
