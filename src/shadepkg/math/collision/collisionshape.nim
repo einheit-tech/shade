@@ -127,6 +127,9 @@ proc newCollisionShape*(shape: Shape, material = DEFAULT_MATERIAL): CollisionSha
 
   initCollisionShape(result, shape, material)
 
+proc newCollisionShape*(vertices: openArray[Vector], material = DEFAULT_MATERIAL): CollisionShape =
+  return newCollisionShape(newPolygon(vertices), material)
+
 proc getBounds*(this: CollisionShape): AABB =
   if this.bounds == nil:
     case this.kind:

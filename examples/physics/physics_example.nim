@@ -40,11 +40,12 @@ proc createRandomCollisionShape(mouseButton: int): CollisionShape =
       result = newCollisionShape(newCircle(VECTOR_ZERO, 30.0 + rand(20.0)))
     of BUTTON_RIGHT:
       let size = rand(15..45)
-      result = newCollisionShape(newPolygon([
-        vector(0, -size),
-        vector(-size, size),
-        vector(size, size),
-      ]))
+      result = newCollisionShape(
+        newRectangularPolygon(
+          vector(-size, -size),
+          vector(size, size)
+        )
+      )
     else:
       let
         halfWidth = float rand(15..45)

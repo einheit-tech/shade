@@ -23,6 +23,17 @@ proc newPolygon*(vertices: openArray[Vector]): Polygon =
     raise newException(Exception, "Polygon must have at least 3 vertices.")
   result = Polygon(vertices: @vertices)
 
+proc newRectangularPolygon*(topLeft, size: Vector): Polygon =
+  ## Creates a polygon in the shape of a rectangle.
+  result = Polygon(
+    vertices: @[
+      topLeft,
+      vector(topLeft.x + size.x, topLeft.y),
+      topLeft + size,
+      vector(topLeft.x, topLeft.y + size.y)
+    ]
+  )
+
 func len*(this: Polygon): int = this.vertices.len
 
 func `[]`*(this: Polygon, i: int): Vector = this.vertices[i]
