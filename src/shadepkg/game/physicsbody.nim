@@ -15,15 +15,15 @@ type
   CollisionListener* = proc(this, other: PhysicsBody, result: CollisionResult, gravityNormal: Vector): bool
   ## Return true if we should remove the listener after it's been invoked.
 
-  PhysicsBodyKind* = enum
+  PhysicsBodyKind* {.pure.} = enum
     ## A body controlled by applied forces.
-    pbDynamic,
+    DYNAMIC
     ## A body that does not move based on forces, collisions, etc.
     ## Mainly used for terrain, moving platforms, and the like.
-    pbStatic,
+    STATIC
     ## A body which is controlled by code, rather than the physics engine.
     ## TODO: More docs about Kinematic bodies
-    pbKinematic
+    KINEMATIC
 
   PhysicsBody* = ref object of Node
     # TODO: Make collisionShape required.
@@ -32,12 +32,12 @@ type
     bounds: AABB
 
     case kind*: PhysicsBodyKind:
-      of pbDynamic, pbKinematic:
+      of DYNAMIC, KINEMATIC:
         isOnGround*: bool
         isOnWall*: bool
         ## Forces applied to the center of mass, this frame.
         forces*: seq[Vector]
-      of pbStatic:
+      of STATIC:
         discard
 
     collisionListeners: SafeSet[CollisionListener]
@@ -47,15 +47,15 @@ proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener)
 proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult, gravityNormal: Vector): bool
 proc getBounds*(this: PhysicsBody): AABB
 
-proc initPhysicsBody*(physicsBody: var PhysicsBody, flags: set[LayerObjectFlags] = {loUpdate, loRender}) =
+proc initPhysicsBody*(physicsBody: var PhysicsBody, flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}) =
   initNode(Node(physicsBody), flags)
   physicsBody.collisionListeners = newSafeSet[CollisionListener]()
-  if physicsBody.kind != pbStatic:
+  if physicsBody.kind != PhysicsBodyKind.STATIC:
     physicsBody.addCollisionListener(wallAndGroundSetter)
 
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
-  flags: set[LayerObjectFlags] = {loUpdate, loRender}
+  flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}
 ): PhysicsBody =
   ## Creates a new PhysicsBody.
   result = PhysicsBody(kind: kind)
@@ -69,7 +69,7 @@ template collisionShape*(this: PhysicsBody): CollisionShape =
 
 template `collisionShape=`*(this: PhysicsBody, shape: CollisionShape) =
   this.collisionShape = shape
-  if this.kind == pbStatic:
+  if this.kind == PhysicsBodyKind.STATIC:
     this.collisionShape.mass = 0
 
 template width*(this: PhysicsBody): float =
@@ -153,7 +153,7 @@ method update*(this: PhysicsBody, deltaTime: float) =
   if this.velocity != VECTOR_ZERO:
     this.move(this.velocity * deltaTime)
 
-  if this.kind != pbStatic:
+  if this.kind != PhysicsBodyKind.STATIC:
     # Reset the state every update.
     this.isOnGround = false
     this.isOnWall = false

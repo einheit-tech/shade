@@ -80,9 +80,9 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
     mtv = collision.getMinimumTranslationVector()
 
   # Translate bodies out of each other.
-  if bodyA.kind == pbStatic:
+  if bodyA.kind == PhysicsBodyKind.STATIC:
     bodyB.move(mtv.negate())
-  elif bodyB.kind == pbStatic:
+  elif bodyB.kind == PhysicsBodyKind.STATIC:
     bodyA.move(mtv)
   else:
     bodyA.move(mtv * 0.5)
@@ -108,7 +108,7 @@ template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
     for j in countup(i + 1, this.physicsBodyChildren.len - 1):
       let bodyB = this.physicsBodyChildren[j]
 
-      if bodyA.kind == pbStatic and bodyB.kind == pbStatic:
+      if bodyA.kind == PhysicsBodyKind.STATIC and bodyB.kind == PhysicsBodyKind.STATIC:
         continue
       
       let collision = collides(
@@ -129,7 +129,7 @@ template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
 
 template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
   for body in this.physicsBodyChildren:
-    if body.kind == pbStatic:
+    if body.kind == PhysicsBodyKind.STATIC:
       continue
 
     # Apply forces to all non-static bodies.
@@ -137,7 +137,7 @@ template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
       body.velocity += force * deltaTime
 
     # Clear forces every frame.
-    if body.kind == pbDynamic and this.gravity != VECTOR_ZERO:
+    if body.kind == PhysicsBodyKind.DYNAMIC and this.gravity != VECTOR_ZERO:
       # Re-apply gravity to dynamic bodies.
       body.forces.setLen(1)
       body.forces[0] = this.gravity

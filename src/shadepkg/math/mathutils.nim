@@ -6,15 +6,6 @@ import
 export math, vector2
 
 type
-  NumberKind* = enum
-    Int,
-    Float
-  IntOrFloat* = object
-    case kind: NumberKind:
-      of Int:
-        intVal: int
-      of Float:
-        floatVal: float
   CompletionRatio* = 0.0 .. 1.0
   EasingFunction*[T] = proc(a, b: T, completionRatio: CompletionRatio): T
 

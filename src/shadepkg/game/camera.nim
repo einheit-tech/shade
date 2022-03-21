@@ -20,7 +20,7 @@ type
 proc updateViewportSize*(this: Camera)
 
 proc initCamera*(camera: Camera) =
-  initNode(Node(camera), {loUpdate})
+  initNode(Node(camera), {LayerObjectFlags.UPDATE})
   camera.bounds = newAABB(float.low, float.low, float.high, float.high)
   camera.updateViewportSize()
 

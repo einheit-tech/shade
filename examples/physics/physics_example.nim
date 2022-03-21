@@ -20,7 +20,7 @@ Game.scene.addLayer(layer)
 
 # Create and add the platform.
 const platformWidth = width - 200
-let platform = newPhysicsBody(pbStatic)
+let platform = newPhysicsBody(PhysicsBodyKind.STATIC)
 let platformHull = newCollisionShape(newPolygon([
   vector(-platformWidth / 2, -100),
   vector(platformWidth / 2, -100),
@@ -40,12 +40,11 @@ proc createRandomCollisionShape(mouseButton: int): CollisionShape =
       result = newCollisionShape(newCircle(VECTOR_ZERO, 30.0 + rand(20.0)))
     of BUTTON_RIGHT:
       let size = rand(15..45)
-      result = newCollisionShape(
-        newRectangularPolygon(
-          vector(-size, -size),
-          vector(size, size)
-        )
-      )
+      result = newCollisionShape(newPolygon([
+        vector(0, -size),
+        vector(-size, size),
+        vector(size, size),
+      ]))
     else:
       let
         halfWidth = float rand(15..45)
@@ -53,7 +52,7 @@ proc createRandomCollisionShape(mouseButton: int): CollisionShape =
       result = newCollisionShape(newAABB(-halfWidth, -halfHeight, halfHeight, halfWidth))
 
 proc addRandomBodyToLayer(mouseButton: int, state: ButtonState) =
-  let body = newPhysicsBody(pbDynamic)
+  let body = newPhysicsBody(PhysicsBodyKind.DYNAMIC)
 
   body.collisionShape = createRandomCollisionShape(mouseButton)
   body.setLocation(Input.mouseLocation)

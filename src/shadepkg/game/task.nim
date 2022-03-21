@@ -15,7 +15,7 @@ proc initTask*(
   checkCompletionCondition: proc(this: Task): bool,
   onCompletion: proc(this: Task)
 ) =
-  initNode(Node(task), {loUpdate})
+  initNode(Node(task), {LayerObjectFlags.UPDATE})
   task.onUpdate = proc(this: Node, deltaTime: float) = onUpdate(task, deltaTime)
   task.checkCompletionCondition = checkCompletionCondition
   task.onCompletion = onCompletion

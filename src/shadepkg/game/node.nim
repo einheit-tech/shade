@@ -16,9 +16,9 @@ export
 
 type 
   ## Flags indicating how the object should be treated by a layer.
-  LayerObjectFlags* = enum
-    loUpdate
-    loRender
+  LayerObjectFlags* {.pure.} = enum
+    UPDATE
+    RENDER
 
   Node* = ref object of RootObj
     # Invoked after this node has been updated.
@@ -40,11 +40,11 @@ method hash*(this: Node): Hash {.base.}
 method update*(this: Node, deltaTime: float) {.base.}
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.}
 
-proc initNode*(node: Node, flags: set[LayerObjectFlags] = {loUpdate, loRender}) =
+proc initNode*(node: Node, flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}) =
   node.flags = flags
   node.scale = VECTOR_ONE
 
-proc newNode*(flags: set[LayerObjectFlags] = {loUpdate, loRender}): Node =
+proc newNode*(flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}): Node =
   result = Node()
   initNode(result, flags)
 
