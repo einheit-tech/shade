@@ -1,5 +1,5 @@
 import
-  ../testutils,
+  nimtest,
   shade
 
 describe "CollisionShape tests":

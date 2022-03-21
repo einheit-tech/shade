@@ -1,6 +1,6 @@
 import
   shade,
-  ../../testutils
+  nimtest
 
 describe "AABB":
 

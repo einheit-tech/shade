@@ -1,5 +1,5 @@
 import
-  ../../testutils,
+  nimtest,
   shade,
   sequtils
 

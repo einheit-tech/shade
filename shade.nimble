@@ -18,6 +18,7 @@ bin           = @["shade"]
 requires "nim >= 1.6.2"
 requires "sdl2_nim >= 2.0.14.3"
 requires "https://github.com/avahe-kellenberger/safeset"
+requires "https://github.com/avahe-kellenberger/nimtest"
 
 # Tasks
 task setup, "Runs the shader example":
