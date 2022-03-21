@@ -12,7 +12,7 @@ Game.scene.addLayer layer
 
 let (_, image) = Images.loadImage("./examples/assets/images/king.png", FILTER_NEAREST)
 
-let king = newNode({loUpdate, loRender})
+let king = newNode({LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER})
 king.scale = vector(10, 10)
 king.setLocation(vector(width / 2, height / 2))
 

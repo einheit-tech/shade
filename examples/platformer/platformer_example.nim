@@ -41,7 +41,7 @@ let groundShape = newCollisionShape(
 groundShape.material = PLATFORM
 
 let ground = newPhysicsBody(
-  kind = pbStatic
+  kind = PhysicsBodyKind.STATIC
 )
 
 ground.x = 1920 / 2
@@ -65,7 +65,7 @@ proc createWall(): PhysicsBody =
   # Left wall
   let wallShape = newCollisionShape(wallShapePolygon)
   wallShape.material = PLATFORM
-  result = newPhysicsBody(kind = pbStatic)
+  result = newPhysicsBody(kind = PhysicsBodyKind.STATIC)
   result.collisionShape = wallShape
   
   result.onRender = proc(this: Node, ctx: Target) =

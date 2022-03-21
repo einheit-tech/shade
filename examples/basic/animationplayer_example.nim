@@ -10,7 +10,7 @@ Game.scene.addLayer(layer)
 
 let (_, image) = Images.loadImage("./examples/assets/images/king.png", FILTER_NEAREST)
 
-let king = newNode({loUpdate, loRender})
+let king = newNode({LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER})
 let kingSprite = newSprite(image, 11, 8)
 
 # Set up the run animation

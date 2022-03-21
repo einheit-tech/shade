@@ -75,14 +75,14 @@ method update*(this: Layer, deltaTime: float, onChildUpdate: proc(child: Node) =
     this.onUpdate(this, deltaTime)
 
   for child in this.children:
-    if loUpdate in child.flags:
+    if LayerObjectFlags.UPDATE in child.flags:
       child.update(deltaTime)
       if onChildUpdate != nil:
         onChildUpdate(child)
 
 Layer.renderAsParent:
   for child in this.children:
-    if loRender in child.flags:
+    if LayerObjectFlags.RENDER in child.flags:
       child.render(ctx)
 
   if callback != nil:
