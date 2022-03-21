@@ -1,10 +1,9 @@
 import 
   sdl2_nim/sdl,
-  tables
+  tables,
+  safeset
 
-import 
-  ../math/mathutils,
-  ../collections/safeset
+import ../math/mathutils
 
 export Scancode, Keycode
 

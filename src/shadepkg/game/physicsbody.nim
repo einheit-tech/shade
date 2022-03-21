@@ -1,10 +1,11 @@
-import macros
+import
+  macros,
+  safeset
 
 import
   node,
   ../math/collision/collisionshape,
-  ../math/collision/collisionresult,
-  ../collections/safeset
+  ../math/collision/collisionresult
 
 export
   node,

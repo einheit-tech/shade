@@ -1,6 +1,6 @@
 import 
   node,
-  ../collections/safeset
+  safeset
 
 export node
 
