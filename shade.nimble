@@ -51,8 +51,7 @@ task platformerd, "Runs the platformer example in debug mode":
   exec "nim r -d:debug --multimethods:on -d:inputdebug examples/platformer/platformer_example.nim"
 
 task runtests, "Runs all tests":
-  withDir "tests":
-    exec "nim r -d:debug testrunner.nim"
+  exec "nimtest"
 
 task release, "Builds a release shade executable":
   exec "nim c -d:release --multimethods:on src/shade.nim"
