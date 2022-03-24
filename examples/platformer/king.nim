@@ -65,6 +65,7 @@ proc createNewKing*(): King =
   initPhysicsBody(PhysicsBody(result))
 
   let sprite = createKingSprite()
+  sprite.offset = vector(8.0, 1.0)
   result.sprite = sprite
   result.animationPlayer = createAnimPlayer(sprite)
 
@@ -79,7 +80,5 @@ method update*(this: King, deltaTime: float) =
   this.animationPlayer.update(deltaTime)
 
 King.renderAsChildOf(PhysicsBody):
-  # TODO: Sprite offsets?
-  translate(ctx, 8.0, 1.0):
-    this.sprite.render(ctx)
+  this.sprite.render(ctx)
 
