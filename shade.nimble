@@ -30,6 +30,12 @@ task setup, "Runs the shader example":
       withDir "build":
         exec fmt"cmake -B . -S .. -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX={localUsrPath}"
         exec "make -j install"
+
+    withDir "submodules/sdl_ttf":
+      exec "./configure"
+      exec "make"
+      exec fmt"cp ./.libs/libSDL2_ttf.so {localUsrPath}/lib/"
+
   exec "nimble install -dy"
 
 task shaders, "Runs the shader example":
