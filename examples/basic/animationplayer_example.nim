@@ -1,8 +1,8 @@
 import ../../src/shade
 
 const
-  width = 1920
-  height = 1080
+  width = 400
+  height = 300
 
 initEngineSingleton("Animation Player Example", width, height)
 let layer = newLayer()
@@ -55,7 +55,7 @@ king.onUpdate = proc(this: Node, deltaTime: float) =
 king.onRender = proc(this: Node, ctx: Target) =
   kingSprite.render(ctx)
 
-king.setLocation(vector(200, 200))
+king.setLocation(vector(width / 2, height / 2))
 layer.addChild king
 
 Game.start()

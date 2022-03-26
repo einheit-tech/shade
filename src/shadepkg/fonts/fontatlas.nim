@@ -21,7 +21,7 @@ proc registerFont(this: FontAtlas, font: Font): int =
   this.fonts[result] = font
   this.nextFontID.inc
 
-proc loadFont*(this: FontAtlas, fontPath: string, size: int): tuple[id: int, font: Font] =
+proc load*(this: FontAtlas, fontPath: string, size: int): tuple[id: int, font: Font] =
   result.font = openFont(fontPath, size)
   if result.font == nil:
     raise newException(Exception, "Failed to load font: " & fontPath)

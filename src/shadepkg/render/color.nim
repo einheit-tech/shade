@@ -14,4 +14,3 @@ const
   PURPLE* = newColor(255, 0, 255)
   ORANGE* = newColor(255, 165, 0)
 
-

@@ -12,6 +12,7 @@ initEngineSingleton(
   "Physics Example",
   width,
   height,
+  fullscreen = true,
   clearColor = newColor(20, 20, 20)
 )
 
