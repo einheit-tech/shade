@@ -17,7 +17,7 @@ jobs:
       - name: Install sdl
         run: |
           sudo apt-get update
-          sudo apt-get -y install libsdl2-dev
+          sudo apt-get -y install libglu1-mesa-dev freeglut3-dev mesa-common-dev
 
       - uses: jiro4989/setup-nim-action@v1
         with:

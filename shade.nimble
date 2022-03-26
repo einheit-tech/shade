@@ -25,6 +25,10 @@ task setup, "Runs the shader example":
   exec "git submodule update --init"
   when defined(linux):
     let localUsrPath = joinPath(thisDir(), ".usr")
+    withDir "submodules/sdl":
+      exec fmt"./configure --prefix={localUsrPath}"
+      exec "make -j install"
+
     withDir "submodules/sdl-gpu":
       mkDir "build"
       withDir "build":
@@ -32,9 +36,8 @@ task setup, "Runs the shader example":
         exec "make -j install"
 
     withDir "submodules/sdl_ttf":
-      exec "./configure"
-      exec "make"
-      exec fmt"cp ./.libs/libSDL2_ttf.so {localUsrPath}/lib/"
+      exec fmt"./configure --prefix={localUsrPath}"
+      exec "make -j install"
 
   exec "nimble install -dy"
 
