@@ -10,8 +10,7 @@ import
   gamestate,
   ../input/inputhandler,
   ../audio/audioplayer,
-  ../render/color,
-  ../math/aabb
+  ../render/color
 
 const
   oneBillion = 1000000000
@@ -42,7 +41,8 @@ proc initEngineSingleton*(
   title: string,
   gameWidth, gameHeight: int,
   scene: Scene = newScene(),
-  windowFlags: int = WINDOW_FULLSCREEN_DESKTOP or WINDOW_ALLOW_HIGHDPI,
+  fullscreen: bool = false,
+  windowFlags: int = WINDOW_ALLOW_HIGHDPI,
   clearColor: Color = BLACK
 ) =
   if Game != nil:
@@ -50,6 +50,13 @@ proc initEngineSingleton*(
 
   when defined(debug):
     setDebugLevel(DEBUG_LEVEL_MAX)
+
+  # Squeeze in fullscreen flags if requested.
+  let windowFlags =
+    if fullscreen:
+      windowFlags or WINDOW_FULLSCREEN_DESKTOP
+    else:
+      windowFlags
 
   let target = init(uint16 gameWidth, uint16 gameHeight, uint32 windowFlags)
   if target == nil:
@@ -72,17 +79,8 @@ proc initEngineSingleton*(
   initAudioPlayerSingleton()
 
   gamestate.onResolutionChanged:
-    Game.screen.setVirtualResolution(uint16 gamestate.resolution.x, uint16 gamestate.resolution.y)
-
-    if Game.scene.camera != nil:
-      Game.screen.setViewport(
-        (
-          cfloat 0,
-          cfloat 0,
-          cfloat Game.scene.camera.viewport.width,
-          cfloat Game.scene.camera.viewport.height
-        )
-      )
+    # Returns false if there's no renderer or window size is 0. Don't care about the result.
+    discard setWindowResolution(uint16 gamestate.resolution.x, uint16 gamestate.resolution.y)
 
   # Input event handlers
 

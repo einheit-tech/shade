@@ -7,7 +7,7 @@ type
   # TODO: http://www.dinomage.com/2015/01/sdl_gpu-simple-tutorial/
   ImageAtlas* = ref object
     images: Table[int, Image]
-    nextTextureId: int
+    nextTextureID: int
 
 proc newImageAtlas(): ImageAtlas =
   return ImageAtlas()
@@ -16,9 +16,9 @@ proc newImageAtlas(): ImageAtlas =
 var Images* = newImageAtlas()
 
 proc registerImage(this: ImageAtlas, image: Image): int =
-  result = this.nextTextureId
+  result = this.nextTextureID
   this.images[result] = image
-  this.nextTextureId.inc
+  this.nextTextureID.inc
   return result
 
 proc loadImage*(this: ImageAtlas, imagePath: string): tuple[id: int, image: Image] =
@@ -36,7 +36,7 @@ template `[]`*(this: ImageAtlas, imageID: int): Image =
   this.images[imageID]
 
 proc free*(this: ImageAtlas, imageID: int) =
-  freeImage this.images[imageID]
+  freeImage(this.images[imageID])
   this.images.del(imageID)
 
 proc freeAll*(this: ImageAtlas) =
