@@ -18,8 +18,15 @@ Run the two example games to make sure everything works on your system
 
 ## Running examples
 
-`nimble example` or
-`nim r examples/basic/basic_game.nim`
+Platformer:
+
+`nimble platformer`
+
+Physics:
+
+`nimble physics`
+
+Click on the screen when the game launches to spawn shapes
 
 ## Setting up local shade repo to be used in another project
 
