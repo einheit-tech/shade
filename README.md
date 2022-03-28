@@ -4,6 +4,8 @@
 
 ## Clone and setup
 
+1. Have Nim installed (preferably via [choosenim](https://github.com/dom96/choosenim#choosenim))
+
 ```shell
 git clone git@github.com:avahe-kellenberger/shade.git
 cd shade
