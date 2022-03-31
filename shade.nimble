@@ -10,6 +10,7 @@ description   = "Game Engine"
 license       = "GPLv2.0"
 srcDir        = "src"
 installExt    = @["nim"]
+skipDirs      = @[".github", "examples", "tests", "submodules"]
 bin           = @["shade"]
 
 
@@ -21,7 +22,7 @@ requires "https://github.com/avahe-kellenberger/safeset"
 requires "https://github.com/avahe-kellenberger/nimtest"
 
 # Tasks
-task setup, "Runs the shader example":
+task build_deps, "Runs the shader example":
   exec "git submodule update --init"
   when defined(linux):
     let localUsrPath = joinPath(thisDir(), ".usr")
@@ -38,6 +39,13 @@ task setup, "Runs the shader example":
     withDir "submodules/sdl_ttf":
       exec fmt"./configure --prefix={localUsrPath}"
       exec "make -j install"
+
+    withDir "submodules/sdl_mixer":
+      mkDir "build"
+      withDir "build":
+        exec fmt"../configure --prefix={localUsrPath}"
+        exec "make -j"
+        exec "make install"
 
   exec "nimble install -dy"
 
