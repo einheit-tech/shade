@@ -11,7 +11,7 @@ license               = "GPLv2.0"
 srcDir                = "src"
 installExt            = @["nim"]
 skipDirs              = @[".github", "examples", "tests", "submodules"]
-namedBin["buildtool"] = "shade"
+namedBin["shadepkg/buildtool"] = "shade"
 
 # Dependencies
 
@@ -56,8 +56,6 @@ task build_deps, "Runs the shader example":
     withDir fmt"{localUsrPath}/lib":
       exec "rm -r *.a *.la cmake pkgconfig"
 
-  exec "nimble install -dy"
-
 task shaders, "Runs the shader example":
   exec "nim r examples/shaders/simple.nim"
 
@@ -81,5 +79,4 @@ task textbox, "Runs the textbox example":
 
 task runtests, "Runs all tests":
   exec "nimtest"
-
 

@@ -13,11 +13,23 @@ const
   artifactFilename = "deps_artifact.tar.gz"
   artifactDownloadLink = fmt"https://github.com/avahe-kellenberger/shade/raw/build-tool/{artifactFilename}"
 
+proc fetchAndExtractDependencies()
+proc cleanup()
+
+template withDir(dir: string, body: untyped) =
+  let startingDir = getCurrentDir()
+  setCurrentDir(dir)
+  body
+  setCurrentDir(startingDir)
+
 proc printHelp() =
   echo fmt"""
     Options:
       --help
         Prints this help message
+
+      --init directory
+        Initializes a new shade project at the given directory.
 
       --compress
         Compresses the contents of "{usrLibDir}"
@@ -26,11 +38,15 @@ proc printHelp() =
         Fetches and extracts an archive to "{usrLibDir}"
   """.dedent()
 
-template withDir(dir: string, body: untyped) =
-  let startingDir = getCurrentDir()
-  setCurrentDir(usrLibDir)
-  body
-  setCurrentDir(startingDir)
+proc init(dir: string) =
+  ## Creates a new project with a given name, fetches deps, extracts, nimble install -dy etc.
+
+  # Copy the example game to the new project dir.
+  copyDir(joinPath(getAppDir(), "examplegame"), dir)
+
+  withDir(dir):
+    fetchAndExtractDependencies()
+    discard execShellCmd "nimble install -dy"
 
 proc cleanup() =
   withDir(usrLibDir):
@@ -48,26 +64,32 @@ proc compress() =
   cleanup()
   createTarball(usrLibDir, artifactFilename)
 
-proc fetch() =
+proc fetchAndExtractDependencies() =
   let client = newHttpClient()
   client.downloadFile(artifactDownloadLink, artifactFilename)
   # NOTE: extractAll requires the destination to NOT exist.
   removeDir(usrLibDir)
   extractAll(artifactFilename, usrDir)
 
-var optParser = initOptParser()
-let remainingArgs = optParser.remainingArgs()
-# Only supporting one option at a time, currently.
-if remainingArgs.len != 1:
-  printHelp()
-  quit()
-
-let command = remainingArgs[0]
-case command:
-  of "--compress":
-    compress()
-  of "--fetch":
-    fetch()
-  else:
+when isMainModule:
+  var optParser = initOptParser()
+  let remainingArgs = optParser.remainingArgs()
+  # Only supporting one option at a time, currently.
+  if remainingArgs.len == 0:
     printHelp()
+    quit()
+
+  let command = remainingArgs[0]
+  case command:
+    of "--init":
+      if remainingArgs.len >= 2:
+        init(remainingArgs[1])
+      else:
+        echo "--init must be given a destination directory."
+    of "--compress":
+      compress()
+    of "--fetch":
+      fetchAndExtractDependencies()
+    else:
+      printHelp()
 
