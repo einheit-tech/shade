@@ -22,7 +22,7 @@ requires "https://github.com/avahe-kellenberger/safeset"
 requires "https://github.com/avahe-kellenberger/nimtest"
 
 task create_deps_artifact, "Compresses contents of .usr dir needed for development":
-  exec "nim r -d:release src/shade.nim"
+  exec "nim r -d:release src/shade.nim --compress"
 
 # Tasks
 task build_deps, "Runs the shader example":
