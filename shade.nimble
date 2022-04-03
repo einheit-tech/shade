@@ -24,6 +24,9 @@ requires "https://github.com/avahe-kellenberger/nimtest"
 task create_deps_artifact, "Compresses contents of .usr dir needed for development":
   exec "nim r -d:release src/shade.nim --compress"
 
+task fetch_deps, "Fetches dependencies and extracts them to .usr/lib":
+  exec "nim r -d:release -d:ssl src/shade.nim --fetch"
+
 # Tasks
 task build_deps, "Runs the shader example":
   exec "git submodule update --init"

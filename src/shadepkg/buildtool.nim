@@ -1,13 +1,17 @@
 import
   std/httpclient,
-  zippy/tarballs_v1,
+  zippy/[tarballs, tarballs_v1],
   parseopt,
   strformat,
   strutils,
   os,
   re
 
-const usrLibDir = ".usr/lib"
+const
+  usrDir = ".usr"
+  usrLibDir = fmt"{usrDir}/lib"
+  artifactFilename = "deps_artifact.tar.gz"
+  artifactDownloadLink = fmt"https://github.com/avahe-kellenberger/shade/raw/build-tool/{artifactFilename}"
 
 proc printHelp() =
   echo fmt"""
@@ -22,29 +26,34 @@ proc printHelp() =
         Fetches and extracts an archive to "{usrLibDir}"
   """.dedent()
 
-proc cleanup() =
+template withDir(dir: string, body: untyped) =
   let startingDir = getCurrentDir()
   setCurrentDir(usrLibDir)
-
-  # Delete symlinks
-  for (pathComponentKind, path) in walkDir("."):
-    if pathComponentKind == pcLinkToFile:
-      removeFile path
-
-  for (pathComponentKind, path) in walkDir("."):
-    if pathComponentKind == pcFile and path =~ re"\.\/(.*)\-.*\.so.*":
-      moveFile(path, fmt"{matches[0]}.so")
-
+  body
   setCurrentDir(startingDir)
+
+proc cleanup() =
+  withDir(usrLibDir):
+    # Delete symlinks
+    for (pathComponentKind, path) in walkDir("."):
+      if pathComponentKind == pcLinkToFile:
+        removeFile path
+
+    # Rename files to be the proper foo.so names
+    for (pathComponentKind, path) in walkDir("."):
+      if pathComponentKind == pcFile and path =~ re"\.\/(.*)\-.*\.so.*":
+        moveFile(path, fmt"{matches[0]}.so")
 
 proc compress() =
   cleanup()
-  createTarball(usrLibDir, "deps_artifact.tar.gz")
+  createTarball(usrLibDir, artifactFilename)
 
 proc fetch() =
-  # let client = newHttpClient()
-  # client.downloadFile("", "deps.tar.gz")
-  echo "TODO: fetch"
+  let client = newHttpClient()
+  client.downloadFile(artifactDownloadLink, artifactFilename)
+  # NOTE: extractAll requires the destination to NOT exist.
+  removeDir(usrLibDir)
+  extractAll(artifactFilename, usrDir)
 
 var optParser = initOptParser()
 let remainingArgs = optParser.remainingArgs()
