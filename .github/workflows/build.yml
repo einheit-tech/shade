@@ -23,7 +23,10 @@ jobs:
         with:
           nim-version: "1.6.4"
 
-      - name: Install Shade dependencies
+      - name: Install Shade nim dependencies
+        run: nimble install -dy
+
+      - name: Install Shade library dependencies
         run: nimble fetch_deps
 
       - name: Build Shade's in debug mode
