@@ -22,8 +22,11 @@ when defined(linux):
   let ldLibPath = getEnv("LD_LIBRARY_PATH")
   if ldLibPath.len > 0:
     putEnv("LD_LIBRARY_PATH", ldLibPath & PathSep & libPath)
+    putEnv("LIBRARY_PATH", ldLibPath & PathSep & libPath)
   else:
     putEnv("LD_LIBRARY_PATH", libPath)
+    putEnv("LIBRARY_PATH", libPath)
 
   echo "set up LD_LIBRARY_PATH: " & getEnv("LD_LIBRARY_PATH")
+  echo "set up LIBRARY_PATH: " & getEnv("LIBRARY_PATH")
 
