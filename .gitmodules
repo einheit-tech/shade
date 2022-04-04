@@ -8,3 +8,6 @@
 [submodule "submodules/sdl_ttf"]
 	path = submodules/sdl_ttf
 	url = git@github.com:libsdl-org/SDL_ttf.git
+[submodule "submodules/sdl_mixer"]
+	path = submodules/sdl_mixer
+	url = git@github.com:libsdl-org/SDL_mixer.git

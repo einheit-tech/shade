@@ -4,24 +4,31 @@ import
 
 # Package
 
-version       = "0.1.0"
-author        = "Einheit Technologies"
-description   = "Game Engine"
-license       = "GPLv2.0"
-srcDir        = "src"
-installExt    = @["nim"]
-bin           = @["shade"]
-
+version               = "0.1.0"
+author                = "Einheit Technologies"
+description           = "Game Engine"
+license               = "GPLv2.0"
+srcDir                = "src"
+installExt            = @["nim"]
+skipDirs              = @[".github", "examples", "tests", "submodules"]
+namedBin["shadepkg/buildtool"] = "shade"
 
 # Dependencies
 
-requires "nim >= 1.6.2"
-requires "sdl2_nim >= 2.0.14.3"
+requires "nim == 1.6.4"
+requires "sdl2_nim == 2.0.14.3"
+requires "zippy == 0.9.7"
 requires "https://github.com/avahe-kellenberger/safeset"
 requires "https://github.com/avahe-kellenberger/nimtest"
 
+task create_deps_artifact, "Compresses contents of .usr dir needed for development":
+  exec "nim r -d:release src/shade.nim --compress"
+
+task fetch_deps, "Fetches dependencies and extracts them to .usr/lib":
+  exec "nim r -d:release -d:ssl src/shade.nim --fetch"
+
 # Tasks
-task setup, "Runs the shader example":
+task build_deps, "Runs the shader example":
   exec "git submodule update --init"
   when defined(linux):
     let localUsrPath = joinPath(thisDir(), ".usr")
@@ -39,7 +46,15 @@ task setup, "Runs the shader example":
       exec fmt"./configure --prefix={localUsrPath}"
       exec "make -j install"
 
-  exec "nimble install -dy"
+    withDir "submodules/sdl_mixer":
+      mkDir "build"
+      withDir "build":
+        exec fmt"../configure --prefix={localUsrPath}"
+        exec "make -j"
+        exec "make install"
+
+    withDir fmt"{localUsrPath}/lib":
+      exec "rm -r *.a *.la cmake pkgconfig"
 
 task shaders, "Runs the shader example":
   exec "nim r examples/shaders/simple.nim"
@@ -64,7 +79,4 @@ task textbox, "Runs the textbox example":
 
 task runtests, "Runs all tests":
   exec "nimtest"
-
-task release, "Builds a release shade executable":
-  exec "nim c -d:release src/shade.nim"
 
