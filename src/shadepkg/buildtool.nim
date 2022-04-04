@@ -11,7 +11,7 @@ const
   usrDir = ".usr"
   usrLibDir = fmt"{usrDir}/lib"
   artifactFilename = "deps_artifact.tar.gz"
-  artifactDownloadLink = fmt"https://github.com/avahe-kellenberger/shade/raw/build-tool/{artifactFilename}"
+  artifactDownloadLink = fmt"https://github.com/avahe-kellenberger/shade/raw/master/{artifactFilename}"
 
 proc fetchAndExtractDependencies()
 proc cleanup()
