@@ -30,4 +30,6 @@ jobs:
           nim c -d:debug src/shade.nim
           nimble develop
           tree .usr
+          echo "PATH: $PATH"
+          echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
           nimble runtests
