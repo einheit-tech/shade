@@ -19,3 +19,5 @@ echo "defined(linux) ? ", $defined(linux)
 
 when defined(linux):
   putEnv("LD_LIBRARY_PATH", getEnv("LD_LIBRARY_PATH") & PathSep & libPath)
+  echo "set up LD_LIBRARY_PATH: " & getEnv("LD_LIBRARY_PATH")
+
