@@ -18,6 +18,11 @@ putEnv("PATH", path)
 echo "defined(linux) ? ", $defined(linux)
 
 when defined(linux):
-  putEnv("LD_LIBRARY_PATH", getEnv("LD_LIBRARY_PATH") & PathSep & libPath)
+  let ldLibPath = getEnv("LD_LIBRARY_PATH")
+  if ldLibPath.len > 0:
+    putEnv("LD_LIBRARY_PATH", ldLibPath & PathSep & libPath)
+  else:
+    putEnv("LD_LIBRARY_PATH", libPath & PathSep)
+
   echo "set up LD_LIBRARY_PATH: " & getEnv("LD_LIBRARY_PATH")
 
