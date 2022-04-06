@@ -1,6 +1,7 @@
 import os
 
 switch("multimethods", "on")
+switch("define", "ssl")
 
 var
   path = getEnv("PATH")
