@@ -1,13 +1,16 @@
 [submodule "submodules/sdl-gpu"]
   path = submodules/sdl-gpu
-  url = git@github.com:grimfang4/sdl-gpu.git
+  url = https://github.com/grimfang4/sdl-gpu.git
   shallow = true
 [submodule "submodules/sdl"]
 	path = submodules/sdl
-	url = git@github.com:libsdl-org/SDL.git
+	url = https://github.com/libsdl-org/SDL.git
+  shallow = true
 [submodule "submodules/sdl_ttf"]
 	path = submodules/sdl_ttf
-	url = git@github.com:libsdl-org/SDL_ttf.git
+	url = https://github.com/libsdl-org/SDL_ttf.git
+  shallow = true
 [submodule "submodules/sdl_mixer"]
 	path = submodules/sdl_mixer
-	url = git@github.com:libsdl-org/SDL_mixer.git
+	url = https://github.com/libsdl-org/SDL_mixer.git
+  shallow = true
