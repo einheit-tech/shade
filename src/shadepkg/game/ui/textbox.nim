@@ -1,4 +1,4 @@
-import sdl2_nim/sdl_ttf
+import sdl2_nim/[sdl, sdl_ttf]
 
 import 
   ../node,
@@ -31,6 +31,7 @@ TextBox.renderAsNodeChild:
       0
     )
     this.imageOfText = copyImageFromSurface(surface)
+    freeSurface(surface)
 
   blit(this.imageOfText, nil, ctx, 0, 0)
 
