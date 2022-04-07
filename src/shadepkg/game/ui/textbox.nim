@@ -4,11 +4,16 @@ import
   ../node,
   ../../render/color
 
-type TextBox* = ref object of Node
-  font: Font
-  text: string
-  color: Color
-  imageOfText: Image
+type
+  TextBoxObj = object of Node
+    font: Font
+    text: string
+    color: Color
+    imageOfText: Image
+
+  TextBox* = ref TextBoxObj
+
+proc `=destroy`(this: var TextBoxObj)
 
 proc initTextBox*(textBox: TextBox, font: Font, text: string, color: Color = BLACK) =
   initNode(textBox)
@@ -34,4 +39,8 @@ TextBox.renderAsNodeChild:
     freeSurface(surface)
 
   blit(this.imageOfText, nil, ctx, 0, 0)
+
+proc `=destroy`(this: var TextBoxObj) =
+  if this.imageOfText != nil:
+    freeImage(this.imageOfText)
 
