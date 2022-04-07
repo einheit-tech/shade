@@ -11,8 +11,8 @@ license                        = "GPLv2.0"
 # srcDir                         = "src"
 # installExt                     = @["nim"]
 # skipDirs                       = @[".github", "examples", "tests", "submodules"]
-installDirs                    = @[ "src", "exampleGame" ]
-namedBin["shadepkg/buildtool"] = "shade"
+installDirs                    = @[ "src", "examplegame" ]
+namedBin["src/shadepkg/buildtool"] = "src/shade"
 
 # Dependencies
 
