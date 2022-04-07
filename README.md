@@ -7,9 +7,10 @@
 1. Have Nim installed (preferably via [choosenim](https://github.com/dom96/choosenim#choosenim))
 
 ```shell
-git clone git@github.com:avahe-kellenberger/shade.git
+git clone https://github.com/avahe-kellenberger/shade.git
 cd shade
-nimble setup
+nimble install -dy
+nimble fetch_deps
 ```
 
 ## Examples
@@ -28,12 +29,9 @@ Physics:
 
 Click on the screen when the game launches to spawn shapes
 
-## Setting up local shade repo to be used in another project
+## Using shade for a game project
 
-1. `cd` into the shade repo
-2. Run `nimble develop`
-
-"The develop command allows you to link an existing copy of a package into your installation directory. This is so that when developing a package you don't need to keep reinstalling it for every single change."
-
-See [the nimble docs](https://github.com/nim-lang/nimble#nimble-develop) for details.
+1. `nimble install 'https://github.com/avahe-kellenberger/shade'`
+2. Wherever you'd like your project: `shade --init projectname`
+3. `cd projectname && nimble runr` to run the example
 
