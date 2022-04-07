@@ -42,7 +42,9 @@ proc init(dir: string) =
   ## Creates a new project with a given name, fetches deps, extracts, nimble install -dy etc.
 
   # Copy the example game to the new project dir.
-  copyDir(joinPath(getAppDir(), "examplegame"), dir)
+  let exampleGamePath = joinPath(getAppDir(), "examplegame")
+  echo fmt"exampleGamePath: {exampleGamePath}"
+  copyDir(exampleGamePath, dir)
 
   withDir(dir):
     fetchAndExtractDependencies()
