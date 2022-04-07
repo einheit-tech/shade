@@ -4,13 +4,14 @@ import
 
 # Package
 
-version               = "0.1.0"
-author                = "Einheit Technologies"
-description           = "Game Engine"
-license               = "GPLv2.0"
-srcDir                = "src"
-installExt            = @["nim"]
-skipDirs              = @[".github", "examples", "tests", "submodules"]
+version                        = "0.1.0"
+author                         = "Einheit Technologies"
+description                    = "Game Engine"
+license                        = "GPLv2.0"
+srcDir                         = "src"
+# installExt                     = @["nim"]
+# skipDirs                       = @[".github", "examples", "tests", "submodules"]
+installDirs                    = @[ "src", "exampleGame" ]
 namedBin["shadepkg/buildtool"] = "shade"
 
 # Dependencies
