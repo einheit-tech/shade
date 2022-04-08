@@ -4,14 +4,11 @@ import
 
 # Package
 
-version                        = "0.1.0"
-author                         = "Einheit Technologies"
-description                    = "Game Engine"
-license                        = "GPLv2.0"
-# srcDir                         = "src"
-# installExt                     = @["nim"]
-# skipDirs                       = @[".github", "examples", "tests", "submodules"]
-installDirs                    = @[ "src", "examplegame" ]
+version                            = "0.1.0"
+author                             = "Einheit Technologies"
+description                        = "Game Engine"
+license                            = "GPLv2.0"
+installDirs                        = @[ "src", "examplegame" ]
 namedBin["src/shadepkg/buildtool"] = "src/shade"
 
 # Dependencies
@@ -27,6 +24,9 @@ task create_deps_artifact, "Compresses contents of .usr dir needed for developme
 
 task fetch_deps, "Fetches dependencies and extracts them to .usr/lib":
   exec "nim r -d:release -d:ssl src/shade.nim --fetch"
+
+task extract_deps, "Extracts local dependencies (deps_artifact.tar.gz) to .usr/lib":
+  exec "nim r -d:release -d:ssl src/shade.nim --extract"
 
 # Tasks
 task build_deps, "Runs the shader example":

@@ -36,6 +36,9 @@ proc printHelp() =
 
       --fetch
         Fetches and extracts an archive to "{usrLibDir}"
+
+      --extract
+        Extracts local dependencies (deps_artifact.tar.gz) to "{usrLibDir}"
   """.dedent()
 
 proc init(dir: string) =
@@ -66,12 +69,15 @@ proc compress() =
   cleanup()
   createTarball(usrLibDir, artifactFilename)
 
-proc fetchAndExtractDependencies() =
-  let client = newHttpClient()
-  client.downloadFile(artifactDownloadLink, artifactFilename)
+proc extractDependencies() =
   # NOTE: extractAll requires the destination to NOT exist.
   removeDir(usrLibDir)
   extractAll(artifactFilename, usrDir)
+
+proc fetchAndExtractDependencies() =
+  let client = newHttpClient()
+  client.downloadFile(artifactDownloadLink, artifactFilename)
+  extractDependencies()
 
 when isMainModule:
   var optParser = initOptParser()
@@ -92,6 +98,8 @@ when isMainModule:
       compress()
     of "--fetch":
       fetchAndExtractDependencies()
+    of "--extract":
+      extractDependencies()
     else:
       printHelp()
 

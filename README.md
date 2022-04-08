@@ -10,7 +10,7 @@
 git clone https://github.com/avahe-kellenberger/shade.git
 cd shade
 nimble install -dy
-nimble fetch_deps
+nimble extract_deps
 ```
 
 ## Examples
