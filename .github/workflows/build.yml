@@ -26,7 +26,7 @@ jobs:
       - name: Install Shade, run tests, etc
         run: |
           nimble install -dy
-          nimble fetch_deps
+          nimble build_deps
           nim c -d:debug src/shade.nim
           nimble develop
           tree .usr
