@@ -33,15 +33,15 @@ type Mouse* = ref object
 
 type
   KeyState* = object
-    pressed: bool
-    justPressed: bool
-    justReleased: bool
+    pressed*: bool
+    justPressed*: bool
+    justReleased*: bool
 
   KeyListener* = proc(key: Keycode, state: KeyState)
 
   Keyboard* = ref object
     keys: Table[Keycode, KeyState]
-    keyListeners: Table[Keycode, seq[KeyListener]]
+    keyListeners: Table[Keycode, SafeSet[KeyListener]]
 
 type
   ControllerButtonState* = object
@@ -91,6 +91,15 @@ proc addEventListener*(this: InputHandler, eventKind: EventKind, listener: Event
 proc removeEventListener*(this: InputHandler, eventKind: EventKind, listener: EventListener) =
   if this.eventListeners.hasKey(eventKind):
     this.eventListeners[eventKind].remove(listener)
+
+proc addKeyEventListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
+  if not this.keyboard.keyListeners.hasKey(key):
+    this.keyboard.keyListeners[key] = newSafeSet[KeyListener]()
+  this.keyboard.keyListeners[key].add(listener)
+
+proc removeKeyEventListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
+  if this.keyboard.keyListeners.hasKey(key):
+    this.keyboard.keyListeners[key].remove(listener)
 
 proc addMousePressedEventListener*(this: InputHandler, listener: ButtonEventListener) =
   this.mouse.buttonPressedEventListeners.add(listener)

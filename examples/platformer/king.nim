@@ -58,7 +58,7 @@ proc createCollisionShape(): CollisionShape =
 
 type King* = ref object of PhysicsBody
   animationPlayer: AnimationPlayer
-  sprite: Sprite
+  sprite*: Sprite
 
 proc createNewKing*(): King =
   result = King()

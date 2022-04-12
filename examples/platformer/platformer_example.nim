@@ -150,6 +150,20 @@ player.onUpdate = physicsProcess
 # Use a negative x scale to flip the image
 rightWall.scale = vector(-1, 1)
 
+# Toggle transparency upon pressing "t"
+var isTransparent = false
+Input.addKeyEventListener(
+  K_t,
+  proc(key: Keycode, state: KeyState) =
+    if state.justPressed:
+      if isTransparent:
+        player.sprite.alpha = 1.0
+      else:
+        player.sprite.alpha = 0.5
+
+      isTransparent = not isTransparent
+  )
+
 when not defined(debug):
   # Play some music
   let (someSong, err) = capture loadMusic("./examples/assets/music/night_prowler.ogg")
