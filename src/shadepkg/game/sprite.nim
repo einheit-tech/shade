@@ -33,6 +33,14 @@ proc newSprite*(
   result = Sprite()
   initSprite(result, image, hframes, vframes, frameCoords)
 
+proc `alpha=`*(this: Sprite, alpha: CompletionRatio) =
+  this.spritesheet.image.setRGBA(
+    uint8.high,
+    uint8.high,
+    uint8.high,
+    uint8 (float(uint8.high) * alpha)
+  )
+
 Sprite.render:
   translate(ctx, this.offset.x, this.offset.y):
     # `blit` renders the image centered at the given location.
