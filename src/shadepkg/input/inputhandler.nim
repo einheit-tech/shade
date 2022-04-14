@@ -5,7 +5,11 @@ import
 
 import ../math/mathutils
 
-export Scancode, Keycode
+export
+  Scancode,
+  Keycode,
+  Event,
+  EventKind
 
 export
   BUTTON_LEFT,
@@ -128,10 +132,6 @@ proc processEvent*(this: InputHandler, event: Event) =
   ## Processes events.
   ## Returns if the user wants to exit the application.
   case event.kind:
-    of QUIT:
-      # TODO
-      discard
-
     # Mouse
     of MOUSEMOTION:
       this.mouse.location.x = (float) event.motion.x
