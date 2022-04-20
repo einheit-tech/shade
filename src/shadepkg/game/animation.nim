@@ -52,6 +52,9 @@ type
 template currentTime*(this: Animation): float = this.currentTime
 template duration*(this: Animation): float = this.duration
 
+template isFinished*(this: Animation): bool =
+  return not this.looping and this.currentTime == this.duration
+
 proc initAnimation*(anim: Animation, duration: float, looping: bool) =
   initNode(Node(anim), {LayerObjectFlags.UPDATE})
   anim.duration = duration
@@ -80,7 +83,7 @@ method update*(this: Animation, deltaTime: float) =
     this.animateToTime(this.currentTime, deltaTime)
   else:
     if this.currentTime < this.duration:
-      this.currentTime += deltaTime
+      this.currentTime = min(this.currentTime + deltaTime, this.duration)
       this.animateToTime(this.currentTime, deltaTime)
   
 proc newAnimationTrack*[T: TrackType](
