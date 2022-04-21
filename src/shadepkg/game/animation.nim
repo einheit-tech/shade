@@ -53,7 +53,7 @@ template currentTime*(this: Animation): float = this.currentTime
 template duration*(this: Animation): float = this.duration
 
 template isFinished*(this: Animation): bool =
-  return not this.looping and this.currentTime == this.duration
+  not this.looping and this.currentTime == this.duration
 
 proc initAnimation*(anim: Animation, duration: float, looping: bool) =
   initNode(Node(anim), {LayerObjectFlags.UPDATE})
