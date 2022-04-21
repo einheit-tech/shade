@@ -9,6 +9,8 @@
 
 import macros
 
+import safeset
+
 import
   node,
   ../math/mathutils,
@@ -43,11 +45,14 @@ type
         framesClosureProc: seq[Keyframe[ClosureProc]]
         lastFiredProcIndex: int
 
+  AnimationCallback* = proc(this: Animation)
+  # TODO: Why is this a Node?
   Animation* = ref object of Node
     currentTime: float
     duration: float
     looping: bool
     tracks: seq[AnimationTrack]
+    onFinishedCallbacks: SafeSet[AnimationCallback]
 
 template currentTime*(this: Animation): float = this.currentTime
 template duration*(this: Animation): float = this.duration
@@ -64,6 +69,21 @@ proc newAnimation*(duration: float, looping: bool): Animation =
   ## Creates a new Animation.
   result = Animation()
   initAnimation(result, duration, looping)
+
+proc addFinishedCallback*(this: Animation, callback: AnimationCallback) =
+  if this.onFinishedCallbacks == nil:
+    this.onFinishedCallbacks = newSafeSet[AnimationCallback]()
+  this.onFinishedCallbacks.add(callback)
+
+proc removeFinishedCallback*(this: Animation, callback: AnimationCallback) =
+  if this.onFinishedCallbacks != nil:
+    this.onFinishedCallbacks.remove(callback)
+
+template onFinished*(this: Animation, body: untyped) =
+  this.addFinishedCallback(
+    proc(this {.inject.}: Animation) =
+      body
+  )
 
 proc animateToTime*(this: Animation, currentTime, deltaTime: float) =
   for track in this.tracks.mitems:
@@ -83,6 +103,7 @@ method update*(this: Animation, deltaTime: float) =
     this.animateToTime(this.currentTime, deltaTime)
   else:
     if this.currentTime < this.duration:
+      # TODO: Need a callback here
       this.currentTime = min(this.currentTime + deltaTime, this.duration)
       this.animateToTime(this.currentTime, deltaTime)
   
