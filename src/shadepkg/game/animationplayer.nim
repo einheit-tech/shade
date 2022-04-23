@@ -1,39 +1,27 @@
 import tables
 import safeset
-import animation
+import animation, ../math/mathutils
 
 export animation
 
 type
   NamedAnimation* = tuple[name: string, animation: Animation]
-  NamedAnimationCallback* = proc(this: AnimationPlayer, namedAnimation: NamedAnimation)
+  AnimationCallback* = proc(this: AnimationPlayer, namedAnimation: NamedAnimation): bool
 
   AnimationPlayer* = ref AnimationPlayerObj
   AnimationPlayerObj = object
     # Table[animationName, Animation]
     animations: Table[string, Animation]
+    currentTime: float
     currentAnimation: Animation
     currentAnimationName: string
-    # TODO: Attach a callback to each animation?
-    # How would we clean it up?
-    # =destroy proc
-    animationFinishedCallbacks: SafeSet[NamedAnimationCallback]
+    isCurrentAnimationLooping: bool
+    animationFinishedCallbacks: SafeSet[AnimationCallback]
 
 proc addAnimations*(this: AnimationPlayer, animations: openArray[NamedAnimation])
 
-proc initAnimationPlayer*(
-  player: AnimationPlayer,
-  animations: varargs[NamedAnimation]
-) =
+proc initAnimationPlayer*(player: AnimationPlayer, animations: varargs[NamedAnimation]) =
   player.addAnimations(animations)
-
-# TODO: How will this work to notify the callbacks in AnimationPlayer?
-proc animationFinishedCallback(anim: Animation) =
-  discard
-
-proc `=destroy`*(this: var AnimationPlayerObj) =
-  # TODO: Remove our callbacks from every animation
-  discard
 
 proc newAnimationPlayer*(animations: varargs[NamedAnimation]): AnimationPlayer =
   result = AnimationPlayer()
@@ -41,14 +29,12 @@ proc newAnimationPlayer*(animations: varargs[NamedAnimation]): AnimationPlayer =
 
 proc addAnimation*(this: AnimationPlayer, animationName: string, animation: Animation) =
   this.animations[animationName] = animation
-  # We need to hook into each animation to know when it finishes.
-  animation.addFinishedCallback(animationFinishedCallback)
 
 proc addAnimations*(this: AnimationPlayer, animations: openArray[NamedAnimation]) =
   for (name, anim) in animations:
     this.addAnimation(name, anim)
 
-proc playAnimation*(this: AnimationPlayer, animationName: string) =
+proc playAnimation*(this: AnimationPlayer, animationName: string, looping: bool = false) =
   if this.currentAnimation != nil:
     if this.currentAnimationName == animationName:
       return
@@ -57,6 +43,10 @@ proc playAnimation*(this: AnimationPlayer, animationName: string) =
 
   this.currentAnimation = this.animations[animationName]
   this.currentAnimationName = animationName
+  this.isCurrentAnimationLooping = looping
+
+template currentTime*(this: AnimationPlayer): float =
+  this.currentTime
 
 template currentAnimation*(this: AnimationPlayer): Animation =
   this.currentAnimation
@@ -64,7 +54,29 @@ template currentAnimation*(this: AnimationPlayer): Animation =
 template currentAnimationName*(this: AnimationPlayer): string =
   this.currentAnimationName
 
+template invokeAnimationFinishedCallbacks(this: AnimationPlayer) =
+  if this.currentAnimation != nil:
+    for callback in this.animationFinishedCallbacks:
+      if callback(this, (this.currentAnimationName, this.currentAnimation)):
+        this.animationFinishedCallbacks.remove(callback)
+
+proc addAnimationFinishedCallback(this: AnimationPlayer, callback: AnimationCallback) =
+  this.animationFinishedCallbacks.add(callback)
+
+proc removeAnimationFinishedCallback(this: AnimationPlayer, callback: AnimationCallback) =
+  this.animationFinishedCallbacks.remove(callback)
+
 proc update*(this: AnimationPlayer, deltaTime: float) =
   if this.currentAnimation != nil:
-    this.currentAnimation.update(deltaTime)
+    this.currentTime += deltaTime
+    if this.currentTime >= this.currentAnimation.duration:
+      if this.isCurrentAnimationLooping:
+        this.currentTime = this.currentTime mod this.currentAnimation.duration
+      else:
+        this.currentTime = min(this.currentTime, this.currentAnimation.duration)
+
+      # Tell callbacks the animation has reached its end when we surpass the duration.
+      this.invokeAnimationFinishedCallbacks()
+
+    this.currentAnimation.animateToTime(this.currentTime, deltaTime, this.isCurrentAnimationLooping)
 

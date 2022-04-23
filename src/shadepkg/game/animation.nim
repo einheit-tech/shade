@@ -9,8 +9,6 @@
 
 import macros
 
-import safeset
-
 import
   node,
   ../math/mathutils,
@@ -27,6 +25,7 @@ type
     track: var AnimationTrack,
     currentTime: float,
     deltaTime: float,
+    looping: bool = false,
     wrapInterpolation: bool = false
   )
   AnimationTrack* = object
@@ -45,68 +44,29 @@ type
         framesClosureProc: seq[Keyframe[ClosureProc]]
         lastFiredProcIndex: int
 
-  AnimationCallback* = proc(this: Animation)
-  # TODO: Why is this a Node?
-  Animation* = ref object of Node
-    currentTime: float
+  Animation* = ref object
     duration: float
-    looping: bool
     tracks: seq[AnimationTrack]
-    onFinishedCallbacks: SafeSet[AnimationCallback]
 
-template currentTime*(this: Animation): float = this.currentTime
 template duration*(this: Animation): float = this.duration
 
-template isFinished*(this: Animation): bool =
-  not this.looping and this.currentTime == this.duration
-
-proc initAnimation*(anim: Animation, duration: float, looping: bool) =
-  initNode(Node(anim), {LayerObjectFlags.UPDATE})
+proc initAnimation*(anim: Animation, duration: float) =
   anim.duration = duration
-  anim.looping = looping
 
-proc newAnimation*(duration: float, looping: bool): Animation =
+proc newAnimation*(duration: float): Animation =
   ## Creates a new Animation.
   result = Animation()
-  initAnimation(result, duration, looping)
+  initAnimation(result, duration)
 
-proc addFinishedCallback*(this: Animation, callback: AnimationCallback) =
-  if this.onFinishedCallbacks == nil:
-    this.onFinishedCallbacks = newSafeSet[AnimationCallback]()
-  this.onFinishedCallbacks.add(callback)
-
-proc removeFinishedCallback*(this: Animation, callback: AnimationCallback) =
-  if this.onFinishedCallbacks != nil:
-    this.onFinishedCallbacks.remove(callback)
-
-template onFinished*(this: Animation, body: untyped) =
-  this.addFinishedCallback(
-    proc(this {.inject.}: Animation) =
-      body
-  )
-
-proc animateToTime*(this: Animation, currentTime, deltaTime: float) =
+proc animateToTime*(this: Animation, currentTime, deltaTime: float, looping: bool = false) =
   for track in this.tracks.mitems:
-    track.animateToTime(track, currentTime, deltaTime, track.wrapInterpolation)
+    track.animateToTime(track, currentTime, deltaTime, looping, track.wrapInterpolation)
 
 proc reset*(this: Animation) =
-  this.currentTime = 0
   for track in this.tracks.mitems:
     if track.kind == tkClosureProc:
       track.lastFiredProcIndex = -1
 
-method update*(this: Animation, deltaTime: float) =
-  procCall Node(this).update(deltaTime)
-
-  if this.looping:
-    this.currentTime = (this.currentTime + deltaTime) mod this.duration
-    this.animateToTime(this.currentTime, deltaTime)
-  else:
-    if this.currentTime < this.duration:
-      # TODO: Need a callback here
-      this.currentTime = min(this.currentTime + deltaTime, this.duration)
-      this.animateToTime(this.currentTime, deltaTime)
-  
 proc newAnimationTrack*[T: TrackType](
   field: T,
   frames: seq[Keyframe[T]],
@@ -192,6 +152,7 @@ macro addNewAnimationTrack*[T: TrackType](
       track: var AnimationTrack,
       currentTime: float,
       deltaTime: float,
+      looping: bool = false,
       wrapInterpolation: bool = false
     ) =
       var currIndex = -1
@@ -256,6 +217,7 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
       track: var AnimationTrack,
       currentTime: float,
       deltaTime: float,
+      looping: bool = false,
       wrapInterpolation: bool = false
     ) =
       # Find the start time
@@ -276,7 +238,7 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
       if currIndex == -1:
         currIndex = `frames`.low
 
-      if not `this`.looping:
+      if not looping:
         var
           nextFrame = `frames`[currIndex]
           collectiveFrameTime = round(nextFrame.time - timeInAnim, 2)
