@@ -79,9 +79,9 @@ proc removeFinishedCallback*(this: Animation, callback: AnimationCallback) =
   if this.onFinishedCallbacks != nil:
     this.onFinishedCallbacks.remove(callback)
 
-template onFinished*(foo: Animation, body: untyped) =
-  foo.addFinishedCallback(
-    proc(this {.inject.}: Animation) =
+template onFinished*(this: Animation, body: untyped) =
+  this.addFinishedCallback(
+    proc(`this` {.inject.}: Animation) =
       body
   )
 
