@@ -9,6 +9,8 @@
 
 import macros
 
+import safeset
+
 import
   node,
   ../math/mathutils,
@@ -43,20 +45,23 @@ type
         framesClosureProc: seq[Keyframe[ClosureProc]]
         lastFiredProcIndex: int
 
-  Animation* = ref object of Node
+  AnimationCallback* = proc(this: Animation)
+
+  Animation* = ref object
     currentTime: float
     duration: float
     looping: bool
     tracks: seq[AnimationTrack]
+    onFinishedCallbacks: SafeSet[AnimationCallback]
 
 template currentTime*(this: Animation): float = this.currentTime
 template duration*(this: Animation): float = this.duration
 
 template isFinished*(this: Animation): bool =
+  ## If a non-looping Animation has reached its end.
   not this.looping and this.currentTime == this.duration
 
 proc initAnimation*(anim: Animation, duration: float, looping: bool) =
-  initNode(Node(anim), {LayerObjectFlags.UPDATE})
   anim.duration = duration
   anim.looping = looping
 
@@ -64,6 +69,26 @@ proc newAnimation*(duration: float, looping: bool): Animation =
   ## Creates a new Animation.
   result = Animation()
   initAnimation(result, duration, looping)
+
+proc addFinishedCallback*(this: Animation, callback: AnimationCallback) =
+  if this.onFinishedCallbacks == nil:
+    this.onFinishedCallbacks = newSafeSet[AnimationCallback]()
+  this.onFinishedCallbacks.add(callback)
+
+proc removeFinishedCallback*(this: Animation, callback: AnimationCallback) =
+  if this.onFinishedCallbacks != nil:
+    this.onFinishedCallbacks.remove(callback)
+
+template onFinished*(foo: Animation, body: untyped) =
+  foo.addFinishedCallback(
+    proc(this {.inject.}: Animation) =
+      body
+  )
+
+template notifyCallbacks(this: Animation) =
+  if this.onFinishedCallbacks != nil:
+    for callback in this.onFinishedCallbacks:
+      callback(this)
 
 proc animateToTime*(this: Animation, currentTime, deltaTime: float) =
   for track in this.tracks.mitems:
@@ -75,9 +100,7 @@ proc reset*(this: Animation) =
     if track.kind == tkClosureProc:
       track.lastFiredProcIndex = -1
 
-method update*(this: Animation, deltaTime: float) =
-  procCall Node(this).update(deltaTime)
-
+proc update*(this: Animation, deltaTime: float) =
   if this.looping:
     this.currentTime = (this.currentTime + deltaTime) mod this.duration
     this.animateToTime(this.currentTime, deltaTime)
@@ -85,6 +108,9 @@ method update*(this: Animation, deltaTime: float) =
     if this.currentTime < this.duration:
       this.currentTime = min(this.currentTime + deltaTime, this.duration)
       this.animateToTime(this.currentTime, deltaTime)
+      # Just reached the end of the animation
+      if this.currentTime == this.duration:
+        this.notifyCallbacks()
   
 proc newAnimationTrack*[T: TrackType](
   field: T,

@@ -33,10 +33,7 @@ proc addAnimations*(this: AnimationPlayer, animations: openArray[NamedAnimation]
 
 proc playAnimation*(this: AnimationPlayer, animationName: string) =
   if this.currentAnimation != nil:
-    if this.currentAnimationName == animationName:
-      return
-    else:
-      this.currentAnimation.reset()
+    this.currentAnimation.reset()
 
   this.currentAnimation = this.animations[animationName]
   this.currentAnimationName = animationName
