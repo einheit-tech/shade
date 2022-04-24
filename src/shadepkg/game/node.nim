@@ -40,7 +40,10 @@ method hash*(this: Node): Hash {.base.}
 method update*(this: Node, deltaTime: float) {.base.}
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.}
 
-proc initNode*(node: Node, flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}) =
+proc initNode*(
+  node: Node,
+  flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}
+) =
   node.flags = flags
   node.scale = VECTOR_ONE
 

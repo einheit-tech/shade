@@ -41,6 +41,9 @@ proc `alpha=`*(this: Sprite, alpha: CompletionRatio) =
     uint8 (float(uint8.high) * alpha)
   )
 
+proc size*(this: Sprite): Vector =
+  this.spritesheet.spriteSize
+
 Sprite.render:
   translate(ctx, this.offset.x, this.offset.y):
     # `blit` renders the image centered at the given location.

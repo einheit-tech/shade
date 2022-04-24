@@ -27,13 +27,14 @@ type
     justReleased: bool
 
   ButtonEventListener* = proc(button: int, state: ButtonState)
+  MouseButtonEventListener* = proc(button: int, state: ButtonState, x, y, clicks: int)
 
 type Mouse* = ref object
   location: Vector
   buttons: Table[int, ButtonState]
   vScrolled: int
-  buttonPressedEventListeners: seq[ButtonEventListener]
-  buttonReleasedEventListeners: seq[ButtonEventListener]
+  buttonPressedEventListeners: seq[MouseButtonEventListener]
+  buttonReleasedEventListeners: seq[MouseButtonEventListener]
 
 type
   KeyState* = object
@@ -105,10 +106,10 @@ proc removeKeyEventListener*(this: InputHandler, key: Keycode, listener: KeyList
   if this.keyboard.keyListeners.hasKey(key):
     this.keyboard.keyListeners[key].remove(listener)
 
-proc addMousePressedEventListener*(this: InputHandler, listener: ButtonEventListener) =
+proc addMousePressedEventListener*(this: InputHandler, listener: MouseButtonEventListener) =
   this.mouse.buttonPressedEventListeners.add(listener)
 
-proc addMouseReleasedEventListener*(this: InputHandler, listener: ButtonEventListener) =
+proc addMouseReleasedEventListener*(this: InputHandler, listener: MouseButtonEventListener) =
   this.mouse.buttonReleasedEventListeners.add(listener)
 
 proc clearController(this: InputHandler) =
@@ -138,17 +139,22 @@ proc processEvent*(this: InputHandler, event: Event) =
       this.mouse.location.y = (float) event.motion.y
 
     of MOUSEBUTTONDOWN:
-      let button = event.button.button
+      let
+        buttonEvent = event.button
+        button = buttonEvent.button
       if not this.mouse.buttons.hasKey(button):
         this.mouse.buttons[button] = ButtonState()
       this.mouse.buttons[button].pressed = true
       this.mouse.buttons[button].justPressed = true
 
       for listener in this.mouse.buttonPressedEventListeners:
-        listener(button, this.mouse.buttons[button])
+        listener(button, this.mouse.buttons[button], int buttonEvent.x, int buttonEvent.y, int buttonEvent.clicks)
 
     of MOUSEBUTTONUP:
-      let button = event.button.button
+      let
+        buttonEvent = event.button
+        button = buttonEvent.button
+
       if not this.mouse.buttons.hasKey(button):
         this.mouse.buttons[button] = ButtonState()
       this.mouse.buttons[button].pressed = false
@@ -156,7 +162,7 @@ proc processEvent*(this: InputHandler, event: Event) =
       this.mouse.buttons[button].justReleased = true
 
       for listener in this.mouse.buttonReleasedEventListeners:
-        listener(button, this.mouse.buttons[button])
+        listener(button, this.mouse.buttons[button], int buttonEvent.x, int buttonEvent.y, int buttonEvent.clicks)
 
     of MOUSEWHEEL:
       this.mouse.vScrolled = event.wheel.y

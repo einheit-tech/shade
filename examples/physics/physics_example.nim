@@ -52,11 +52,11 @@ proc createRandomCollisionShape(mouseButton: int): CollisionShape =
         halfHeight = float rand(15..45)
       result = newCollisionShape(newAABB(-halfWidth, -halfHeight, halfHeight, halfWidth))
 
-proc addRandomBodyToLayer(mouseButton: int, state: ButtonState) =
+proc addRandomBodyToLayer(mouseButton: int, state: ButtonState, x, y, clicks: int) =
   let body = newPhysicsBody(PhysicsBodyKind.DYNAMIC)
 
   body.collisionShape = createRandomCollisionShape(mouseButton)
-  body.setLocation(Input.mouseLocation)
+  body.setLocation(vector(x, y))
 
   let randColor = getRandomColor()
   body.onRender = proc(this: Node, ctx: Target) =

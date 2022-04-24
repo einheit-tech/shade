@@ -4,6 +4,7 @@ import
 
 type Spritesheet* = ref object
   sheetImage: Image
+  spriteSize*: Vector
   spriteRects: seq[Rect]
   cols: int
   rows: int
@@ -19,6 +20,7 @@ proc newSpritesheet*(sheetImage: Image, cols, rows: int): Spritesheet =
   ## but need to be loaded by invoking loadSprites.
   result = Spritesheet(
     sheetImage: sheetImage,
+    spriteSize: vector(sheetImage.w.float / cols.float, sheetImage.h.float / rows.float),
     cols: cols,
     rows: rows,
     spriteRects: newSeq[Rect](rows * cols)
@@ -27,18 +29,14 @@ proc newSpritesheet*(sheetImage: Image, cols, rows: int): Spritesheet =
 
 proc loadSprites*(this: Spritesheet) =
   ## Loads all individual sprite images from the sprite sheet.
-  let
-    spriteWidth = this.sheetImage.w.float / this.cols.float
-    spriteHeight = this.sheetImage.h.float / this.rows.float
-
   for row in (0..<this.rows):
     for col in (0..<this.cols):
       this.spriteRects[col + row * this.cols] =
         (
-          cfloat(col.float * spriteWidth),
-          cfloat(row.float * spriteHeight),
-          cfloat(spriteWidth),
-          cfloat(spriteHeight)
+          cfloat(col.float * this.spriteSize.x),
+          cfloat(row.float * this.spriteSize.y),
+          cfloat this.spriteSize.x,
+          cfloat this.spriteSize.y
         )
 
 template rows*(this: Spritesheet): int =

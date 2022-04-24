@@ -87,6 +87,14 @@ proc confineToBounds(this: Camera) =
     this.bounds.bottom - halfViewportHeight
   )
 
+proc screenToWorldCoord*(this: Camera, point: Vector): Vector =
+  # TODO: This doesn't seem to work as expected.
+  # Relative z must be taken into account.
+  return this.viewport.topLeft + point
+
+proc screenToWorldCoord*(this: Camera, x, y: float|int): Vector =
+  return this.screenToWorldCoord(vector(x, y))
+
 method update*(this: Camera, deltaTime: float) =
   procCall Node(this).update(deltaTime)
 
