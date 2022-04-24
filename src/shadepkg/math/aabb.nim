@@ -41,7 +41,10 @@ template getArea*(this: AABB): float =
   this.width * this.height
 
 template getSize*(this: AABB): Vector =
-  vector(this.width, this.height)
+  this.bottomRight - this.topLeft
+
+template center*(this: AABB): Vector =
+  (this.topLeft + this.bottomRight) * 0.5
 
 proc getTranslatedInstance*(this: AABB, offset: Vector): AABB =
   newAABB(

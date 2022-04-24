@@ -8,7 +8,7 @@ export aabb
 type
   Camera* = ref object of Node
     z*: float
-    bounds*: AABB
+    bounds: AABB
     viewport*: AABB
 
     # For node tracking
@@ -21,7 +21,11 @@ proc updateViewportSize*(this: Camera)
 
 proc initCamera*(camera: Camera) =
   initNode(Node(camera), {LayerObjectFlags.UPDATE})
-  camera.bounds = newAABB(float.low, float.low, float.high, float.high)
+  camera.bounds = nil
+  camera.offset = VECTOR_ZERO
+  camera.trackedNode = nil
+  camera.completionRatioPerFrame = 1.0
+  camera.easingFunction = lerp
   camera.updateViewportSize()
 
 proc newCamera*(): Camera =
@@ -70,30 +74,41 @@ proc setTrackingEasingFunction*(this: Camera, easingFunction: EasingFunction[Vec
 proc setTrackedNode*(this: Camera, n: Node) =
   this.trackedNode = n
 
-proc confineToBounds(this: Camera) =
-  let
-    halfViewportWidth = this.viewport.width * 0.5
-    halfViewportHeight = this.viewport.height * 0.5
+proc bounds*(this: Camera): AABB =
+  if this.bounds == nil:
+    this.bounds = newAABB(float.low, float.low, float.high, float.high)
+  return this.bounds
 
-  this.x = clamp(
-    this.bounds.left + halfViewportWidth,
-    this.x,
-    this.bounds.right - halfViewportWidth
-  )
+template confineToBounds(this: Camera) =
+  if this.bounds != nil:
+    let
+      halfViewportWidth = this.viewport.width * 0.5
+      halfViewportHeight = this.viewport.height * 0.5
 
-  this.y = clamp(
-    this.bounds.top + halfViewportHeight,
-    this.y,
-    this.bounds.bottom - halfViewportHeight
-  )
+    this.x = clamp(
+      this.bounds.left + halfViewportWidth,
+      this.x,
+      this.bounds.right - halfViewportWidth
+    )
 
-proc screenToWorldCoord*(this: Camera, point: Vector): Vector =
-  # TODO: This doesn't seem to work as expected.
-  # Relative z must be taken into account.
-  return this.viewport.topLeft + point
+    this.y = clamp(
+      this.bounds.top + halfViewportHeight,
+      this.y,
+      this.bounds.bottom - halfViewportHeight
+    )
 
-proc screenToWorldCoord*(this: Camera, x, y: float|int): Vector =
-  return this.screenToWorldCoord(vector(x, y))
+proc screenToWorldCoord*(this: Camera, screenPoint: Vector, relativeZ: float = 1.0): Vector =
+  if relativeZ == 1.0:
+    return this.viewport.topLeft + screenPoint
+  else:
+    let
+      screenCenter = this.viewport.getSize() * 0.5
+      screenCenterToPoint = screenPoint - screenCenter
+      scaledScreenPoint = screenCenterToPoint * relativeZ
+    return this.viewport.center + scaledScreenPoint
+
+template screenToWorldCoord*(this: Camera, x, y: float|int, relativeZ: float = 1.0): Vector =
+  this.screenToWorldCoord(vector(x, y), relativeZ)
 
 method update*(this: Camera, deltaTime: float) =
   procCall Node(this).update(deltaTime)
