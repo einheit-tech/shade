@@ -48,7 +48,10 @@ proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener)
 proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult, gravityNormal: Vector): bool
 proc getBounds*(this: PhysicsBody): AABB
 
-proc initPhysicsBody*(physicsBody: var PhysicsBody, flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}) =
+proc initPhysicsBody*(
+  physicsBody: var PhysicsBody,
+  flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}
+) =
   initNode(Node(physicsBody), flags)
   physicsBody.collisionListeners = newSafeSet[CollisionListener]()
   if physicsBody.kind != PhysicsBodyKind.STATIC:

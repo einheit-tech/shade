@@ -28,6 +28,7 @@ type
     # Collisions that happened this frame.
     # Only tracks collisions for PhysicsBodies that have collision callbacks.
     currentFrameCollisions: Table[tuple[owner: PhysicsBody, other: PhysicsBody], CollisionResult]
+    collisionFilter*: proc(this: PhysicsLayer, bodyA, bodyB: PhysicsBody): bool
 
 template gravity*(this: PhysicsLayer): Vector =
   this.gravity
@@ -111,21 +112,22 @@ template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
       if bodyA.kind == PhysicsBodyKind.STATIC and bodyB.kind == PhysicsBodyKind.STATIC:
         continue
       
-      let collision = collides(
-        bodyA.getLocation(),
-        bodyA.collisionShape,
-        bodyB.getLocation(),
-        bodyB.collisionShape
-      )
+      if this.collisionFilter == nil or this.collisionFilter(this, bodyA, bodyB):
+        let collision = collides(
+          bodyA.getLocation(),
+          bodyA.collisionShape,
+          bodyB.getLocation(),
+          bodyB.collisionShape
+        )
 
-      if collision == nil:
-        continue
+        if collision == nil:
+          continue
 
-      collision.resolve(bodyA, bodyB)
+        collision.resolve(bodyA, bodyB)
 
-      # Register the collision for any existing callbacks.
-      if bodyA.collisionListenerCount > 0 or bodyB.collisionListenerCount > 0:
-        this.currentFrameCollisions[(bodyA, bodyB)] = collision
+        # Register the collision for any existing callbacks.
+        if bodyA.collisionListenerCount > 0 or bodyB.collisionListenerCount > 0:
+          this.currentFrameCollisions[(bodyA, bodyB)] = collision
 
 template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
   for body in this.physicsBodyChildren:

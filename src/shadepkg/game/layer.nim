@@ -19,6 +19,7 @@ type
     z: float
     zChangeListeners: seq[ZChangeListener]
     onUpdate*: proc(this: Layer, deltaTime: float)
+    onRender*: proc(this: Layer, ctx: Target)
 
 proc initLayer*(layer: Layer, z: float = 1.0) =
   layer.z = z
@@ -87,4 +88,7 @@ Layer.renderAsParent:
 
   if callback != nil:
     callback()
+
+  if this.onRender != nil:
+    this.onRender(this, ctx)
 
