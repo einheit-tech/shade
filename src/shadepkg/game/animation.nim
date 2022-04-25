@@ -85,7 +85,7 @@ template onFinished*(this: Animation, body: untyped) =
       body
   )
 
-template notifyCallbacks(this: Animation) =
+proc notifyFinishedCallbacks*(this: Animation) =
   if this.onFinishedCallbacks != nil:
     for callback in this.onFinishedCallbacks:
       callback(this)
@@ -110,8 +110,8 @@ proc update*(this: Animation, deltaTime: float) =
       this.animateToTime(this.currentTime, deltaTime)
       # Just reached the end of the animation
       if this.currentTime == this.duration:
-        this.notifyCallbacks()
-  
+        this.notifyFinishedCallbacks()
+
 proc newAnimationTrack*[T: TrackType](
   field: T,
   frames: seq[Keyframe[T]],

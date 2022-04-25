@@ -14,6 +14,15 @@ type
 
 proc addAnimations*(this: AnimationPlayer, animations: openArray[NamedAnimation])
 
+template currentAnimation*(this: AnimationPlayer): Animation =
+  this.currentAnimation
+
+template currentAnimationName*(this: AnimationPlayer): string =
+  this.currentAnimationName
+
+template `[]`*(this: AnimationPlayer, animationName: string): Animation =
+  this.animations[animationName]
+
 proc initAnimationPlayer*(
   player: AnimationPlayer,
   animations: varargs[NamedAnimation]
@@ -37,14 +46,6 @@ proc playAnimation*(this: AnimationPlayer, animationName: string) =
 
   this.currentAnimation = this.animations[animationName]
   this.currentAnimationName = animationName
-
-template currentAnimation*(this: AnimationPlayer): Animation =
-  this.currentAnimation
-
-template currentAnimationName*(this: AnimationPlayer): string =
-  this.currentAnimationName
-
-# TODO: etc...
 
 proc update*(this: AnimationPlayer, deltaTime: float) =
   if this.currentAnimation != nil:
