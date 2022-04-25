@@ -73,7 +73,7 @@ template collisionShape*(this: PhysicsBody): CollisionShape =
 
 template `collisionShape=`*(this: PhysicsBody, shape: CollisionShape) =
   this.collisionShape = shape
-  if this.kind == PhysicsBodyKind.STATIC:
+  if this.kind == PhysicsBodyKind.STATIC and this.collisionShape != nil:
     this.collisionShape.mass = 0
 
 template width*(this: PhysicsBody): float =

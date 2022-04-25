@@ -50,6 +50,16 @@ method removeChild*(this: Layer, child: Node) {.base.} =
   ## Removes the child from this Node.
   this.children.remove(child)
 
+method visitChildren*(this: Layer, handler: proc(child: Node)) {.base.} =
+  for child in this.children:
+    handler(child)
+
+template forEachChild*(this: Layer, body: untyped) =
+  this.visitChildren(
+    proc(child {.inject.}: Node) =
+      body
+  )
+
 proc addZChangeListener*(this: Layer, listener: ZChangeListener) =
   this.zChangeListeners.add(listener)
 
@@ -82,7 +92,7 @@ method update*(this: Layer, deltaTime: float, onChildUpdate: proc(child: Node) =
         onChildUpdate(child)
 
 Layer.renderAsParent:
-  for child in this.children:
+  this.forEachChild:
     if LayerObjectFlags.RENDER in child.flags:
       child.render(ctx)
 

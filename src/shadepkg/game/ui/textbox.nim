@@ -26,6 +26,12 @@ proc newTextBox*(font: Font, text: string, color: Color = BLACK): TextBox =
   result = TextBox()
   initTextBox(result, font, text, color)
 
+proc setText*(this: TextBox, text: string) =
+  this.text = text
+  if this.imageOfText != nil:
+    freeImage(this.imageOfText)
+    this.imageOfText = nil
+
 TextBox.renderAsNodeChild:
   if this.imageOfText == nil:
     let surface = renderText_Blended_Wrapped(

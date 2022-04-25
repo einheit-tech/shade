@@ -17,7 +17,7 @@ type
     completionRatioPerFrame*: CompletionRatio
     easingFunction*: EasingFunction[Vector]
 
-proc updateViewportSize*(this: Camera)
+proc updateViewport*(this: Camera)
 
 proc initCamera*(camera: Camera) =
   initNode(Node(camera), {LayerObjectFlags.UPDATE})
@@ -26,7 +26,7 @@ proc initCamera*(camera: Camera) =
   camera.trackedNode = nil
   camera.completionRatioPerFrame = 1.0
   camera.easingFunction = lerp
-  camera.updateViewportSize()
+  camera.updateViewport()
 
 proc newCamera*(): Camera =
   result = Camera()
@@ -49,7 +49,7 @@ proc newCamera*(
   result.completionRatioPerFrame = completionRatioPerFrame
   result.easingFunction = easingFunction
 
-proc updateViewportSize*(this: Camera) =
+proc updateViewport*(this: Camera) =
   ## Updates the camera's viewport to fit the gamestate's resolution.
   if this.viewport == nil:
     this.viewport = newAABB(
@@ -109,6 +109,10 @@ proc screenToWorldCoord*(this: Camera, screenPoint: Vector, relativeZ: float = 1
 
 template screenToWorldCoord*(this: Camera, x, y: float|int, relativeZ: float = 1.0): Vector =
   this.screenToWorldCoord(vector(x, y), relativeZ)
+
+method setLocation*(this: Camera, x, y: float) =
+  procCall Node(this).setLocation(x, y)
+  this.updateViewport()
 
 method update*(this: Camera, deltaTime: float) =
   procCall Node(this).update(deltaTime)

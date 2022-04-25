@@ -38,7 +38,7 @@ proc `alpha=`*(this: Sprite, alpha: CompletionRatio) =
     uint8.high,
     uint8.high,
     uint8.high,
-    uint8 (float(uint8.high) * alpha)
+    uint8(float(uint8.high) * alpha)
   )
 
 proc size*(this: Sprite): Vector =
