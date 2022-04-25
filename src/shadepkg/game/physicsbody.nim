@@ -110,7 +110,7 @@ method setLocation*(this: PhysicsBody, x, y: float) =
   procCall setLocation((Node) this, x, y)
 
 proc getBounds*(this: PhysicsBody): AABB =
-  if this.bounds == nil:
+  if this.bounds == nil and this.collisionShape != nil:
     this.bounds = this.collisionShape.getBounds().getTranslatedInstance(this.getLocation())
   return this.bounds
 

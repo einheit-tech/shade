@@ -21,6 +21,7 @@ proc initSprite*(
   vframes: int,
   frameCoords: IVector = IVECTOR_ZERO
 ) =
+  # TODO: Flyweight pattern for spritesheets.
   sprite.spritesheet = newSpritesheet(image, hframes, vframes)
   sprite.frameCoords = frameCoords
 
