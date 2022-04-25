@@ -57,27 +57,20 @@ proc renderWithCamera(this: Scene, ctx: Target) =
   this.forEachLayer(l):
     relativeZ = l.z - this.camera.z
     if relativeZ > 0:
+      # Save the normal matrix.
+      pushMatrix()
 
       inversedScalar = 1.0 / relativeZ
       let halfViewportSize = this.camera.viewport.getSize() * 0.5
 
       let trans = this.camera.getLocation() * inversedScalar - halfViewportSize
-      translate(
-        -trans.x,
-        -trans.y,
-        0
-      )
-
+      translate(-trans.x, -trans.y, 0)
       scale(inversedScalar, inversedScalar, 1.0)
 
       l.render(ctx)
 
-      scale(relativeZ, relativeZ, 1.0)
-      translate(
-        trans.x,
-        trans.y,
-        0
-      )
+      # Restore normal matrix.
+      popMatrix()
 
 Scene.render:
   this.sortLayers()
