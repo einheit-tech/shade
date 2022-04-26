@@ -77,7 +77,7 @@ func `==`*(this, v: SomeVector): bool =
   return this.x == v.x and this.y == v.y
 
 func getMagnitudeSquared*(this: SomeVector): float =
-  return this.x ^ 2 + this.y ^ 2
+  return float(this.x ^ 2 + this.y ^ 2)
 
 func getMagnitude*(this: SomeVector): float =
   sqrt(this.getMagnitudeSquared())
@@ -88,9 +88,9 @@ func maxMagnitude*(this: SomeVector, magnitude: float): SomeVector =
     return this
   return this * (magnitude / currMagnitude)
 
-func normalize*(this: SomeVector, magnitude: float = 1.0): SomeVector =
+func normalize*(this: SomeVector, magnitude: float = 1.0): Vector =
   let scale = magnitude / this.getMagnitude()
-  return vector(this.x * scale, this.y * scale)
+  return vector(float(this.x) * scale, float(this.y) * scale)
 
 func distanceSquared*(this: SomeVector, point: SomeVector): float =
   return

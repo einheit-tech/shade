@@ -47,6 +47,9 @@ proc playAnimation*(this: AnimationPlayer, animationName: string) =
   this.currentAnimation = this.animations[animationName]
   this.currentAnimationName = animationName
 
+template play*(this: AnimationPlayer, animationName: string) =
+  this.playAnimation(animationName)
+
 proc update*(this: AnimationPlayer, deltaTime: float) =
   if this.currentAnimation != nil:
     this.currentAnimation.update(deltaTime)

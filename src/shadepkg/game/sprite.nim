@@ -13,6 +13,7 @@ type
     spritesheet: Spritesheet
     frameCoords*: IVector
     offset*: Vector
+    scale*: Vector
 
 proc initSprite*(
   sprite: Sprite,
@@ -24,6 +25,7 @@ proc initSprite*(
   # TODO: Flyweight pattern for spritesheets.
   sprite.spritesheet = newSpritesheet(image, hframes, vframes)
   sprite.frameCoords = frameCoords
+  sprite.scale = VECTOR_ONE
 
 proc newSprite*(
   image: Image,
@@ -47,23 +49,24 @@ proc size*(this: Sprite): Vector =
 
 Sprite.render:
   translate(ctx, this.offset.x, this.offset.y):
-    # `blit` renders the image centered at the given location.
-    blit(
-      this.spritesheet.image,
-      this.spritesheet[this.frameCoords].addr,
-      ctx,
-      0,
-      0
-    )
-
-    when defined(spriteBounds):
-      ## Renders the bounds or sprites.
-      let rect = this.spritesheet[this.frameCoords]
-      ctx.rectangle(
-        -rect.w / 2,
-        -rect.h / 2,
-        rect.w / 2,
-        rect.h / 2,
-        BLUE
+    ctx.scale(this.scale.x, this.scale.y):
+      # `blit` renders the image centered at the given location.
+      blit(
+        this.spritesheet.image,
+        this.spritesheet[this.frameCoords].addr,
+        ctx,
+        0,
+        0
       )
+
+      when defined(spriteBounds):
+        ## Renders the bounds or sprites.
+        let rect = this.spritesheet[this.frameCoords]
+        ctx.rectangle(
+          -rect.w / 2,
+          -rect.h / 2,
+          rect.w / 2,
+          rect.h / 2,
+          BLUE
+        )
 
