@@ -21,6 +21,7 @@ type
   Engine* = ref object of RootObj
     screen*: Target
     scene: Scene
+    hud*: Layer
     # The color to fill the screen with to clear it every frame.
     clearColor*: Color
     shouldExit: bool
@@ -151,6 +152,10 @@ proc render*(this: Engine, screen: Target) =
   if this.scene == nil:
     return
   clearColor(this.screen, this.clearColor)
+
   this.scene.render(screen)
+  if this.hud != nil:
+    this.hud.render(screen)
+
   flip(this.screen)
 

@@ -13,8 +13,6 @@ type Scene* = ref object
   camera*: Camera
 
 proc initScene*(scene: Scene) =
-  # TODO: Add UI node
-  # that renders regardless of camera, zoom, etc
   scene.isLayerOrderValid = true
   gamestate.onResolutionChanged:
     if scene.camera != nil:
