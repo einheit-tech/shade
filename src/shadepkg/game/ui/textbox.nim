@@ -10,27 +10,45 @@ type
     text: string
     color: Color
     imageOfText: Image
+    filter: Filter
 
   TextBox* = ref TextBoxObj
 
 proc `=destroy`(this: var TextBoxObj)
 
-proc initTextBox*(textBox: TextBox, font: Font, text: string, color: Color = BLACK) =
+proc initTextBox*(
+  textBox: TextBox,
+  font: Font,
+  text: string,
+  color: Color = BLACK,
+  renderFilter: Filter = FILTER_LINEAR_MIPMAP
+) =
   initNode(textBox)
   textBox.font = font
   textBox.text = text
   textBox.color = color
   textBox.imageOfText = nil
+  textBox.filter = renderFilter
 
-proc newTextBox*(font: Font, text: string, color: Color = BLACK): TextBox =
+proc newTextBox*(
+  font: Font,
+  text: string,
+  color: Color = BLACK,
+  renderFilter: Filter = FILTER_LINEAR_MIPMAP
+): TextBox =
   result = TextBox()
-  initTextBox(result, font, text, color)
+  initTextBox(result, font, text, color, renderFilter)
 
 proc setText*(this: TextBox, text: string) =
   this.text = text
   if this.imageOfText != nil:
     freeImage(this.imageOfText)
     this.imageOfText = nil
+
+proc setRenderFilter*(this: TextBox, filter: Filter) =
+  this.filter = filter
+  if this.imageOfText != nil:
+    this.imageOfText.setImageFilter(this.filter)
 
 TextBox.renderAsNodeChild:
   if this.imageOfText == nil:
@@ -42,6 +60,7 @@ TextBox.renderAsNodeChild:
       0
     )
     this.imageOfText = copyImageFromSurface(surface)
+    this.imageOfText.setImageFilter(this.filter)
     freeSurface(surface)
 
   blit(this.imageOfText, nil, ctx, 0, 0)
