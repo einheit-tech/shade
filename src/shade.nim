@@ -34,6 +34,7 @@ else:
     math/collision/sat
   ]
 
+  import sdl2_nim/[sdl, sdl_ttf]
 
   export
     errors,
@@ -65,5 +66,6 @@ else:
     aabb,
     circle,
     collisionshape,
-    sat
-
+    sat,
+    sdl,
+    sdl_ttf
