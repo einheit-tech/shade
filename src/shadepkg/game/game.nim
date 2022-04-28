@@ -15,7 +15,6 @@ import
 const
   oneBillion = 1000000000
   oneMillion = 1000000
-  DEFAULT_REFRESH_RATE = 60
 
 type
   Engine* = ref object of RootObj
@@ -25,10 +24,6 @@ type
     # The color to fill the screen with to clear it every frame.
     clearColor*: Color
     shouldExit: bool
-
-    refreshRate: int
-    deltaTime: float
-    sleepNanos: int
 
 proc update*(this: Engine, deltaTime: float)
 proc render*(this: Engine, screen: Target)
@@ -68,12 +63,6 @@ proc initEngineSingleton*(
   Game.scene = scene
   Game.clearColor = clearColor
 
-  # TODO: Determine display's refresh rate.
-  Game.refreshRate = DEFAULT_REFRESH_RATE
-
-  Game.deltaTime = 1.0 / Game.refreshRate.float
-  Game.sleepNanos = round(oneBillion / Game.refreshRate).int
-
   gamestate.updateResolution(gameWidth.float, gameHeight.float)
 
   initInputHandlerSingleton()
@@ -111,16 +100,18 @@ proc loop(this: Engine) =
   var
     startTimeNanos = getMonoTime().ticks
     elapsedNanos: int64 = 0
+    deltaTime: float
 
   while not this.shouldExit:
     this.handleEvents()
-    this.update(this.deltaTime)
+    this.update(deltaTime)
     this.render(this.screen)
 
-    Input.update(this.deltaTime)
+    Input.update(deltaTime)
 
     let time = getMonoTime().ticks
     elapsedNanos = time - startTimeNanos
+    deltaTime = float(elapsedNanos) / float(oneBillion)
     startTimeNanos = time
 
   this.teardown()
