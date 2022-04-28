@@ -17,7 +17,7 @@ const
   oneMillion = 1000000
   DEFAULT_REFRESH_RATE = 60
 
-type 
+type
   Engine* = ref object of RootObj
     screen*: Target
     scene: Scene
@@ -106,7 +106,7 @@ proc handleEvents(this: Engine) =
   var event: Event
   while pollEvent(event.addr) != 0:
     Input.processEvent(event)
-    
+
 proc loop(this: Engine) =
   var
     startTimeNanos = getMonoTime().ticks
@@ -118,12 +118,6 @@ proc loop(this: Engine) =
     this.render(this.screen)
 
     Input.update(this.deltaTime)
-
-    # Calculate sleep time
-    elapsedNanos = getMonoTime().ticks - startTimeNanos
-    let sleepMilis =
-      round(max(0, this.sleepNanos - elapsedNanos).float64 / oneMillion.float64).int
-    sleep(sleepMilis)
 
     let time = getMonoTime().ticks
     elapsedNanos = time - startTimeNanos
