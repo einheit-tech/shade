@@ -26,6 +26,7 @@ func easeInAndOutQuadratic*(startValue, endValue: float, completionRatio: Comple
 func easeOutQuadratic*(startValue, endValue: float, completionRatio: CompletionRatio): float
 func smootherStep*(x: float): float
 func smoothStep*(x: float): float
+func lerp*(startValue, endValue: bool, completionRatio: CompletionRatio): bool
 func lerp*(startValue, endValue: float, completionRatio: CompletionRatio): float
 func lerp*(startValue, endValue: int, completionRatio: CompletionRatio): int
 func lerp*(startValue, endValue: IVector, completionRatio: CompletionRatio): IVector
@@ -111,6 +112,12 @@ func minUnsignedAngle*(a1, a2, halfRange: float): float =
   ## @param {float} halfRange
   ## @return {float}
   return halfRange - abs(halfRange - abs(a1 - a2))
+
+func lerp*(startValue, endValue: bool, completionRatio: CompletionRatio): bool =
+  if completionRatio == 1.0:
+    return endValue
+  else:
+    return startValue
 
 func lerp*(startValue, endValue: float, completionRatio: CompletionRatio): float =
   ## Returns a value linearly interpolated between two values based on a ration of completion.

@@ -14,11 +14,12 @@ import safeset
 import
   node,
   ../math/mathutils,
-  ../util/types
+  ../util/types,
+  ../render/color
 
 type
   ClosureProc* = proc() {.closure.}
-  TrackType = int|float|Vector|IVector|ClosureProc
+  TrackType = int|float|bool|Vector|IVector|Color|ClosureProc
 makeEnum(TrackType, TrackKind, "tk")
 
 type
@@ -37,10 +38,14 @@ type
         framesInt: seq[Keyframe[int]]
       of tkFloat:
         framesFloat: seq[Keyframe[float]]
+      of tkBool:
+        framesBool: seq[Keyframe[bool]]
       of tkVector:
         framesVector: seq[Keyframe[Vector]]
       of tkIVector:
         framesIVector: seq[Keyframe[IVector]]
+      of tkColor:
+        framesColor: seq[Keyframe[Color]]
       of tkClosureProc:
         framesClosureProc: seq[Keyframe[ClosureProc]]
         lastFiredProcIndex: int
@@ -131,6 +136,12 @@ proc newAnimationTrack*[T: TrackType](
       framesFloat: frames,
       wrapInterpolation: wrapInterpolation
     )
+  elif field is bool:
+    result = AnimationTrack(
+      kind: tkBool,
+      framesBool: frames,
+      wrapInterpolation: wrapInterpolation
+    )
   elif field is Vector:
     result = AnimationTrack(
       kind: tkVector,
@@ -141,6 +152,12 @@ proc newAnimationTrack*[T: TrackType](
     result = AnimationTrack(
       kind: tkIVector,
       framesIVector: frames,
+      wrapInterpolation: wrapInterpolation
+    )
+  elif field is Color:
+    result = AnimationTrack(
+      kind: tkColor,
+      framesColor: frames,
       wrapInterpolation: wrapInterpolation
     )
   elif field is ClosureProc:
@@ -286,25 +303,24 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
           nextFrame = `frames`[currIndex]
           collectiveFrameTime = round(nextFrame.time - timeInAnim, 2)
 
-        if timeInAnim <= `frames`[`frames`.high].time:
-          while deltaTime - collectiveFrameTime >= 0:
-            if currIndex == track.lastFiredProcIndex:
-              break
+        while deltaTime - collectiveFrameTime >= 0:
+          if currIndex == track.lastFiredProcIndex:
+            break
 
-            nextFrame.value()
-            track.lastFiredProcIndex = currIndex
-            if currIndex == `frames`.high:
-              break
+          nextFrame.value()
+          track.lastFiredProcIndex = currIndex
+          if currIndex == `frames`.high:
+            break
 
-            collectiveFrameTime = round(
-              collectiveFrameTime + `frames`[currIndex + 1].time - nextFrame.time,
-              2
-            )
-            currIndex += 1
+          collectiveFrameTime = round(
+            collectiveFrameTime + `frames`[currIndex + 1].time - nextFrame.time,
+            2
+          )
+          currIndex += 1
 
-            if currIndex > `frames`.high:
-              break
-            nextFrame = `frames`[currIndex]
+          if currIndex > `frames`.high:
+            break
+          nextFrame = `frames`[currIndex]
       else:
         var
           remainingTime = deltaTime
