@@ -43,7 +43,8 @@ proc initEngineSingleton*(
   fullscreen: bool = false,
   windowFlags: int = WINDOW_ALLOW_HIGHDPI or int(INIT_ENABLE_VSYNC),
   clearColor: Color = BLACK,
-  deltaSmoothing: int = 60
+  deltaSmoothing: int = 60,
+  iconFilename: string = ""
 ) =
   if Game != nil:
     raise newException(Exception, "Game has already been initialized!")
@@ -61,6 +62,14 @@ proc initEngineSingleton*(
   let target = init(uint16 gameWidth, uint16 gameHeight, uint32 windowFlags)
   if target == nil:
     raise newException(Exception, "Failed to init SDL!")
+
+  if target.context != nil:
+    let window = getWindowFromId(target.context.windowID)
+    window.setWindowTitle(title)
+    if iconFilename.len > 0:
+      let iconSurface = loadSurface(iconFilename)
+      window.setWindowIcon(iconSurface)
+      freeSurface(iconSurface)
 
   Game = Engine()
   Game.screen = target
