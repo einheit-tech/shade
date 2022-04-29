@@ -42,7 +42,8 @@ proc initEngineSingleton*(
   scene: Scene = newScene(),
   fullscreen: bool = false,
   windowFlags: int = WINDOW_ALLOW_HIGHDPI or int(INIT_ENABLE_VSYNC),
-  clearColor: Color = BLACK
+  clearColor: Color = BLACK,
+  deltaSmoothing: int = 60
 ) =
   if Game != nil:
     raise newException(Exception, "Game has already been initialized!")
@@ -65,6 +66,7 @@ proc initEngineSingleton*(
   Game.screen = target
   Game.scene = scene
   Game.clearColor = clearColor
+  Game.deltaSmoothing = deltaSmoothing
 
   gamestate.updateResolution(gameWidth.float, gameHeight.float)
 
