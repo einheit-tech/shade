@@ -1,4 +1,5 @@
 import
+  std/algorithm,
   std/monotimes,
   os,
   math,
@@ -24,6 +25,8 @@ type
     # The color to fill the screen with to clear it every frame.
     clearColor*: Color
     shouldExit: bool
+    # Delta smoothing: measure average delta time and discard outliers to avoid physics stutters
+    deltaSmoothing: int
 
 proc update*(this: Engine, deltaTime: float)
 proc render*(this: Engine, screen: Target)
@@ -89,6 +92,29 @@ template screen*(this: Engine): Target = this.screen
 template scene*(this: Engine): Scene = this.scene
 template `scene=`*(this: Engine, scene: Scene) = this.scene = scene
 
+proc setDeltaSmoothing*(this: Engine, deltaSmoothing: int) =
+  this.deltaSmoothing = max(0, deltaSmoothing)
+
+proc median(l, r: int): int =
+  return l + ((r - l) div 2)
+
+proc q13(values: seq[float]): tuple[q1: float, q3: float] =
+  let sortedValues = sorted(values)
+  let n = len(sortedValues)
+  let mid = median(0, n)
+  let q1 = sortedValues[median(0, mid)]
+  let q3 = sortedValues[median(mid + 1, n)]
+  return (q1, q3)
+
+proc iqr(q13: tuple[q1: float, q3: float]): float =
+  return q13.q3 - q13.q1
+
+proc outlier(value: float, q13: tuple[q1: float, q3: float]): bool =
+  let i = 1.5 * iqr(q13)
+  let lower = q13.q1 - i
+  let upper = q13.q3 + i
+  return value < lower or value > upper
+
 proc handleEvents(this: Engine) =
   ## Passes all pending events to the inputhandler singleton.
   ## Returns if the application should exit.
@@ -98,21 +124,59 @@ proc handleEvents(this: Engine) =
 
 proc loop(this: Engine) =
   var
-    startTimeNanos = getMonoTime().ticks
-    elapsedNanos: int64 = 0
-    deltaTime: float
+    startTimeNanos: int64 = getMonoTime().ticks
+    previousTimeNanos: int64 = startTimeNanos
+    deltaTime: float = 0
+    deltaSmoothing: int = this.deltaSmoothing
+    deltaWindow: seq[float] = newSeqOfCap[float](deltaSmoothing)
+    refreshRate: int = -1
 
   while not this.shouldExit:
     this.handleEvents()
     this.update(deltaTime)
     this.render(this.screen)
-
     Input.update(deltaTime)
+    flip(this.screen)
 
     let time = getMonoTime().ticks
-    elapsedNanos = time - startTimeNanos
-    deltaTime = float(elapsedNanos) / float(oneBillion)
-    startTimeNanos = time
+    let elapsedNanos = time - previousTimeNanos
+    previousTimeNanos = time
+
+    let realDeltaTime = float(elapsedNanos) / float(oneBillion)
+    deltaTime = realDeltaTime
+
+    if refreshRate == -1:
+      # Process delta smoothing
+      if this.deltaSmoothing != 0:
+        # Detect if delta window needs to change size
+        if this.deltaSmoothing != deltaSmoothing:
+          deltaSmoothing = this.deltaSmoothing
+          deltaWindow = newSeqOfCap[float](deltaSmoothing)
+        # Push new sample
+        deltaWindow.add(realDeltaTime)
+        # Only start using delta window after it's filled up
+        if len(deltaWindow) == deltaSmoothing:
+          # Prune outliers
+          var newDeltaWindow: seq[float] = newSeqOfCap[float](deltaSmoothing)
+          let deltaWindowQ13 = q13(deltaWindow)
+          var foundOutlier = false
+          for sample in deltaWindow:
+            if outlier(sample, deltaWindowQ13):
+              foundOutlier = true
+            else:
+              newDeltaWindow.add(sample)
+          deltaWindow = newDeltaWindow
+          if not foundOutlier:
+            # Calculate average elapsed time over the window
+            let deltaSmoothingFloat = float(deltaSmoothing)
+            var avg: float = 0.0
+            for sample in deltaWindow:
+              avg += sample / deltaSmoothingFloat
+            # Convert into integer refresh rate
+            refreshRate = int round(1.0 / avg)
+    else:
+      # Use refresh rate to override "real" delta time
+      deltaTime = 1.0 / float(refreshRate)
 
   this.teardown()
 
@@ -138,9 +202,12 @@ proc render*(this: Engine, screen: Target) =
     return
   clearColor(this.screen, this.clearColor)
 
+  # Save the normal matrix
+  pushMatrix()
+
   this.scene.render(screen)
   if this.hud != nil:
     this.hud.render(screen)
 
-  flip(this.screen)
-
+  # Restore normal matrix
+  popMatrix()
