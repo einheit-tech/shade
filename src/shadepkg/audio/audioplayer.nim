@@ -58,12 +58,12 @@ proc initAudioPlayerSingleton*(
 proc loadMusic*(filePath: string): Music =
   result = mixer.loadMUS(filePath)
   if result == nil:
-    raise newException(Exception, "loadMusic: " & $mixer.getError())
+    echo "loadMusic failed: " & $mixer.getError()
 
 proc loadSoundEffect*(filePath: string): SoundEffect =
   result = mixer.loadWAV(filePath)
   if result == nil:
-    raise newException(Exception, "loadSound: " & $mixer.getError())
+    echo "loadSound failed: " & $mixer.getError()
 
 proc playMusic*(music: Music, volume: float = 1.0, numLoops: int = -1) =
   ## music {Music} The music to play.
@@ -72,7 +72,7 @@ proc playMusic*(music: Music, volume: float = 1.0, numLoops: int = -1) =
   ##   -1 will cause the music to loop forever.
   discard mixer.volumeMusic(cint(volume * mixer.MAX_VOLUME))
   if mixer.playMusic(music, cint numLoops) != 0:
-    raise newException(Exception, "Failed to play music: " & $mixer.getError())
+    echo "Failed to play music: " & $mixer.getError()
 
 template play*(music: Music, volume: float = 1.0, numLoops: int = -1) =
   music.playMusic(volume, numLoops)
@@ -107,7 +107,7 @@ proc fadeInMusic*(
   ##   -1 will cause the music to loop forever.
   discard mixer.volumeMusic(cint(volume * mixer.MAX_VOLUME))
   if mixer.fadeInMusic(music, cint numLoops, cint(timeInSeconds * 1000)) != 0:
-    raise newException(Exception, "Failed to fade in music: " & $mixer.getError())
+    echo "Failed to fade in music: " & $mixer.getError()
 
 proc fadeOutMusic*(timeInSeconds: float = 1.0) =
   ## Fades out music over the given duration.
@@ -118,7 +118,7 @@ proc playSoundEffect*(sound: SoundEffect, volume: float = 1.0) =
   ## volume {float} Volume (0.0 - 1.0) to play the music.
   discard mixer.volumeChunk(sound, cint(volume * mixer.MAX_VOLUME))
   if mixer.playChannel(-1, sound, 0) == -1:
-    raise newException(Exception, "Failed to play sound effect: " & $mixer.getError())
+    echo "Failed to play sound effect: " & $mixer.getError()
 
 template play*(sound: SoundEffect, volume: float = 1.0) =
   sound.playSoundEffect(volume)
