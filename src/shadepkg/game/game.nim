@@ -25,8 +25,9 @@ type
     # The color to fill the screen with to clear it every frame.
     clearColor*: Color
     shouldExit: bool
-    # Delta smoothing: measure average delta time and discard outliers to avoid physics stutters
-    deltaSmoothing: int
+    # Use fixed rate delta times
+    refreshRate: int
+    useFixedDeltaTime*: bool
 
 proc update*(this: Engine, deltaTime: float)
 proc render*(this: Engine, screen: Target)
@@ -43,7 +44,7 @@ proc initEngineSingleton*(
   fullscreen: bool = false,
   windowFlags: int = WINDOW_ALLOW_HIGHDPI or int(INIT_ENABLE_VSYNC),
   clearColor: Color = BLACK,
-  deltaSmoothing: int = 60,
+  useFixedDeltaTime: bool = true,
   iconFilename: string = ""
 ) =
   if Game != nil:
@@ -63,9 +64,14 @@ proc initEngineSingleton*(
   if target == nil:
     raise newException(Exception, "Failed to init SDL!")
 
+  var refreshRate = 0
+
   if target.context != nil:
     let window = getWindowFromId(target.context.windowID)
     window.setWindowTitle(title)
+    var displayMode: DisplayMode
+    discard window.getWindowDisplayMode(displayMode.addr)
+    refreshRate = displayMode.refreshRate
     if iconFilename.len > 0:
       let iconSurface = loadSurface(iconFilename)
       window.setWindowIcon(iconSurface)
@@ -75,7 +81,8 @@ proc initEngineSingleton*(
   Game.screen = target
   Game.scene = scene
   Game.clearColor = clearColor
-  Game.deltaSmoothing = deltaSmoothing
+  Game.refreshRate = refreshRate
+  Game.useFixedDeltaTime = useFixedDeltaTime
 
   gamestate.updateResolution(gameWidth.float, gameHeight.float)
 
@@ -102,9 +109,6 @@ template time*(this: Engine): float = this.time
 template screen*(this: Engine): Target = this.screen
 template scene*(this: Engine): Scene = this.scene
 template `scene=`*(this: Engine, scene: Scene) = this.scene = scene
-
-proc setDeltaSmoothing*(this: Engine, deltaSmoothing: int) =
-  this.deltaSmoothing = max(0, deltaSmoothing)
 
 proc median(l, r: int): int =
   return l + ((r - l) div 2)
@@ -134,13 +138,14 @@ proc handleEvents(this: Engine) =
     Input.processEvent(event)
 
 proc loop(this: Engine) =
+  const deltaWindowCap = 60
+  const deltaWindowCapFloat = float deltaWindowCap
   var
     startTimeNanos: int64 = getMonoTime().ticks
     previousTimeNanos: int64 = startTimeNanos
     deltaTime: float = 0
-    deltaSmoothing: int = this.deltaSmoothing
-    deltaWindow: seq[float] = newSeqOfCap[float](deltaSmoothing)
-    refreshRate: int = -1
+    deltaWindow: seq[float] = newSeqOfCap[float](deltaWindowCap)
+    refreshRate: int = this.refreshRate
 
   while not this.shouldExit:
     this.handleEvents()
@@ -156,19 +161,14 @@ proc loop(this: Engine) =
     let realDeltaTime = float(elapsedNanos) / float(oneBillion)
     deltaTime = realDeltaTime
 
-    if refreshRate == -1:
-      # Process delta smoothing
-      if this.deltaSmoothing != 0:
-        # Detect if delta window needs to change size
-        if this.deltaSmoothing != deltaSmoothing:
-          deltaSmoothing = this.deltaSmoothing
-          deltaWindow = newSeqOfCap[float](deltaSmoothing)
+    if this.useFixedDeltaTime:
+      if refreshRate == 0:
         # Push new sample
         deltaWindow.add(realDeltaTime)
         # Only start using delta window after it's filled up
-        if len(deltaWindow) == deltaSmoothing:
+        if len(deltaWindow) == deltaWindowCap:
           # Prune outliers
-          var newDeltaWindow: seq[float] = newSeqOfCap[float](deltaSmoothing)
+          var newDeltaWindow: seq[float] = newSeqOfCap[float](deltaWindowCap)
           let deltaWindowQ13 = q13(deltaWindow)
           var foundOutlier = false
           for sample in deltaWindow:
@@ -179,15 +179,14 @@ proc loop(this: Engine) =
           deltaWindow = newDeltaWindow
           if not foundOutlier:
             # Calculate average elapsed time over the window
-            let deltaSmoothingFloat = float(deltaSmoothing)
             var avg: float = 0.0
             for sample in deltaWindow:
-              avg += sample / deltaSmoothingFloat
+              avg += sample / deltaWindowCapFloat
             # Convert into integer refresh rate
-            refreshRate = int round(1.0 / avg)
-    else:
-      # Use refresh rate to override "real" delta time
-      deltaTime = 1.0 / float(refreshRate)
+            refreshRate = max(1, int round(1.0 / avg))
+      else:
+        # Use refresh rate to override "real" delta time
+        deltaTime = 1.0 / float(refreshRate)
 
   this.teardown()
 
