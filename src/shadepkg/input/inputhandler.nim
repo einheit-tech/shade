@@ -72,19 +72,19 @@ type
     mouse: Mouse
     keyboard: Keyboard
     controller: Controller
-    windowScale: float
+    windowScaling*: Vector
 
 # InputHandler singleton
 var Input*: InputHandler
 
-proc initInputHandlerSingleton*(windowScale: float) =
+proc initInputHandlerSingleton*(windowScaling: Vector) =
   if Input != nil:
     raise newException(Exception, "InputHandler singleton already active!")
   Input = InputHandler(
     mouse: Mouse(),
     keyboard: Keyboard(),
     controller: Controller(),
-    windowScale: windowScale
+    windowScaling: windowScaling
   )
 
   if init(INIT_GAMECONTROLLER) != 0:
@@ -137,15 +137,15 @@ proc processEvent*(this: InputHandler, event: Event) =
   case event.kind:
     # Mouse
     of MOUSEMOTION:
-      this.mouse.location.x = float(event.motion.x) * this.windowScale
-      this.mouse.location.y = float(event.motion.y) * this.windowScale
+      this.mouse.location.x = float(event.motion.x) * this.windowScaling.x
+      this.mouse.location.y = float(event.motion.y) * this.windowScaling.y
 
     of MOUSEBUTTONDOWN:
       let
         buttonEvent = event.button
         button = buttonEvent.button
-        buttonX: int = int(float(buttonEvent.x) * this.windowScale)
-        buttonY: int = int(float(buttonEvent.y) * this.windowScale)
+        buttonX: int = int(float(buttonEvent.x) * this.windowScaling.x)
+        buttonY: int = int(float(buttonEvent.y) * this.windowScaling.y)
       if not this.mouse.buttons.hasKey(button):
         this.mouse.buttons[button] = ButtonState()
       this.mouse.buttons[button].pressed = true
@@ -158,8 +158,8 @@ proc processEvent*(this: InputHandler, event: Event) =
       let
         buttonEvent = event.button
         button = buttonEvent.button
-        buttonX: int = int(float(buttonEvent.x) * this.windowScale)
-        buttonY: int = int(float(buttonEvent.y) * this.windowScale)
+        buttonX: int = int(float(buttonEvent.x) * this.windowScaling.x)
+        buttonY: int = int(float(buttonEvent.y) * this.windowScaling.y)
 
       if not this.mouse.buttons.hasKey(button):
         this.mouse.buttons[button] = ButtonState()

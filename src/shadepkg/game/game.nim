@@ -29,6 +29,7 @@ type
     refreshRate: int
     useFixedDeltaTime*: bool
 
+proc detectWindowScaling(this: Engine): Vector
 proc update*(this: Engine, deltaTime: float)
 proc render*(this: Engine, screen: Target)
 proc stop*(this: Engine)
@@ -65,7 +66,6 @@ proc initEngineSingleton*(
     raise newException(Exception, "Failed to init SDL!")
 
   var refreshRate = 0
-  var windowScale: float = 1.0
 
   if target.context != nil:
     let window = getWindowFromId(target.context.windowID)
@@ -78,19 +78,6 @@ proc initEngineSingleton*(
       window.setWindowIcon(iconSurface)
       freeSurface(iconSurface)
 
-    # Get "real" size in pixels
-    var vwidth: uint16
-    var vheight: uint16
-    target.getVirtualResolution(vwidth.addr, vheight.addr)
-    if vwidth > 0 and vheight > 0:
-      # Get the window size (in potentially scaled pixels)
-      var windowWidth: cint
-      var windowHeight: cint
-      window.getWindowSize(windowWidth.addr, windowHeight.addr)
-      if windowWidth > 0 and windowHeight > 0:
-        # Calculate scaling
-        windowScale = float(vwidth) / float(windowWidth)
-
   Game = Engine()
   Game.screen = target
   Game.scene = scene
@@ -100,7 +87,7 @@ proc initEngineSingleton*(
 
   gamestate.updateResolution(gameWidth.float, gameHeight.float)
 
-  initInputHandlerSingleton(windowScale)
+  initInputHandlerSingleton(Game.detectWindowScaling())
   initAudioPlayerSingleton()
 
   gamestate.onResolutionChanged:
@@ -110,8 +97,9 @@ proc initEngineSingleton*(
   # Input event handlers
 
   proc handleWindowEvents(e: Event): bool =
-    if e.window.event == WINDOWEVENT_RESIZED:
+    if e.window.event == WINDOWEVENT_RESIZED or e.window.event == WINDOWEVENT_SIZE_CHANGED:
       gamestate.updateResolution(float e.window.data1, float e.window.data2)
+      Input.windowScaling = Game.detectWindowScaling()
 
   Input.addEventListener(WINDOWEVENT, handleWindowEvents)
   Input.addEventListener(QUIT,
@@ -123,6 +111,26 @@ template time*(this: Engine): float = this.time
 template screen*(this: Engine): Target = this.screen
 template scene*(this: Engine): Scene = this.scene
 template `scene=`*(this: Engine, scene: Scene) = this.scene = scene
+
+proc detectWindowScaling(this: Engine): Vector =
+  result = VECTOR_ONE
+  if this.screen.context != nil:
+    # Get "real" size in pixels
+    var vwidth: uint16
+    var vheight: uint16
+    this.screen.getVirtualResolution(vwidth.addr, vheight.addr)
+    if vwidth > 0 and vheight > 0:
+      # Get the window size (in potentially scaled pixels)
+      var windowWidth: cint
+      var windowHeight: cint
+      let window = getWindowFromId(this.screen.context.windowID)
+      window.getWindowSize(windowWidth.addr, windowHeight.addr)
+      if windowWidth > 0 and windowHeight > 0:
+        # Calculate scaling
+        result = vector(
+          float(vwidth) / float(windowWidth),
+          float(vheight) / float(windowHeight)
+        )
 
 proc median(l, r: int): int =
   return l + ((r - l) div 2)

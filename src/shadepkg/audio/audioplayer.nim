@@ -57,13 +57,15 @@ proc initAudioPlayerSingleton*(
 
 proc loadMusic*(filePath: string): Music =
   result = mixer.loadMUS(filePath)
-  if result == nil:
-    echo "loadMusic failed: " & $mixer.getError()
+  when defined(debug):
+    if result == nil:
+      echo "loadMusic failed: " & $mixer.getError()
 
 proc loadSoundEffect*(filePath: string): SoundEffect =
   result = mixer.loadWAV(filePath)
-  if result == nil:
-    echo "loadSound failed: " & $mixer.getError()
+  when defined(debug):
+    if result == nil:
+      echo "loadSound failed: " & $mixer.getError()
 
 proc playMusic*(music: Music, volume: float = 1.0, numLoops: int = -1) =
   ## music {Music} The music to play.
@@ -117,8 +119,11 @@ proc playSoundEffect*(sound: SoundEffect, volume: float = 1.0) =
   ## sound {SoundEffect} The sound effect to play.
   ## volume {float} Volume (0.0 - 1.0) to play the music.
   discard mixer.volumeChunk(sound, cint(volume * mixer.MAX_VOLUME))
-  if mixer.playChannel(-1, sound, 0) == -1:
-    echo "Failed to play sound effect: " & $mixer.getError()
+  when defined(debug):
+    if mixer.playChannel(-1, sound, 0) == -1:
+      echo "Failed to play sound effect: " & $mixer.getError()
+  else:
+    discard mixer.playChannel(-1, sound, 0)
 
 template play*(sound: SoundEffect, volume: float = 1.0) =
   sound.playSoundEffect(volume)
