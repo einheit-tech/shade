@@ -65,6 +65,7 @@ proc initEngineSingleton*(
     raise newException(Exception, "Failed to init SDL!")
 
   var refreshRate = 0
+  var windowScale: float = 1.0
 
   if target.context != nil:
     let window = getWindowFromId(target.context.windowID)
@@ -77,6 +78,19 @@ proc initEngineSingleton*(
       window.setWindowIcon(iconSurface)
       freeSurface(iconSurface)
 
+    # Get "real" size in pixels
+    var vwidth: uint16
+    var vheight: uint16
+    target.getVirtualResolution(vwidth.addr, vheight.addr)
+    if vwidth > 0 and vheight > 0:
+      # Get the window size (in potentially scaled pixels)
+      var windowWidth: cint
+      var windowHeight: cint
+      window.getWindowSize(windowWidth.addr, windowHeight.addr)
+      if windowWidth > 0 and windowHeight > 0:
+        # Calculate scaling
+        windowScale = float(vwidth) / float(windowWidth)
+
   Game = Engine()
   Game.screen = target
   Game.scene = scene
@@ -86,7 +100,7 @@ proc initEngineSingleton*(
 
   gamestate.updateResolution(gameWidth.float, gameHeight.float)
 
-  initInputHandlerSingleton()
+  initInputHandlerSingleton(windowScale)
   initAudioPlayerSingleton()
 
   gamestate.onResolutionChanged:

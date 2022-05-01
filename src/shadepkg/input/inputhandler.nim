@@ -1,4 +1,4 @@
-import 
+import
   sdl2_nim/sdl,
   tables,
   safeset
@@ -72,17 +72,19 @@ type
     mouse: Mouse
     keyboard: Keyboard
     controller: Controller
+    windowScale: float
 
 # InputHandler singleton
 var Input*: InputHandler
 
-proc initInputHandlerSingleton*() =
+proc initInputHandlerSingleton*(windowScale: float) =
   if Input != nil:
     raise newException(Exception, "InputHandler singleton already active!")
   Input = InputHandler(
     mouse: Mouse(),
     keyboard: Keyboard(),
-    controller: Controller()
+    controller: Controller(),
+    windowScale: windowScale
   )
 
   if init(INIT_GAMECONTROLLER) != 0:
@@ -135,25 +137,29 @@ proc processEvent*(this: InputHandler, event: Event) =
   case event.kind:
     # Mouse
     of MOUSEMOTION:
-      this.mouse.location.x = (float) event.motion.x
-      this.mouse.location.y = (float) event.motion.y
+      this.mouse.location.x = float(event.motion.x) * this.windowScale
+      this.mouse.location.y = float(event.motion.y) * this.windowScale
 
     of MOUSEBUTTONDOWN:
       let
         buttonEvent = event.button
         button = buttonEvent.button
+        buttonX: int = int(float(buttonEvent.x) * this.windowScale)
+        buttonY: int = int(float(buttonEvent.y) * this.windowScale)
       if not this.mouse.buttons.hasKey(button):
         this.mouse.buttons[button] = ButtonState()
       this.mouse.buttons[button].pressed = true
       this.mouse.buttons[button].justPressed = true
 
       for listener in this.mouse.buttonPressedEventListeners:
-        listener(button, this.mouse.buttons[button], int buttonEvent.x, int buttonEvent.y, int buttonEvent.clicks)
+        listener(button, this.mouse.buttons[button], buttonX, buttonY, int buttonEvent.clicks)
 
     of MOUSEBUTTONUP:
       let
         buttonEvent = event.button
         button = buttonEvent.button
+        buttonX: int = int(float(buttonEvent.x) * this.windowScale)
+        buttonY: int = int(float(buttonEvent.y) * this.windowScale)
 
       if not this.mouse.buttons.hasKey(button):
         this.mouse.buttons[button] = ButtonState()
@@ -162,14 +168,14 @@ proc processEvent*(this: InputHandler, event: Event) =
       this.mouse.buttons[button].justReleased = true
 
       for listener in this.mouse.buttonReleasedEventListeners:
-        listener(button, this.mouse.buttons[button], int buttonEvent.x, int buttonEvent.y, int buttonEvent.clicks)
+        listener(button, this.mouse.buttons[button], buttonX, buttonY, int buttonEvent.clicks)
 
     of MOUSEWHEEL:
       this.mouse.vScrolled = event.wheel.y
 
     # Keyboard
     of KEYDOWN, KEYUP:
-      let 
+      let
         keycode = event.key.keysym.sym
         pressed = event.key.state == PRESSED
 
@@ -208,7 +214,7 @@ proc processEvent*(this: InputHandler, event: Event) =
     of CONTROLLERAXISMOTION:
       let e = event.caxis
       let value = float e.value
-      let floatVal = 
+      let floatVal =
         if value < 0:
           -value / float int16.low
         else:
