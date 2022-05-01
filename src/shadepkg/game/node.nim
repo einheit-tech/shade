@@ -8,13 +8,13 @@ import
   ../render/shader,
   ../math/mathutils
 
-export 
+export
   hashes,
   sequtils,
   render,
   mathutils
 
-type 
+type
   ## Flags indicating how the object should be treated by a layer.
   LayerObjectFlags* {.pure.} = enum
     UPDATE
@@ -88,6 +88,8 @@ method update*(this: Node, deltaTime: float) {.base.} =
 
 method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   ## Renders the node with its given position, rotation, and scale.
+  pushMatrix()
+
   if this.location != VECTOR_ZERO:
     translate(this.location.x, this.location.y, 0)
 
@@ -109,12 +111,4 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   if this.shader != nil:
     activateShaderProgram(0, nil)
 
-  if this.scale != VECTOR_ONE:
-    scale(1 / this.scale.x, 1 / this.scale.y, 1.0)
-
-  if this.rotation != 0:
-    rotate(this.rotation, 0, 0, -1)
-
-  if this.location != VECTOR_ZERO:
-    translate(-this.location.x, -this.location.y, 0)
-
+  popMatrix()
