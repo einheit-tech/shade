@@ -1,4 +1,5 @@
 import sdl2_nim/sdl_mixer as mixer
+import sdl2_nim/sdl
 
 type
   Music* = mixer.Music
@@ -22,7 +23,7 @@ proc destroyAudioPlayerSingleton*() =
 
 # TODO: Allow audio settings to be passed in via compiler flags.
 proc initAudioPlayerSingleton*(
-  initFlags: int = INIT_OGG and INIT_MP3,
+  initFlags: int = INIT_OGG,
   frequency: int = mixer.DEFAULT_FREQUENCY,
   format: int = mixer.DEFAULT_FORMAT,
   channels: int = mixer.DEFAULT_CHANNELS,
@@ -36,11 +37,8 @@ proc initAudioPlayerSingleton*(
   if Audio != nil:
     raise newException(Exception, "AudioPlayer singleton already active!")
 
-  let 
-    initializedFlags = int mixer.init(cint initFlags)
-    initSuccessful = (initializedFlags and initFlags) == initFlags
-
-  if not initSuccessful:
+  let initializedFlags = int mixer.init(cint initFlags)
+  if initializedFlags == 0:
     raise newException(Exception, "sdl_mixer.init() failed!")
 
   let openSuccessful: bool = mixer.openAudio(
