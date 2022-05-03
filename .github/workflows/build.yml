@@ -14,10 +14,10 @@ jobs:
         with:
           submodules: true
 
-      - name: Install OpenGL
+      - name: Install needed system deps
         run: |
           sudo apt-get update
-          sudo apt-get -y install libglu1-mesa-dev freeglut3-dev mesa-common-dev
+          sudo apt-get -y install libglu1-mesa-dev freeglut3-dev mesa-common-dev libvorbis-dev
 
       - uses: jiro4989/setup-nim-action@v1
         with:
