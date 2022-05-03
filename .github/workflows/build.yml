@@ -31,3 +31,9 @@ jobs:
           nimble develop
           tree .usr
           nimble runtests
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-libs
+          path: "./usr"
