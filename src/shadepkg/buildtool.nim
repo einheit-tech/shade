@@ -71,7 +71,7 @@ proc compress() =
 
 proc extractDependencies() =
   # NOTE: extractAll requires the destination to NOT exist.
-  removeDir(usrLibDir)
+  removeDir(usrDir)
   extractAll(artifactFilename, usrDir)
 
 proc fetchAndExtractDependencies() =
