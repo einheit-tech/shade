@@ -43,7 +43,7 @@ proc initEngineSingleton*(
   gameWidth, gameHeight: int,
   scene: Scene = newScene(),
   fullscreen: bool = false,
-  windowFlags: int = WINDOW_ALLOW_HIGHDPI or int(INIT_ENABLE_VSYNC),
+  windowFlags: int = WINDOW_ALLOW_HIGHDPI and int(INIT_ENABLE_VSYNC),
   clearColor: Color = BLACK,
   useFixedDeltaTime: bool = true,
   iconFilename: string = ""
