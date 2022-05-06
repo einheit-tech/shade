@@ -1,6 +1,7 @@
 import
   animation,
-  tables
+  tables,
+  ../math/mathutils
 
 export animation
 
@@ -11,6 +12,7 @@ type
     animations: Table[string, Animation]
     currentAnimation: Animation
     currentAnimationName: string
+    currentAnimationTime: float
 
 proc addAnimations*(this: AnimationPlayer, animations: openArray[NamedAnimation])
 
@@ -43,14 +45,29 @@ proc addAnimations*(this: AnimationPlayer, animations: openArray[NamedAnimation]
 proc playAnimation*(this: AnimationPlayer, animationName: string) =
   if this.currentAnimation != nil:
     this.currentAnimation.reset()
-
+  
   this.currentAnimation = this.animations[animationName]
   this.currentAnimationName = animationName
+  this.currentAnimationTime = 0
 
 template play*(this: AnimationPlayer, animationName: string) =
   this.playAnimation(animationName)
 
 proc update*(this: AnimationPlayer, deltaTime: float) =
-  if this.currentAnimation != nil:
-    this.currentAnimation.update(deltaTime)
+  if this.currentAnimation == nil:
+    return
+
+  if this.currentAnimation.looping:
+    this.currentAnimationTime = (this.currentAnimationTime + deltaTime) mod this.currentAnimation.duration
+    this.currentAnimation.animateToTime(this.currentAnimationTime, deltaTime)
+  else:
+    if this.currentAnimationTime < this.currentAnimation.duration:
+      this.currentAnimationTime = min(
+        this.currentAnimationTime + deltaTime,
+        this.currentAnimation.duration
+      )
+      this.currentAnimation.animateToTime(this.currentAnimationTime, deltaTime)
+      # Just reached the end of the animation
+      if this.currentAnimationTime == this.currentAnimation.duration:
+        this.currentAnimation.notifyFinishedCallbacks()
 

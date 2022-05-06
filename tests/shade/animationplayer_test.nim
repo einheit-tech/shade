@@ -1,0 +1,550 @@
+import
+  nimtest,
+  shade,
+  math
+
+describe "AnimationPlayer":
+
+  type FakeNode* = ref object
+    intVal*: int
+    floatVal*: float
+    boolVal*: bool
+    vecVal*: Vector
+    ivecVal*: IVector
+    colorVal*: Color
+
+  describe "Animates all possible field types":
+    let
+      startingIntVal: int = 8
+      startingFloatVal: float = 2.0
+      startingBoolVal: bool = false
+      startingVectorVal: Vector = vector(2.9, 32.7)
+      startingIVectorVal: IVector = ivector(2, -15)
+      startingColor: Color = BLACK
+
+    proc initFakeNode(fakeNode: FakeNode) =
+      fakeNode.intVal = startingIntVal
+      fakeNode.floatVal = startingFloatVal
+      fakeNode.boolVal = startingBoolVal
+      fakeNode.vecVal = startingVectorVal
+      fakeNode.ivecVal = startingIVectorVal
+      fakeNode.colorVal = startingColor
+
+    proc newFakeNode(): FakeNode =
+      result = FakeNode()
+      initFakeNode(result)
+
+    # it "without wrap interpolation":
+    #   resetThis()
+    #   let testAnim = newAnimation(1.8, true)
+
+    #   # int
+    #   const intFrames: seq[KeyFrame[int]] = @[
+    #     (1, 0.0),
+    #     (2, 0.5),
+    #     (3, 1.1)
+    #   ]
+    #   testAnim.addNewAnimationTrack(
+    #     this.intVal,
+    #     intFrames
+    #   )
+
+    #   # float
+    #   const floatFrames: seq[KeyFrame[float]] = @[
+    #     (0.0, 0.0),
+    #     (4.2, 0.5),
+    #     (12.8, 1.1)
+    #   ]
+    #   testAnim.addNewAnimationTrack(
+    #     this.floatVal,
+    #     floatFrames
+    #   )
+
+    #   # Vector
+    #   const vec2Frames: seq[KeyFrame[Vector]] = @[
+    #     (vector(0.0, 2.1), 0.0),
+    #     (vector(14.1, 124.4), 0.5),
+    #     (vector(19.4, 304.8), 1.1)
+    #   ]
+    #   testAnim.addNewAnimationTrack(
+    #     this.vec2Val,
+    #     vec2Frames
+    #   )
+
+    #   var
+    #     proc1CallCount = 0
+    #     proc2CallCount = 0
+    #     proc3CallCount = 0
+
+    #   proc foo1() {.closure.} = proc1CallCount.inc
+    #   proc foo2() {.closure.} = proc2CallCount.inc
+    #   proc foo3() {.closure.} = proc3CallCount.inc
+
+    #   let procFrames: seq[KeyFrame[ClosureProc]] = @[
+    #     (foo1, 0.0),
+    #     (foo2, 0.5),
+    #     (foo3, 1.1)
+    #   ]
+
+    #   testAnim.addProcTrack(procFrames)
+
+    #   ### INITIAL STATE ###
+
+    #   assertEquals(this.intVal, startingIntVal)
+    #   assertEquals(this.floatVal, startingFloatVal)
+    #   assertEquals(this.vec2Val, startingVectorVal)
+    #   assertEquals(proc1CallCount, 0)
+    #   assertEquals(proc2CallCount, 0)
+    #   assertEquals(proc3CallCount, 0)
+
+    #   ### FIRST UPDATE (after first frame ###
+
+    #   var updateTime = 0.2
+    #   testAnim.animateToTime(updateTime)
+
+    #   # int
+    #   assertEquals(this.intVal, intFrames[0].value)
+
+    #   # float
+    #   var expectedFloatVal = lerp(
+    #     floatFrames[0].value,
+    #     floatFrames[1].value,
+    #     testAnim.currentTime / (floatFrames[1].time - floatFrames[0].time)
+    #   )
+    #   assertAlmostEquals(this.floatVal, expectedFloatVal)
+
+    #   # Vector
+    #   var expectedVectorVal = lerp(
+    #     vec2Frames[0].value,
+    #     vec2Frames[1].value,
+    #     testAnim.currentTime / (vec2Frames[1].time - vec2Frames[0].time),
+    #   )
+    #   assertEquals(this.vec2Val, expectedVectorVal)
+
+    #   # Proc calls
+    #   assertEquals(proc1CallCount, 1)
+    #   assertEquals(proc2CallCount, 0)
+    #   assertEquals(proc3CallCount, 0)
+
+    #   ### SECOND UPDATE (past 2nd frame) ###
+
+    #   updateTime = 0.5
+    #   testAnim.update(updateTime)
+
+    #   # int
+    #   assertEquals(this.intVal, intFrames[1].value)
+
+    #   # float
+    #   var completionRatio = 
+    #     (testAnim.currentTime - floatFrames[1].time) / (floatFrames[2].time - floatFrames[1].time)
+
+    #   expectedFloatVal = lerp(
+    #     floatFrames[1].value,
+    #     floatFrames[2].value,
+    #     completionRatio
+    #   )
+    #   assertAlmostEquals(this.floatVal, expectedFloatVal)
+
+    #   # Vector
+    #   completionRatio = 
+    #     (testAnim.currentTime - vec2Frames[1].time) / (vec2Frames[2].time - vec2Frames[1].time)
+    #   expectedVectorVal = lerp(
+    #     vec2Frames[1].value,
+    #     vec2Frames[2].value,
+    #     completionRatio
+    #   )
+    #   assertEquals(this.vec2Val, expectedVectorVal)
+
+    #   assertEquals(proc1CallCount, 1)
+    #   assertEquals(proc2CallCount, 1)
+    #   assertEquals(proc3CallCount, 0)
+
+    #   ### THIRD UPDATE (past 3rd and final frame, animation still playing) ###
+
+    #   updateTime = 0.7
+    #   testAnim.update(updateTime)
+
+    #   # int
+    #   assertEquals(this.intVal, intFrames[2].value)
+
+    #   # float
+    #   assertAlmostEquals(this.floatVal, floatFrames[2].value)
+
+    #   # Vector
+    #   assertEquals(this.vec2Val, vec2Frames[2].value)
+
+    #   assertEquals(proc1CallCount, 1)
+    #   assertEquals(proc2CallCount, 1)
+    #   assertEquals(proc3CallCount, 1)
+
+    #   ### FOURTH UPDATE (exact start of animation after wrapping) ###
+
+    #   # Update till the start of the animation.
+    #   updateTime = testAnim.duration - testAnim.currentTime
+    #   testAnim.update(updateTime)
+
+    #   # int
+    #   assertEquals(this.intVal, intFrames[0].value)
+
+    #   # float
+    #   assertAlmostEquals(this.floatVal, floatFrames[0].value)
+
+    #   # Vector
+    #   assertEquals(this.vec2Val, vec2Frames[0].value)
+
+    #   # TODO: Wrapping proc tracks.
+    #   assertEquals(proc1CallCount, 2)
+    #   assertEquals(proc2CallCount, 1)
+    #   assertEquals(proc3CallCount, 1)
+
+    # it "with wrap interpolation":
+    #   resetThis()
+    #   let testAnim = newAnimation(1.8, true)
+
+    #   # int
+    #   const intFrames: seq[KeyFrame[int]] = @[
+    #     (1, 0.0),
+    #     (2, 0.5),
+    #     (3, 1.1)
+    #   ]
+    #   testAnim.addNewAnimationTrack(
+    #     this.intVal,
+    #     intFrames,
+    #     true
+    #   )
+
+    #   # float
+    #   const floatFrames: seq[KeyFrame[float]] = @[
+    #     (0.0, 0.0),
+    #     (4.2, 0.5),
+    #     (12.8, 1.1)
+    #   ]
+    #   testAnim.addNewAnimationTrack(
+    #     this.floatVal,
+    #     floatFrames,
+    #     true
+    #   )
+
+    #   # Vector
+    #   const vec2Frames: seq[KeyFrame[Vector]] = @[
+    #     (vector(0.0, 2.1), 0.0),
+    #     (vector(14.1, 124.4), 0.5),
+    #     (vector(19.4, 304.8), 1.1)
+    #   ]
+    #   testAnim.addNewAnimationTrack(
+    #     this.vec2Val,
+    #     vec2Frames,
+    #     true
+    #   )
+
+    #   var
+    #     proc1CallCount = 0
+    #     proc2CallCount = 0
+    #     proc3CallCount = 0
+
+    #   proc foo1() {.closure.} = proc1CallCount.inc
+    #   proc foo2() {.closure.} = proc2CallCount.inc
+    #   proc foo3() {.closure.} = proc3CallCount.inc
+
+    #   let procFrames: seq[KeyFrame[ClosureProc]] = @[
+    #     (foo1, 0.0),
+    #     (foo2, 0.5),
+    #     (foo3, 1.1)
+    #   ]
+
+    #   testAnim.addProcTrack(procFrames)
+
+    #   ### INITIAL STATE ###
+
+    #   assertEquals(this.intVal, startingIntVal)
+    #   assertEquals(this.floatVal, startingFloatVal)
+    #   assertEquals(this.vec2Val, startingVectorVal)
+    #   assertEquals(proc1CallCount, 0)
+    #   assertEquals(proc2CallCount, 0)
+    #   assertEquals(proc3CallCount, 0)
+
+    #   ### Update past 3rd and final frame, animation still playing ###
+
+    #   let
+    #     updateTime = testAnim.duration - 0.4
+    #     timeBetweenFrames = testAnim.duration - intFrames[2].time - intFrames[0].time
+    #     completionRatio = (updateTime - intFrames[2].time) / timeBetweenFrames
+    #   testAnim.update(updateTime)
+
+    #   # int
+    #   let expectedIntVal = lerp(intFrames[2].value, intFrames[0].value, completionRatio)
+    #   assertEquals(this.intVal, expectedIntVal)
+
+    #   # float
+    #   let expectedFloatVal = lerp(floatFrames[2].value, floatFrames[0].value, completionRatio)
+    #   assertAlmostEquals(this.floatVal, expectedFloatVal)
+
+    #   # Vector
+    #   let expectedVectorVal = lerp(vec2Frames[2].value, vec2Frames[0].value, completionRatio)
+    #   assertEquals(this.vec2Val, expectedVectorVal)
+
+    #   assertEquals(proc1CallCount, 1)
+    #   assertEquals(proc2CallCount, 1)
+    #   assertEquals(proc3CallCount, 1)
+
+    it "works with single proc frame at 0.0 seconds":
+      let testAnim = newAnimation(1.8, true)
+
+      var proc1CallCount = 0
+      proc foo1() {.closure.} = proc1CallCount.inc
+      let frames: seq[KeyFrame[ClosureProc]] = @[(foo1, 0.0)]
+      testAnim.addProcTrack(frames)
+
+      let animPlayer = newAnimationPlayer(("test", testAnim))
+      animPlayer.play("test")
+
+      # Initial state
+      assertEquals(proc1CallCount, 0)
+
+      animPlayer.update(0.01)
+
+      assertEquals(proc1CallCount, 1)
+
+    it "works with single non-proc frame at 0.0 seconds":
+      let 
+        testAnim = newAnimation(1.8, true)
+        fakeNode = newFakeNode()
+
+      # int
+      const intFrames: seq[KeyFrame[int]] = @[(1, 0.0)]
+      testAnim.addNewAnimationTrack(
+        fakeNode.intVal,
+        intFrames
+      )
+
+      let animPlayer = newAnimationPlayer(("test", testAnim))
+      animPlayer.play("test")
+
+      # Initial state
+      assertEquals(fakeNode.intVal, startingIntVal)
+
+      animPlayer.update(0.0)
+      assertEquals(fakeNode.intVal, intFrames[0][0])
+
+      animPlayer.update(0.0)
+      assertEquals(fakeNode.intVal, intFrames[0][0])
+
+  # describe "AnimationTrack[ClosureProc]":
+    # describe "Non-looping":
+    #   it "Calls a single proc at 0.0":
+    #     let testAnim = newAnimation(1.8, false)
+    #     var procCallCount = 0
+
+    #     proc foo1() {.closure.} = procCallCount.inc
+    #     let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 0.0)]
+
+    #     testAnim.addProcTrack(procFrames)
+
+    #     # Initial state
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(0.01)
+    #     assertEquals(procCallCount, 1)
+
+    #   it "Calls a single proc at 0.0 only once":
+    #     let testAnim = newAnimation(1.8, false)
+    #     var procCallCount = 0
+
+    #     proc foo1() {.closure.} = procCallCount.inc
+    #     let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 0.0)]
+
+    #     testAnim.addProcTrack(procFrames)
+
+    #     # Initial state
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(0.0)
+    #     assertEquals(procCallCount, 1)
+
+    #     testAnim.update(0.0)
+    #     assertEquals(procCallCount, 1)
+
+    #   it "Calls a single proc at the end of a track and animation":
+    #     let testAnim = newAnimation(1.8, false)
+    #     var procCallCount = 0
+
+    #     proc foo1() {.closure.} = procCallCount.inc
+    #     let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, testAnim.duration)]
+
+    #     testAnim.addProcTrack(procFrames)
+
+    #     # Initial state
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(0.01)
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(testAnim.duration - 0.01)
+    #     assertEquals(procCallCount, 1)
+
+    #   it "Calls a single proc at the end of a track, before the animation has ended":
+    #     let testAnim = newAnimation(1.8, false)
+    #     var procCallCount = 0
+
+    #     proc foo1() {.closure.} = procCallCount.inc
+    #     let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 1.1)]
+
+    #     testAnim.addProcTrack(procFrames)
+
+    #     # Initial state
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(0.1)
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(1.0)
+    #     assertEquals(procCallCount, 1)
+
+    #   it "Calls multiple procs at the right times":
+    #     let testAnim = newAnimation(1.8, false)
+    #     var
+    #       proc1CallCount = 0
+    #       proc2CallCount = 0
+    #       proc3CallCount = 0
+
+    #     proc foo1() {.closure.} = proc1CallCount.inc
+    #     proc foo2() {.closure.} = proc2CallCount.inc
+    #     proc foo3() {.closure.} = proc3CallCount.inc
+
+    #     let procFrames: seq[KeyFrame[ClosureProc]] = @[
+    #       (foo1, 0.1),
+    #       (foo2, 0.5),
+    #       (foo3, 1.6)
+    #     ]
+
+    #     testAnim.addProcTrack(procFrames)
+
+    #     # Initial state
+    #     assertEquals(proc1CallCount, 0)
+    #     assertEquals(proc2CallCount, 0)
+    #     assertEquals(proc3CallCount, 0)
+
+    #     testAnim.update(0)
+    #     assertEquals(proc1CallCount, 0)
+    #     assertEquals(proc2CallCount, 0)
+    #     assertEquals(proc3CallCount, 0)
+
+    #     testAnim.update(0.01)
+    #     assertEquals(proc1CallCount, 0)
+    #     assertEquals(proc2CallCount, 0)
+    #     assertEquals(proc3CallCount, 0)
+
+    #     testAnim.update(0.1)
+    #     assertEquals(proc1CallCount, 1)
+    #     assertEquals(proc2CallCount, 0)
+    #     assertEquals(proc3CallCount, 0)
+
+    # describe "Looping":
+    #   it "Calls a single proc at 0.0":
+    #     let testAnim = newAnimation(1.8, true)
+    #     var procCallCount = 0
+
+    #     proc foo1() {.closure.} = procCallCount.inc
+    #     let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 0.0)]
+
+    #     testAnim.addProcTrack(procFrames)
+
+    #     # Initial state
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(0.01)
+    #     assertEquals(procCallCount, 1)
+
+    #   it "Calls a single proc at 0.0 only once":
+    #     let testAnim = newAnimation(1.8, true)
+    #     var procCallCount = 0
+
+    #     proc foo1() {.closure.} = procCallCount.inc
+    #     let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 0.0)]
+
+    #     testAnim.addProcTrack(procFrames)
+
+    #     # Initial state
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(0.0)
+    #     assertEquals(procCallCount, 1)
+
+    #     testAnim.update(0.0)
+    #     assertEquals(procCallCount, 1)
+
+    #   it "Calls a single proc at the end of a track and animation":
+    #     let testAnim = newAnimation(1.8, true)
+    #     var procCallCount = 0
+
+    #     proc foo1() {.closure.} = procCallCount.inc
+    #     let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, testAnim.duration)]
+
+    #     testAnim.addProcTrack(procFrames)
+
+    #     # Initial state
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(0.01)
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(testAnim.duration - 0.01)
+    #     assertEquals(procCallCount, 1)
+
+    #   it "Calls a single proc at the end of a track, before the animation has ended":
+    #     let testAnim = newAnimation(1.8, true)
+    #     var procCallCount = 0
+
+    #     proc foo1() {.closure.} = procCallCount.inc
+    #     let procFrames: seq[KeyFrame[ClosureProc]] = @[(foo1, 1.1)]
+
+    #     testAnim.addProcTrack(procFrames)
+
+    #     # Initial state
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(0.1)
+    #     assertEquals(procCallCount, 0)
+
+    #     testAnim.update(1.0)
+    #     assertEquals(procCallCount, 1)
+
+    #   it "Calls multiple procs at the right times":
+    #     let testAnim = newAnimation(1.8, true)
+    #     var
+    #       proc1CallCount = 0
+    #       proc2CallCount = 0
+    #       proc3CallCount = 0
+
+    #     proc foo1() {.closure.} = proc1CallCount.inc
+    #     proc foo2() {.closure.} = proc2CallCount.inc
+    #     proc foo3() {.closure.} = proc3CallCount.inc
+
+    #     let procFrames: seq[KeyFrame[ClosureProc]] = @[
+    #       (foo1, 0.1),
+    #       (foo2, 0.5),
+    #       (foo3, 1.6)
+    #     ]
+
+    #     testAnim.addProcTrack(procFrames)
+
+    #     # Initial state
+    #     assertEquals(proc1CallCount, 0)
+    #     assertEquals(proc2CallCount, 0)
+    #     assertEquals(proc3CallCount, 0)
+
+    #     testAnim.update(0)
+    #     assertEquals(proc1CallCount, 0)
+    #     assertEquals(proc2CallCount, 0)
+    #     assertEquals(proc3CallCount, 0)
+
+    #     testAnim.update(0.01)
+    #     assertEquals(proc1CallCount, 0)
+    #     assertEquals(proc2CallCount, 0)
+    #     assertEquals(proc3CallCount, 0)
+
+    #     testAnim.update(0.1)
+    #     assertEquals(proc1CallCount, 1)
+    #     assertEquals(proc2CallCount, 0)
+    #     assertEquals(proc3CallCount, 0)
+

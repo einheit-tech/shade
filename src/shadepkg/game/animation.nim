@@ -53,18 +53,13 @@ type
   AnimationCallback* = proc(this: Animation)
 
   Animation* = ref object
-    currentTime: float
     duration: float
     looping: bool
     tracks: seq[AnimationTrack]
     onFinishedCallbacks: SafeSet[AnimationCallback]
 
-template currentTime*(this: Animation): float = this.currentTime
 template duration*(this: Animation): float = this.duration
-
-template isFinished*(this: Animation): bool =
-  ## If a non-looping Animation has reached its end.
-  not this.looping and this.currentTime == this.duration
+template looping*(this: Animation): bool = this.looping
 
 proc initAnimation*(anim: Animation, duration: float, looping: bool) =
   anim.duration = duration
@@ -100,22 +95,9 @@ proc animateToTime*(this: Animation, currentTime, deltaTime: float) =
     track.animateToTime(track, currentTime, deltaTime, track.wrapInterpolation)
 
 proc reset*(this: Animation) =
-  this.currentTime = 0
   for track in this.tracks.mitems:
     if track.kind == tkClosureProc:
       track.lastFiredProcIndex = -1
-
-proc update*(this: Animation, deltaTime: float) =
-  if this.looping:
-    this.currentTime = (this.currentTime + deltaTime) mod this.duration
-    this.animateToTime(this.currentTime, deltaTime)
-  else:
-    if this.currentTime < this.duration:
-      this.currentTime = min(this.currentTime + deltaTime, this.duration)
-      this.animateToTime(this.currentTime, deltaTime)
-      # Just reached the end of the animation
-      if this.currentTime == this.duration:
-        this.notifyFinishedCallbacks()
 
 proc newAnimationTrack*[T: TrackType](
   field: T,
