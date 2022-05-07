@@ -324,7 +324,7 @@ template wasControllerButtonJustPressed*(this: InputHandler, button: GameControl
 template wasControllerButtonJustReleased*(this: InputHandler, button: GameControllerButton): bool =
   this.getControllerButtonState(button).justReleased
 
-proc update*(this: InputHandler, deltaTime: float) =
+proc resetFrameSpecificState*(this: InputHandler) =
   # Update justPressed props (invoked _after_ the game was updated).
   for button in this.mouse.buttons.mvalues:
     button.justPressed = false

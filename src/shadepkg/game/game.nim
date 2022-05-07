@@ -1,11 +1,11 @@
 import
-  std/algorithm,
   std/monotimes,
   math,
   sdl2_nim/sdl,
   sdl2_nim/sdl_gpu
 
 import
+  refresh_rate_calculator as refresh_rate_calculator_module,
   scene,
   gamestate,
   ../input/inputhandler,
@@ -13,8 +13,8 @@ import
   ../render/color
 
 const
-  oneBillion = 1000000000
-  oneMillion = 1000000
+  ONE_BILLION = 1000000000
+  ONE_MILLION = 1000000
 
 type
   Engine* = ref object of RootObj
@@ -24,8 +24,8 @@ type
     # The color to fill the screen with to clear it every frame.
     clearColor*: Color
     shouldExit: bool
-    # Use fixed rate delta times
     refreshRate: int
+    # Use fixed rate delta times
     useFixedDeltaTime*: bool
 
 proc detectWindowScaling(this: Engine): Vector
@@ -131,26 +131,6 @@ proc detectWindowScaling(this: Engine): Vector =
           float(vheight) / float(windowHeight)
         )
 
-proc median(l, r: int): int =
-  return l + ((r - l) div 2)
-
-proc q13(values: seq[float]): tuple[q1: float, q3: float] =
-  let sortedValues = sorted(values)
-  let n = len(sortedValues)
-  let mid = median(0, n)
-  let q1 = sortedValues[median(0, mid)]
-  let q3 = sortedValues[median(mid + 1, n)]
-  return (q1, q3)
-
-proc iqr(q13: tuple[q1: float, q3: float]): float =
-  return q13.q3 - q13.q1
-
-proc outlier(value: float, q13: tuple[q1: float, q3: float]): bool =
-  let i = 1.5 * iqr(q13)
-  let lower = q13.q1 - i
-  let upper = q13.q3 + i
-  return value < lower or value > upper
-
 proc handleEvents(this: Engine) =
   ## Passes all pending events to the inputhandler singleton.
   ## Returns if the application should exit.
@@ -159,55 +139,36 @@ proc handleEvents(this: Engine) =
     Input.processEvent(event)
 
 proc loop(this: Engine) =
-  const deltaWindowCap = 60
-  const deltaWindowCapFloat = float deltaWindowCap
   var
-    startTimeNanos: int64 = getMonoTime().ticks
-    previousTimeNanos: int64 = startTimeNanos
+    previousTimeNanos: int64 = getMonoTime().ticks
     deltaTime: float = 0
-    deltaWindow: seq[float] = newSeqOfCap[float](deltaWindowCap)
-    refreshRate: int = this.refreshRate
+    refreshRateCalculator: RefreshRateCalculator
 
   while not this.shouldExit:
     this.handleEvents()
     this.update(deltaTime)
     this.render(this.screen)
-    Input.update(deltaTime)
+    Input.resetFrameSpecificState()
     flip(this.screen)
 
     let time = getMonoTime().ticks
     let elapsedNanos = time - previousTimeNanos
     previousTimeNanos = time
 
-    let realDeltaTime = float(elapsedNanos) / float(oneBillion)
-    deltaTime = realDeltaTime
-
     if this.useFixedDeltaTime:
-      if refreshRate == 0:
-        # Push new sample
-        deltaWindow.add(realDeltaTime)
-        # Only start using delta window after it's filled up
-        if len(deltaWindow) == deltaWindowCap:
-          # Prune outliers
-          var newDeltaWindow: seq[float] = newSeqOfCap[float](deltaWindowCap)
-          let deltaWindowQ13 = q13(deltaWindow)
-          var foundOutlier = false
-          for sample in deltaWindow:
-            if outlier(sample, deltaWindowQ13):
-              foundOutlier = true
-            else:
-              newDeltaWindow.add(sample)
-          deltaWindow = newDeltaWindow
-          if not foundOutlier:
-            # Calculate average elapsed time over the window
-            var avg: float = 0.0
-            for sample in deltaWindow:
-              avg += sample / deltaWindowCapFloat
-            # Convert into integer refresh rate
-            refreshRate = max(1, int round(1.0 / avg))
+      if this.refreshRate > 0:
+        deltaTime = 1.0 / float(this.refreshRate)
       else:
-        # Use refresh rate to override "real" delta time
-        deltaTime = 1.0 / float(refreshRate)
+        if refreshRateCalculator == nil:
+          refreshRateCalculator = RefreshRateCalculator()
+
+        refreshRateCalculator.calcRefreshRate(elapsedNanos)
+
+        if refreshRateCalculator.refreshRate > 0:
+          this.refreshRate = refreshRateCalculator.refreshRate
+          refreshRateCalculator = nil
+        else:
+          deltaTime = float(elapsedNanos) / float(ONE_BILLION)
 
   this.teardown()
 
