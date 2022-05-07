@@ -22,6 +22,9 @@ template currentAnimation*(this: AnimationPlayer): Animation =
 template currentAnimationName*(this: AnimationPlayer): string =
   this.currentAnimationName
 
+template currentTime*(this: AnimationPlayer): float =
+  this.currentAnimationTime
+
 template `[]`*(this: AnimationPlayer, animationName: string): Animation =
   this.animations[animationName]
 
