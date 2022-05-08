@@ -320,6 +320,12 @@ proc rightStickY*(this: InputHandler): float =
     if abs(result) <= this.controller.deadzoneRadius:
       result = 0.0
 
+template leftStick*(this: InputHandler): tuple[x: float, y: float] =
+  (this.leftStickX, this.leftStickY)
+
+template rightStick*(this: InputHandler): tuple[x: float, y: float] =
+  (this.rightStickX, this.rightStickY)
+
 proc getControllerButtonState*(this: InputHandler, button: GameControllerButton): ButtonState =
   if not this.controller.buttons.hasKey(button):
     this.controller.buttons[button] = ButtonState()
