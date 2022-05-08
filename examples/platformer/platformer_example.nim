@@ -98,8 +98,8 @@ proc physicsProcess(this: Node, deltaTime: float) =
 
   let
     leftStickX = Input.leftStickX()
-    leftPressed = Input.isKeyPressed(K_LEFT) or leftStickX < -0.01
-    rightPressed = Input.isKeyPressed(K_RIGHT) or leftStickX > 0.01
+    leftPressed = Input.isKeyPressed(K_LEFT) or leftStickX < 0
+    rightPressed = Input.isKeyPressed(K_RIGHT) or leftStickX > 0
 
   var
     x: float = player.velocityX

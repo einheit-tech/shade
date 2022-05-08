@@ -20,6 +20,8 @@ export
   GameControllerButton,
   Keycode
 
+const DEFAULT_DEADZONE = 0.1
+
 type
   ButtonState* = object
     pressed: bool
@@ -54,10 +56,10 @@ type
     justPressed: bool
     justReleased: bool
 
-  # TODO: Deadzones
   Controller* = ref object
     # NOTE: Will add support for multiple controllers, touchpads, etc. later when needed.
     sdlGameController: GameController
+    deadzoneRadius*: float
     name: string
     axes: Table[GameControllerAxis, float]
     buttons: Table[GameControllerButton, ButtonState]
@@ -71,7 +73,7 @@ type
     eventListeners: Table[EventKind, SafeSet[EventListener]]
     mouse: Mouse
     keyboard: Keyboard
-    controller: Controller
+    controller*: Controller
     windowScaling*: Vector
 
 # InputHandler singleton
@@ -83,7 +85,7 @@ proc initInputHandlerSingleton*(windowScaling: Vector) =
   Input = InputHandler(
     mouse: Mouse(),
     keyboard: Keyboard(),
-    controller: Controller(),
+    controller: Controller(deadzoneRadius: DEFAULT_DEADZONE),
     windowScaling: windowScaling
   )
 
@@ -296,19 +298,27 @@ proc mouseLocation*(this: InputHandler): Vector =
 
 proc leftStickX*(this: InputHandler): float =
   if this.controller.axes.hasKey(CONTROLLER_AXIS_LEFTX):
-    return this.controller.axes[CONTROLLER_AXIS_LEFTX]
+    result = this.controller.axes[CONTROLLER_AXIS_LEFTX]
+    if abs(result) <= this.controller.deadzoneRadius:
+      result = 0.0
 
 proc leftStickY*(this: InputHandler): float =
   if this.controller.axes.hasKey(CONTROLLER_AXIS_LEFTY):
-    return this.controller.axes[CONTROLLER_AXIS_LEFTY]
+    result = this.controller.axes[CONTROLLER_AXIS_LEFTY]
+    if abs(result) <= this.controller.deadzoneRadius:
+      result = 0.0
 
 proc rightStickX*(this: InputHandler): float =
   if this.controller.axes.hasKey(CONTROLLER_AXIS_RIGHTX):
-    return this.controller.axes[CONTROLLER_AXIS_RIGHTX]
+    result = this.controller.axes[CONTROLLER_AXIS_RIGHTX]
+    if abs(result) <= this.controller.deadzoneRadius:
+      result = 0.0
 
 proc rightStickY*(this: InputHandler): float =
   if this.controller.axes.hasKey(CONTROLLER_AXIS_RIGHTY):
-    return this.controller.axes[CONTROLLER_AXIS_RIGHTY]
+    result = this.controller.axes[CONTROLLER_AXIS_RIGHTY]
+    if abs(result) <= this.controller.deadzoneRadius:
+      result = 0.0
 
 proc getControllerButtonState*(this: InputHandler, button: GameControllerButton): ButtonState =
   if not this.controller.buttons.hasKey(button):
