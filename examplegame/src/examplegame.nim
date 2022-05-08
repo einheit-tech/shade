@@ -152,11 +152,11 @@ rightWall.scale = vector(-1, 1)
 
 when not defined(debug):
   # Play some music
-  let (someSong, err) = capture loadMusic("./assets/night_prowler.ogg")
-  if err == nil:
-    discard capture fadeInMusic(someSong, 2.0, 0.15)
+  let someSong = loadMusic("./assets/night_prowler.ogg")
+  if someSong != nil:
+    fadeInMusic(someSong, 2.0, 0.15)
   else:
-    echo "Error playing music: " & err.msg
+    echo "Error playing music"
 
 Game.start()
 
