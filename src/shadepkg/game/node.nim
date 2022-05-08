@@ -35,6 +35,8 @@ type
     # Rotation in degrees (clockwise).
     rotation*: float
 
+const UPDATE_RENDER_FLAGS* = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}
+
 method setLocation*(this: Node, x, y: float) {.base.}
 method hash*(this: Node): Hash {.base.}
 method update*(this: Node, deltaTime: float) {.base.}
@@ -42,7 +44,7 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.}
 
 proc initNode*(
   node: Node,
-  flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}
+  flags: set[LayerObjectFlags] = UPDATE_RENDER_FLAGS
 ) =
   node.flags = flags
   node.scale = VECTOR_ONE
