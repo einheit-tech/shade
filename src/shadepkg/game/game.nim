@@ -1,6 +1,5 @@
 import
   std/monotimes,
-  math,
   sdl2_nim/sdl,
   sdl2_nim/sdl_gpu
 
