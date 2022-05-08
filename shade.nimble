@@ -13,7 +13,7 @@ namedBin["src/shadepkg/buildtool"] = "src/shade"
 
 # Dependencies
 
-requires "nim == 1.6.4"
+requires "nim == 1.6.6"
 requires "zippy == 0.9.7"
 requires "https://github.com/avahe-kellenberger/sdl2_nim#head"
 requires "https://github.com/avahe-kellenberger/safeset"
