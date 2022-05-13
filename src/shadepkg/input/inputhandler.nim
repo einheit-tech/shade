@@ -192,10 +192,18 @@ proc addMouseReleasedEventListener*(this: InputHandler, listener: MouseButtonEve
 
 ## Custom Events
 
-proc registerCustomEvent*(this: InputHandler, name: string) =
-  Input.customEvents[name] = InputState()
-  Input.customEventTriggers[name] = CustomEventTriggers()
-  Input.customEventListeners[name] = newSafeSet[CustomEventListener]()
+proc registerCustomEvent*(this: InputHandler, eventName: string) =
+  this.customEvents[eventName] = InputState()
+  this.customEventTriggers[eventName] = CustomEventTriggers()
+  this.customEventListeners[eventName] = newSafeSet[CustomEventListener]()
+
+proc dispatchCustomEvent*(this: InputHandler, eventName: string) =
+  if not this.customEventListeners.hasKey(eventName) or not this.customEvents.hasKey(eventName):
+    raise newException(Exception, "Custom event " & eventName & " has not been registered")
+
+  let state = this.customEvents[eventName]
+  for listener in this.customEventListeners[eventName]:
+    listener(state)
 
 proc addCustomEventListener*(this: InputHandler, eventName: string, listener: CustomEventListener) =
   if not this.customEventListeners.hasKey(eventName):
@@ -217,6 +225,20 @@ proc addCustomEventTrigger*(
     raise newException(Exception, "Custom event " & eventName & " has not been registered")
 
   this.customEventTriggers[eventName].mouseButtons[mouseButton] = action
+
+  # TODO:
+  # Would be nice if I could just add a new button event listener that triggers the custom event,
+  # but then how do we remove that listener when we remove the custom event?
+  # Maybe worry about that later.
+
+  let listener =
+    proc(button: int, state: ButtonState, x, y, clicks: int) =
+      this.dispatchCustomEvent(eventName)
+
+  if action == ButtonAction.PRESSED:
+    this.addMousePressedEventListener(listener)
+  elif action == ButtonAction.RELEASED:
+    this.addMouseReleasedEventListener(listener)
 
 # proc addCustomEventTrigger*(this: InputHandler, eventName: string, stick: Stick, dir: Direction) =
 #   this.customEventTriggers[eventName] = CustomEventTriggers()

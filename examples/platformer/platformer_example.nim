@@ -172,5 +172,12 @@ when not defined(debug):
   else:
     echo "Error playing music"
 
+# NOTE: Testing custom input events
+Input.registerCustomEvent("jump")
+Input.addCustomEventTrigger("jump", MouseButton.LEFT)
+Input.addCustomEventListener("jump", proc(state: InputState) =
+  player.velocity.y += jumpForce
+)
+
 Game.start()
 
