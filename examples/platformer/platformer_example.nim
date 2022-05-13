@@ -97,7 +97,7 @@ proc physicsProcess(this: Node, deltaTime: float) =
     return
 
   let
-    leftStickX = Input.leftStickX()
+    leftStickX = Input.leftStick.x
     leftPressed = Input.isKeyPressed(K_LEFT) or leftStickX < 0
     rightPressed = Input.isKeyPressed(K_RIGHT) or leftStickX > 0
 

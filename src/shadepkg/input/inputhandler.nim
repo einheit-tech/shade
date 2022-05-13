@@ -1,9 +1,13 @@
+import 
+  std/[tables, hashes]
+
 import
   sdl2_nim/sdl,
-  tables,
   safeset
 
-import ../math/mathutils
+import
+  ../math/mathutils,
+  ../util/types
 
 export
   Scancode,
@@ -12,45 +16,91 @@ export
   EventKind
 
 export
-  BUTTON_LEFT,
-  BUTTON_MIDDLE,
-  BUTTON_RIGHT,
   PRESSED,
   RELEASED,
-  GameControllerButton,
   Keycode
 
 const DEFAULT_DEADZONE = 0.1
 
 type
-  ButtonState* = object
-    pressed: bool
-    justPressed: bool
-    justReleased: bool
+  ButtonAction* {.pure.} = enum
+    PRESSED,
+    RELEASED
 
-  ButtonEventListener* = proc(button: int, state: ButtonState)
-  MouseButtonEventListener* = proc(button: int, state: ButtonState, x, y, clicks: int)
-
-type Mouse* = ref object
-  location: Vector
-  buttons: Table[int, ButtonState]
-  vScrolled: int
-  buttonPressedEventListeners: seq[MouseButtonEventListener]
-  buttonReleasedEventListeners: seq[MouseButtonEventListener]
-
-type
-  KeyState* = object
+  InputState* {.pure, inheritable.} = object
     pressed*: bool
     justPressed*: bool
     justReleased*: bool
 
-  KeyListener* = proc(key: Keycode, state: KeyState)
+  ButtonState* = InputState
 
+  ButtonEventListener* = proc(button: int, state: ButtonState)
+  MouseButtonEventListener* = proc(button: int, state: ButtonState, x, y, clicks: int)
+
+  MouseButton* {.pure.} = enum
+    LEFT = BUTTON_LEFT
+    MIDDLE = BUTTON_MIDDLE
+    RIGHT = BUTTON_RIGHT
+    X1 = BUTTON_X1
+    X2 = BUTTON_X2
+
+  ControllerButton* {.pure, size: sizeof(uint8).} = enum
+    A = CONTROLLER_BUTTON_A,
+    B = CONTROLLER_BUTTON_B,
+    X = CONTROLLER_BUTTON_X,
+    Y = CONTROLLER_BUTTON_Y,
+    BACK = CONTROLLER_BUTTON_BACK,
+    GUIDE = CONTROLLER_BUTTON_GUIDE,
+    START = CONTROLLER_BUTTON_START, 
+    LEFT_STICK = CONTROLLER_BUTTON_LEFTSTICK,
+    RIGHT_STICK = CONTROLLER_BUTTON_RIGHTSTICK,
+    LEFT_SHOULDER = CONTROLLER_BUTTON_LEFTSHOULDER,
+    RIGHT_SHOULDER = CONTROLLER_BUTTON_RIGHTSHOULDER,
+    DPAD_UP = CONTROLLER_BUTTON_DPAD_UP,
+    DPAD_DOWN = CONTROLLER_BUTTON_DPAD_DOWN,
+    DPAD_LEFT = CONTROLLER_BUTTON_DPAD_LEFT,
+    DPAD_RIGHT = CONTROLLER_BUTTON_DPAD_RIGHT,
+    MISC1 = CONTROLLER_BUTTON_MISC1,
+    PADDLE1 = SDL_CONTROLLER_BUTTON_PADDLE1,
+    PADDLE2 = SDL_CONTROLLER_BUTTON_PADDLE2,
+    PADDLE3 = SDL_CONTROLLER_BUTTON_PADDLE3,
+    PADDLE4 = SDL_CONTROLLER_BUTTON_PADDLE4,
+    TOUCHPAD = SDL_CONTROLLER_BUTTON_TOUCHPAD
+
+  Direction* {.pure.} = enum
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
+
+  ControllerStick* {.pure.} = enum
+    ## Analog sticks
+    LEFT,
+    RIGHT
+
+  ControllerTrigger* {.pure, size: sizeof(uint8).} = enum
+    TRIGGER_LEFT = CONTROLLER_AXIS_TRIGGERLEFT,
+    TRIGGER_RIGHT = CONTROLLER_AXIS_TRIGGERRIGHT
+
+  Mouse* = ref object
+    location: Vector
+    buttons: Table[int, ButtonState]
+    vScrolled: int
+    buttonPressedListeners: seq[MouseButtonEventListener]
+    buttonReleasedListeners: seq[MouseButtonEventListener]
+
+  KeyState* = InputState
+  KeyListener* = proc(key: Keycode, state: KeyState)
   Keyboard* = ref object
     keys: Table[Keycode, KeyState]
     keyListeners: Table[Keycode, SafeSet[KeyListener]]
 
-type
+  ControllerStickState* = object
+    x*: float
+    y*: float
+
+  ControllerStickEventListener* = proc(stick: ControllerStick, state: ControllerStickState)
+
   ControllerButtonState* = object
     pressed: bool
     justPressed: bool
@@ -61,16 +111,40 @@ type
     sdlGameController: GameController
     deadzoneRadius*: float
     name: string
-    axes: Table[GameControllerAxis, float]
-    buttons: Table[GameControllerButton, ButtonState]
-    buttonPressedEventListeners: seq[ButtonEventListener]
-    buttonReleasedEventListeners: seq[ButtonEventListener]
 
-type
+    leftStick: ControllerStickState
+    rightStick: ControllerStickState
+    stickListeners: seq[ControllerStickEventListener]
+
+    buttons: Table[GameControllerButton, ButtonState]
+    buttonPressedListeners: seq[ButtonEventListener]
+    buttonReleasedListeners: seq[ButtonEventListener]
+
+  CustomEventListener* = proc(state: InputState)
+  CustomEventTriggers = ref object
+    keys*: seq[Keycode]
+    sticks*: Table[ControllerStick, Vector]
+    # TODO: angle or radians? slope?
+    ## Table[Stick, AngleRange]
+    triggers*: seq[ControllerTrigger]
+    mouseButtons*: Table[MouseButton, ButtonAction]
+    controllerButtons*: seq[GameControllerButton]
+
+  # NOTE: Desired syntax:
+  # let upEvent = Input.createCustomEvent("up")
+  # upEvent.addTrigger(Stick.LEFT, Direction.UP)
+  # upEvent.addTrigger(K_UP, PRESSED)
+  # upEvent.onTrigger(proc(state: InputState) = discard)
+
   EventListener* = proc(e: Event): bool
   ## Return true to remove the listener from the InputHandler.
   InputHandler* = ref object
     eventListeners: Table[EventKind, SafeSet[EventListener]]
+
+    customEvents: Table[string, InputState]
+    customEventTriggers: Table[string, CustomEventTriggers]
+    customEventListeners: Table[string, SafeSet[CustomEventListener]]
+
     mouse: Mouse
     keyboard: Keyboard
     controller*: Controller
@@ -111,15 +185,50 @@ proc removeKeyEventListener*(this: InputHandler, key: Keycode, listener: KeyList
     this.keyboard.keyListeners[key].remove(listener)
 
 proc addMousePressedEventListener*(this: InputHandler, listener: MouseButtonEventListener) =
-  this.mouse.buttonPressedEventListeners.add(listener)
+  this.mouse.buttonPressedListeners.add(listener)
 
 proc addMouseReleasedEventListener*(this: InputHandler, listener: MouseButtonEventListener) =
-  this.mouse.buttonReleasedEventListeners.add(listener)
+  this.mouse.buttonReleasedListeners.add(listener)
+
+## Custom Events
+
+proc registerCustomEvent*(this: InputHandler, name: string) =
+  Input.customEvents[name] = InputState()
+  Input.customEventTriggers[name] = CustomEventTriggers()
+  Input.customEventListeners[name] = newSafeSet[CustomEventListener]()
+
+proc addCustomEventListener*(this: InputHandler, eventName: string, listener: CustomEventListener) =
+  if not this.customEventListeners.hasKey(eventName):
+    this.customEventListeners[eventName] = newSafeSet[CustomEventListener]()
+  this.customEventListeners[eventName].add(listener)
+
+# proc addCustomEventTrigger*(this: InputHandler, eventName: string, button: GameControllerButton) =
+#   if this.customEventTriggers.hasKey(eventName):
+#     this.customEventTriggers[eventName].controllerButtons.add(button)
+
+# TODO: Make an example with mouse buttons first
+proc addCustomEventTrigger*(
+  this: InputHandler,
+  eventName: string,
+  mouseButton: MouseButton,
+  action: ButtonAction = ButtonAction.PRESSED
+) =
+  if not this.customEventTriggers.hasKey(eventName):
+    raise newException(Exception, "Custom event " & eventName & " has not been registered")
+
+  this.customEventTriggers[eventName].mouseButtons[mouseButton] = action
+
+# proc addCustomEventTrigger*(this: InputHandler, eventName: string, stick: Stick, dir: Direction) =
+#   this.customEventTriggers[eventName] = CustomEventTriggers()
+#   if this.customEventTriggers.hasKey(eventName):
+#     this.customEventTriggers[eventName].sticks.add(stick)
 
 proc clearController(this: InputHandler) =
   this.controller.sdlGameController = nil
   this.controller.name = ""
-  this.controller.axes.clear()
+  this.controller.leftStick = ControllerStickState()
+  this.controller.rightStick = ControllerStickState()
+  # this.controller.triggers.clear()
   this.controller.buttons.clear()
 
 proc setController(this: InputHandler, id: JoystickID) =
@@ -127,7 +236,9 @@ proc setController(this: InputHandler, id: JoystickID) =
   if sdlGameController != nil:
     this.controller.sdlGameController = sdlGameController
     this.controller.name = $sdlGameController.gameControllerName()
-    this.controller.axes.clear()
+    this.controller.leftStick = ControllerStickState()
+    this.controller.rightStick = ControllerStickState()
+    # this.controller.triggers.clear()
     this.controller.buttons.clear()
   else:
     # TODO: Need some sort of better logging for non-fatal errors.
@@ -153,7 +264,7 @@ proc processEvent*(this: InputHandler, event: Event) =
       this.mouse.buttons[button].pressed = true
       this.mouse.buttons[button].justPressed = true
 
-      for listener in this.mouse.buttonPressedEventListeners:
+      for listener in this.mouse.buttonPressedListeners:
         listener(button, this.mouse.buttons[button], buttonX, buttonY, int buttonEvent.clicks)
 
     of MOUSEBUTTONUP:
@@ -169,7 +280,7 @@ proc processEvent*(this: InputHandler, event: Event) =
       this.mouse.buttons[button].justPressed = false
       this.mouse.buttons[button].justReleased = true
 
-      for listener in this.mouse.buttonReleasedEventListeners:
+      for listener in this.mouse.buttonReleasedListeners:
         listener(button, this.mouse.buttons[button], buttonX, buttonY, int buttonEvent.clicks)
 
     of MOUSEWHEEL:
@@ -214,15 +325,32 @@ proc processEvent*(this: InputHandler, event: Event) =
       buttonState.justReleased = not pressed
 
     of CONTROLLERAXISMOTION:
-      let e = event.caxis
-      let value = float e.value
-      let floatVal =
+      let
+        e = event.caxis
+        axis = e.axis
+
+      var value = float e.value
+      value =
         if value < 0:
           -value / float int16.low
         else:
           value / float int16.high
 
-      this.controller.axes[e.axis] = floatVal
+      if abs(value) <= this.controller.deadzoneRadius:
+        value = 0.0
+
+      case axis:
+        of CONTROLLER_AXIS_LEFTX:
+          this.controller.leftStick.x = value
+        of CONTROLLER_AXIS_LEFTY:
+          this.controller.leftStick.y = value
+        of CONTROLLER_AXIS_RIGHTX:
+          this.controller.rightStick.x = value
+        of CONTROLLER_AXIS_RIGHTY:
+          this.controller.rightStick.y = value
+        else:
+          # TODO: Triggers
+          discard
 
     else:
       discard
@@ -267,24 +395,24 @@ template wasKeyJustReleased*(this: InputHandler, keycode: Keycode): bool =
 # Left mouse button
 
 template isLeftMouseButtonPressed*(this: InputHandler): bool =
-  this.isMouseButtonPressed(BUTTON_LEFT)
+  this.isMouseButtonPressed(MouseButton.LEFT)
 
 template wasLeftMouseButtonJustPressed*(this: InputHandler): bool =
-  this.wasMouseButtonJustPressed(BUTTON_LEFT)
+  this.wasMouseButtonJustPressed(MouseButton.LEFT)
 
 template wasLeftMouseButtonJustReleased*(this: InputHandler): bool =
-  this.wasMouseButtonJustReleased(BUTTON_LEFT)
+  this.wasMouseButtonJustReleased(MouseButton.LEFT)
 
 # Right mouse button
 
 template isRightMouseButtonPressed*(this: InputHandler): bool =
-  this.isMouseButtonPressed(BUTTON_RIGHT)
+  this.isMouseButtonPressed(MouseButton.RIGHT)
 
 template wasRightMouseButtonJustPressed*(this: InputHandler): bool =
-  this.wasMouseButtonJustPressed(BUTTON_RIGHT)
+  this.wasMouseButtonJustPressed(MouseButton.RIGHT)
 
 template wasRightMouseButtonJustReleased*(this: InputHandler): bool =
-  this.wasMouseButtonJustReleased(BUTTON_RIGHT)
+  this.wasMouseButtonJustReleased(MouseButton.RIGHT)
 
 # Wheel
 
@@ -296,35 +424,11 @@ proc mouseLocation*(this: InputHandler): Vector =
 
 # Controller
 
-proc leftStickX*(this: InputHandler): float =
-  if this.controller.axes.hasKey(CONTROLLER_AXIS_LEFTX):
-    result = this.controller.axes[CONTROLLER_AXIS_LEFTX]
-    if abs(result) <= this.controller.deadzoneRadius:
-      result = 0.0
+proc leftStick*(this: InputHandler): ControllerStickState =
+  result = this.controller.leftStick
 
-proc leftStickY*(this: InputHandler): float =
-  if this.controller.axes.hasKey(CONTROLLER_AXIS_LEFTY):
-    result = this.controller.axes[CONTROLLER_AXIS_LEFTY]
-    if abs(result) <= this.controller.deadzoneRadius:
-      result = 0.0
-
-proc rightStickX*(this: InputHandler): float =
-  if this.controller.axes.hasKey(CONTROLLER_AXIS_RIGHTX):
-    result = this.controller.axes[CONTROLLER_AXIS_RIGHTX]
-    if abs(result) <= this.controller.deadzoneRadius:
-      result = 0.0
-
-proc rightStickY*(this: InputHandler): float =
-  if this.controller.axes.hasKey(CONTROLLER_AXIS_RIGHTY):
-    result = this.controller.axes[CONTROLLER_AXIS_RIGHTY]
-    if abs(result) <= this.controller.deadzoneRadius:
-      result = 0.0
-
-template leftStick*(this: InputHandler): tuple[x: float, y: float] =
-  (this.leftStickX, this.leftStickY)
-
-template rightStick*(this: InputHandler): tuple[x: float, y: float] =
-  (this.rightStickX, this.rightStickY)
+proc rightStick*(this: InputHandler): ControllerStickState =
+  result = this.controller.rightStick
 
 proc getControllerButtonState*(this: InputHandler, button: GameControllerButton): ButtonState =
   if not this.controller.buttons.hasKey(button):

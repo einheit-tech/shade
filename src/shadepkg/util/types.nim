@@ -1,6 +1,8 @@
 import
   std/[
     macros,
+    macrocache,
+    genasts,
     strutils,
     sequtils
   ]
@@ -40,4 +42,43 @@ macro makeEnum*(t: typedesc, enumName: untyped, prefix: static string, exported 
       x = prefix & x
   var nodes = bases.map(proc(n: string): NimNode = ident(n))
   newEnum(enumName, nodes, exported.boolVal, false)
+
+macro unionType*(vals: typed): untyped =
+  # TODO: Ideally sort the vals
+  const myTable = CacheTable "checkedValTypes"
+  let
+    name = genSym(nskType, "CheckedType")
+    cacheName = vals.repr
+  for key, val in myTable.pairs:
+    if key.eqIdent cacheName:
+      return val
+  
+  myTable[vals.repr] = name
+  result = genast(vals, name, typeOfColl = vals[0].getTypeInst):
+    type name[T: static openarray[typeOfColl]] = distinct typeOfColl
+    name[vals]
+
+template makeUnionConverter*(Subtype: typedesc, Type: typedesc) =
+  converter toFixed(t: Type): Subtype =
+    assert t in Subtype.T
+    Subtype t
+
+  # TODO: This is probably incorrect, hit up Elegantbeef about it.
+  converter toFixed(s: Subtype): Type =
+    Type s
+
+# Example:
+#
+# type
+#   Direction = enum
+#     LEFT
+#     UP
+#     RIGHT
+#     DOWN
+
+# type Horizontal = unionType([LEFT, RIGHT])
+# Horizontal.makeUnionConverter(Direction)
+
+# let dir: Horizontal = LEFT
+# echo repr dir
 
