@@ -24,8 +24,10 @@ const DEFAULT_DEADZONE = 0.1
 
 type
   ButtonAction* {.pure.} = enum
-    PRESSED,
+    PRESSED
     RELEASED
+
+  KeyAction* {.pure.} = ButtonAction
 
   InputState* {.pure, inheritable.} = object
     pressed*: bool
@@ -94,13 +96,18 @@ type
   KeyListener* = proc(key: Keycode, state: KeyState)
   Keyboard* = ref object
     keys: Table[Keycode, KeyState]
-    keyListeners: Table[Keycode, SafeSet[KeyListener]]
+    keyPressedListeners: Table[Keycode, SafeSet[KeyListener]]
+    keyReleasedListeners: Table[Keycode, SafeSet[KeyListener]]
 
   ControllerStickState* = object
     x*: float
     y*: float
 
-  ControllerStickEventListener* = proc(stick: ControllerStick, state: ControllerStickState)
+  ControllerStickEventCallback* = proc(state: ControllerStickState)
+  ControllerStickEventFilter* = proc(state: ControllerStickState): bool
+  ControllerStickEventListener* = object
+    filter: ControllerStickEventFilter
+    callback: ControllerStickEventCallback
 
   ControllerButtonState* = object
     pressed: bool
@@ -115,27 +122,14 @@ type
 
     leftStick: ControllerStickState
     rightStick: ControllerStickState
-    stickListeners: seq[ControllerStickEventListener]
+    rightStickListeners: seq[ControllerStickEventListener]
+    leftStickListeners: seq[ControllerStickEventListener]
 
     buttons: Table[ControllerButton, ButtonState]
     buttonPressedListeners: Table[ControllerButton, SafeSet[ControllerButtonEventListener]]
     buttonReleasedListeners: Table[ControllerButton, SafeSet[ControllerButtonEventListener]]
 
   CustomEventListener* = proc(state: InputState)
-  CustomEventTriggers = ref object
-    keys*: seq[Keycode]
-    sticks*: Table[ControllerStick, Vector]
-    # TODO: angle or radians? slope?
-    ## Table[Stick, AngleRange]
-    triggers*: seq[ControllerTrigger]
-    mouseButtons*: Table[MouseButton, ButtonAction]
-    controllerButtons*: seq[ControllerButton]
-
-  # NOTE: Desired syntax:
-  # let upEvent = Input.createCustomEvent("up")
-  # upEvent.addTrigger(Stick.LEFT, Direction.UP)
-  # upEvent.addTrigger(K_UP, PRESSED)
-  # upEvent.onTrigger(proc(state: InputState) = discard)
 
   EventListener* = proc(e: Event): bool
   ## Return true to remove the listener from the InputHandler.
@@ -143,7 +137,6 @@ type
     eventListeners: Table[EventKind, SafeSet[EventListener]]
 
     customEvents: Table[string, InputState]
-    customEventTriggers: Table[string, CustomEventTriggers]
     customEventListeners: Table[string, SafeSet[CustomEventListener]]
 
     mouse: Mouse
@@ -200,14 +193,23 @@ proc removeListener*(this: InputHandler, eventKind: EventKind, listener: EventLi
   if this.eventListeners.hasKey(eventKind):
     this.eventListeners[eventKind].remove(listener)
 
-proc addKeyListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
-  if not this.keyboard.keyListeners.hasKey(key):
-    this.keyboard.keyListeners[key] = newSafeSet[KeyListener]()
-  this.keyboard.keyListeners[key].add(listener)
+proc addKeyPressedListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
+  if not this.keyboard.keyPressedListeners.hasKey(key):
+    this.keyboard.keyPressedListeners[key] = newSafeSet[KeyListener]()
+  this.keyboard.keyPressedListeners[key].add(listener)
 
-proc removeKeyListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
-  if this.keyboard.keyListeners.hasKey(key):
-    this.keyboard.keyListeners[key].remove(listener)
+proc addKeyReleasedListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
+  if not this.keyboard.keyReleasedListeners.hasKey(key):
+    this.keyboard.keyReleasedListeners[key] = newSafeSet[KeyListener]()
+  this.keyboard.keyReleasedListeners[key].add(listener)
+
+proc removeKeyPressedListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
+  if this.keyboard.keyPressedListeners.hasKey(key):
+    this.keyboard.keyPressedListeners[key].remove(listener)
+
+proc removeKeyReleasedListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
+  if this.keyboard.keyReleasedListeners.hasKey(key):
+    this.keyboard.keyReleasedListeners[key].remove(listener)
 
 proc addMousePressedListener*(this: InputHandler, listener: MouseButtonEventListener) =
   this.mouse.buttonPressedListeners.add(listener)
@@ -233,15 +235,38 @@ proc addControllerButtonReleasedListener*(
     this.controller.buttonReleasedListeners[button] = newSafeSet[ControllerButtonEventListener]()
   this.controller.buttonReleasedListeners[button].add(listener)
 
+proc addControllerStickListener*(
+  this: InputHandler,
+  stick: ControllerStick,
+  callback: ControllerStickEventCallback,
+  filter: ControllerStickEventFilter = nil
+) =
+  if stick == ControllerStick.LEFT:
+    this.controller.leftStickListeners.add(
+      ControllerStickEventListener(
+        callback: callback,
+        filter: filter
+      )
+    )
+  else:
+    this.controller.rightStickListeners.add(
+      ControllerStickEventListener(
+        callback: callback,
+        filter: filter
+      )
+    )
+
 ## Custom Events
 
 proc registerCustomEvent*(this: InputHandler, eventName: string) =
   this.customEvents[eventName] = InputState()
-  this.customEventTriggers[eventName] = CustomEventTriggers()
   this.customEventListeners[eventName] = newSafeSet[CustomEventListener]()
 
+template isCustomEventRegistered*(this: InputHandler, eventName: string): bool =
+  this.customEvents.hasKey(eventName)
+
 proc dispatchCustomEvent*(this: InputHandler, eventName: string) =
-  if not this.customEventListeners.hasKey(eventName) or not this.customEvents.hasKey(eventName):
+  if not this.customEventListeners.hasKey(eventName) or not this.isCustomEventRegistered(eventName):
     raise newException(Exception, "Custom event " & eventName & " has not been registered")
 
   let state = this.customEvents[eventName]
@@ -256,16 +281,48 @@ proc addCustomEventListener*(this: InputHandler, eventName: string, listener: Cu
 proc addCustomEventTrigger*(
   this: InputHandler,
   eventName: string,
+  key: Keycode,
+  action: KeyAction = KeyAction.PRESSED
+) =
+  if not this.isCustomEventRegistered(eventName):
+    raise newException(Exception, "Custom event " & eventName & " has not been registered")
+
+  let listener =
+    proc(key: Keycode, state: KeyState) =
+      this.dispatchCustomEvent(eventName)
+
+  if action == KeyAction.PRESSED:
+    this.addKeyPressedListener(key, listener)
+  elif action == KeyAction.RELEASED:
+    this.addKeyReleasedListener(key, listener)
+
+proc addCustomEventTrigger*(
+  this: InputHandler,
+  eventName: string,
   button: ControllerButton,
   action: ButtonAction = ButtonAction.PRESSED
 ) =
-  if not this.customEventTriggers.hasKey(eventName):
+  if not this.isCustomEventRegistered(eventName):
     raise newException(Exception, "Custom event " & eventName & " has not been registered")
 
-  # TODO: Is this line even needed?
-  # this.customEventTriggers[eventName].controllerButtons[button] = action
+  let listener =
+    proc(button: ControllerButton, state: ButtonState) =
+      this.dispatchCustomEvent(eventName)
 
-  # TODO: How do we remove this listener when we remove the custom event?
+  if action == ButtonAction.PRESSED:
+    this.addControllerButtonPressedListener(button, listener)
+  elif action == ButtonAction.RELEASED:
+    this.addControllerButtonReleasedListener(button, listener)
+
+proc addCustomEventTrigger*(
+  this: InputHandler,
+  eventName: string,
+  mouseButton: MouseButton,
+  action: ButtonAction = ButtonAction.PRESSED
+) =
+  if not this.isCustomEventRegistered(eventName):
+    raise newException(Exception, "Custom event " & eventName & " has not been registered")
+
   let listener =
     proc(button: int, state: ButtonState, x, y, clicks: int) =
       this.dispatchCustomEvent(eventName)
@@ -278,28 +335,33 @@ proc addCustomEventTrigger*(
 proc addCustomEventTrigger*(
   this: InputHandler,
   eventName: string,
-  mouseButton: MouseButton,
-  action: ButtonAction = ButtonAction.PRESSED
+  stick: ControllerStick,
+  dir: Direction
 ) =
-  if not this.customEventTriggers.hasKey(eventName):
+  if not this.customEvents.hasKey(eventName):
     raise newException(Exception, "Custom event " & eventName & " has not been registered")
-
-  this.customEventTriggers[eventName].mouseButtons[mouseButton] = action
-
-  # TODO: How do we remove this listener when we remove the custom event?
-  let listener =
-    proc(button: int, state: ButtonState, x, y, clicks: int) =
+  
+  let callback =
+    proc(state: ControllerStickState) =
       this.dispatchCustomEvent(eventName)
 
-  if action == ButtonAction.PRESSED:
-    this.addMousePressedListener(listener)
-  elif action == ButtonAction.RELEASED:
-    this.addMouseReleasedListener(listener)
+  var filter: ControllerStickEventFilter = nil
 
-# proc addCustomEventTrigger*(this: InputHandler, eventName: string, stick: Stick, dir: Direction) =
-#   this.customEventTriggers[eventName] = CustomEventTriggers()
-#   if this.customEventTriggers.hasKey(eventName):
-#     this.customEventTriggers[eventName].sticks.add(stick)
+  case dir:
+    of Direction.UP:
+      filter = proc(state: ControllerStickState): bool =
+        state.y < 0 and -abs(state.x) > abs(state.y)
+    of Direction.DOWN:
+      filter = proc(state: ControllerStickState): bool =
+        state.y > 0 and abs(state.x) < state.y
+    of Direction.LEFT:
+      filter = proc(state: ControllerStickState): bool =
+        state.x < 0 and -abs(state.y) > state.x
+    of Direction.RIGHT:
+      filter = proc(state: ControllerStickState): bool =
+        state.x > 0 and abs(state.y) < state.x
+
+  this.addControllerStickListener(stick, callback, filter)
 
 proc clearController(this: InputHandler) =
   this.controller.sdlGameController = nil
@@ -362,9 +424,14 @@ template handleKeyboardEvent(this: InputHandler, e: KeyboardEventObj) =
   this.keyboard.keys[keycode].pressed = pressed
   this.keyboard.keys[keycode].justReleased = not pressed
 
-  if this.keyboard.keyListeners.hasKey(keycode):
-    for listener in this.keyboard.keyListeners[keycode]:
-      listener(keycode, this.keyboard.keys[keycode])
+  if pressed:
+    if this.keyboard.keyPressedListeners.hasKey(keycode):
+      for listener in this.keyboard.keyPressedListeners[keycode]:
+        listener(keycode, this.keyboard.keys[keycode])
+  else:
+    if this.keyboard.keyReleasedListeners.hasKey(keycode):
+      for listener in this.keyboard.keyReleasedListeners[keycode]:
+        listener(keycode, this.keyboard.keys[keycode])
 
 template handleControllerDeviceEvent(this: InputHandler, e: ControllerDeviceEventObj) =
   if e.kind == CONTROLLERDEVICEADDED:
@@ -397,6 +464,16 @@ template handleControllerButtonEvent(this: InputHandler, e: ControllerButtonEven
         for listener in this.controller.buttonReleasedListeners[button]:
           listener(button, buttonState)
 
+template notifyLeftStickListeners(this: InputHandler) =
+  for listener in this.controller.leftStickListeners:
+    if listener.filter == nil or listener.filter(this.controller.leftStick):
+      listener.callback(this.controller.leftStick)
+
+template notifyRightStickListeners(this: InputHandler) =
+  for listener in this.controller.rightStickListeners:
+    if listener.filter == nil or listener.filter(this.controller.rightStick):
+      listener.callback(this.controller.rightStick)
+
 template handleControllerAxisEvent(this: InputHandler, e: ControllerAxisEventObj) =
   let axis = e.axis
   var value = float e.value
@@ -412,12 +489,16 @@ template handleControllerAxisEvent(this: InputHandler, e: ControllerAxisEventObj
   case axis:
     of CONTROLLER_AXIS_LEFTX:
       this.controller.leftStick.x = value
+      this.notifyLeftStickListeners()
     of CONTROLLER_AXIS_LEFTY:
       this.controller.leftStick.y = value
+      this.notifyLeftStickListeners()
     of CONTROLLER_AXIS_RIGHTX:
       this.controller.rightStick.x = value
+      this.notifyRightStickListeners()
     of CONTROLLER_AXIS_RIGHTY:
       this.controller.rightStick.y = value
+      this.notifyRightStickListeners()
     else:
       # TODO: Triggers
       discard
