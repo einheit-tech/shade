@@ -128,18 +128,18 @@ proc physicsProcess(this: Node, deltaTime: float) =
 
     player.playAnimation("run")
 
-  proc jump() =
-    if player.isOnGround and (
-      Input.wasKeyJustPressed(K_SPACE) or Input.wasControllerButtonJustPressed(CONTROLLER_BUTTON_A)
-    ):
-      y += jumpForce
+  # proc jump() =
+  #   if player.isOnGround and (
+  #     Input.wasKeyJustPressed(K_SPACE) or Input.wasControllerButtonJustPressed(ControllerButton.A)
+  #   ):
+  #     y += jumpForce
 
   proc friction() =
     x *= (1 - ground.collisionShape.material.friction)
 
   friction()
   run(x, y)
-  jump()
+  # jump()
 
   player.velocity = vector(x, y)
 
@@ -152,7 +152,7 @@ rightWall.scale = vector(-1, 1)
 
 # Toggle transparency upon pressing "t"
 var isTransparent = false
-Input.addKeyEventListener(
+Input.addKeyListener(
   K_t,
   proc(key: Keycode, state: KeyState) =
     if state.justPressed:
@@ -175,8 +175,18 @@ when not defined(debug):
 # NOTE: Testing custom input events
 Input.registerCustomEvent("jump")
 Input.addCustomEventTrigger("jump", MouseButton.LEFT)
-Input.addCustomEventListener("jump", proc(state: InputState) =
-  player.velocity.y += jumpForce
+Input.addCustomEventListener(
+  "jump",
+  proc(state: InputState) =
+    if player.isOnGround:
+      player.velocity.y += jumpForce
+)
+
+Input.addControllerButtonPressedListener(
+  ControllerButton.A,
+  proc(button: ControllerButton, state: ButtonState) =
+    if player.isOnGround:
+      player.velocity.y += jumpForce
 )
 
 Game.start()

@@ -35,6 +35,7 @@ type
   ButtonState* = InputState
 
   ButtonEventListener* = proc(button: int, state: ButtonState)
+  ControllerButtonEventListener* = proc(button: ControllerButton, state: ButtonState)
   MouseButtonEventListener* = proc(button: int, state: ButtonState, x, y, clicks: int)
 
   MouseButton* {.pure.} = enum
@@ -45,26 +46,26 @@ type
     X2 = BUTTON_X2
 
   ControllerButton* {.pure, size: sizeof(uint8).} = enum
-    A = CONTROLLER_BUTTON_A,
-    B = CONTROLLER_BUTTON_B,
-    X = CONTROLLER_BUTTON_X,
-    Y = CONTROLLER_BUTTON_Y,
-    BACK = CONTROLLER_BUTTON_BACK,
-    GUIDE = CONTROLLER_BUTTON_GUIDE,
-    START = CONTROLLER_BUTTON_START, 
-    LEFT_STICK = CONTROLLER_BUTTON_LEFTSTICK,
-    RIGHT_STICK = CONTROLLER_BUTTON_RIGHTSTICK,
-    LEFT_SHOULDER = CONTROLLER_BUTTON_LEFTSHOULDER,
-    RIGHT_SHOULDER = CONTROLLER_BUTTON_RIGHTSHOULDER,
-    DPAD_UP = CONTROLLER_BUTTON_DPAD_UP,
-    DPAD_DOWN = CONTROLLER_BUTTON_DPAD_DOWN,
-    DPAD_LEFT = CONTROLLER_BUTTON_DPAD_LEFT,
-    DPAD_RIGHT = CONTROLLER_BUTTON_DPAD_RIGHT,
-    MISC1 = CONTROLLER_BUTTON_MISC1,
-    PADDLE1 = SDL_CONTROLLER_BUTTON_PADDLE1,
-    PADDLE2 = SDL_CONTROLLER_BUTTON_PADDLE2,
-    PADDLE3 = SDL_CONTROLLER_BUTTON_PADDLE3,
-    PADDLE4 = SDL_CONTROLLER_BUTTON_PADDLE4,
+    A = CONTROLLER_BUTTON_A
+    B = CONTROLLER_BUTTON_B
+    X = CONTROLLER_BUTTON_X
+    Y = CONTROLLER_BUTTON_Y
+    BACK = CONTROLLER_BUTTON_BACK
+    GUIDE = CONTROLLER_BUTTON_GUIDE
+    START = CONTROLLER_BUTTON_START 
+    LEFT_STICK = CONTROLLER_BUTTON_LEFTSTICK
+    RIGHT_STICK = CONTROLLER_BUTTON_RIGHTSTICK
+    LEFT_SHOULDER = CONTROLLER_BUTTON_LEFTSHOULDER
+    RIGHT_SHOULDER = CONTROLLER_BUTTON_RIGHTSHOULDER
+    DPAD_UP = CONTROLLER_BUTTON_DPAD_UP
+    DPAD_DOWN = CONTROLLER_BUTTON_DPAD_DOWN
+    DPAD_LEFT = CONTROLLER_BUTTON_DPAD_LEFT
+    DPAD_RIGHT = CONTROLLER_BUTTON_DPAD_RIGHT
+    MISC1 = CONTROLLER_BUTTON_MISC1
+    PADDLE1 = SDL_CONTROLLER_BUTTON_PADDLE1
+    PADDLE2 = SDL_CONTROLLER_BUTTON_PADDLE2
+    PADDLE3 = SDL_CONTROLLER_BUTTON_PADDLE3
+    PADDLE4 = SDL_CONTROLLER_BUTTON_PADDLE4
     TOUCHPAD = SDL_CONTROLLER_BUTTON_TOUCHPAD
 
   Direction* {.pure.} = enum
@@ -116,9 +117,9 @@ type
     rightStick: ControllerStickState
     stickListeners: seq[ControllerStickEventListener]
 
-    buttons: Table[GameControllerButton, ButtonState]
-    buttonPressedListeners: seq[ButtonEventListener]
-    buttonReleasedListeners: seq[ButtonEventListener]
+    buttons: Table[ControllerButton, ButtonState]
+    buttonPressedListeners: Table[ControllerButton, SafeSet[ControllerButtonEventListener]]
+    buttonReleasedListeners: Table[ControllerButton, SafeSet[ControllerButtonEventListener]]
 
   CustomEventListener* = proc(state: InputState)
   CustomEventTriggers = ref object
@@ -128,7 +129,7 @@ type
     ## Table[Stick, AngleRange]
     triggers*: seq[ControllerTrigger]
     mouseButtons*: Table[MouseButton, ButtonAction]
-    controllerButtons*: seq[GameControllerButton]
+    controllerButtons*: seq[ControllerButton]
 
   # NOTE: Desired syntax:
   # let upEvent = Input.createCustomEvent("up")
@@ -150,6 +151,30 @@ type
     controller*: Controller
     windowScaling*: Vector
 
+const CONTROLLER_BUTTON_REVERSE_LOOKUP = {
+  CONTROLLER_BUTTON_A: A,
+  CONTROLLER_BUTTON_B: B,
+  CONTROLLER_BUTTON_X: X,
+  CONTROLLER_BUTTON_Y: Y,
+  CONTROLLER_BUTTON_BACK: BACK,
+  CONTROLLER_BUTTON_GUIDE: GUIDE,
+  CONTROLLER_BUTTON_START: START,
+  CONTROLLER_BUTTON_LEFTSTICK: LEFT_STICK,
+  CONTROLLER_BUTTON_RIGHTSTICK: RIGHT_STICK,
+  CONTROLLER_BUTTON_LEFTSHOULDER: LEFT_SHOULDER,
+  CONTROLLER_BUTTON_RIGHTSHOULDER: RIGHT_SHOULDER,
+  CONTROLLER_BUTTON_DPAD_UP: DPAD_UP,
+  CONTROLLER_BUTTON_DPAD_DOWN: DPAD_DOWN,
+  CONTROLLER_BUTTON_DPAD_LEFT: DPAD_LEFT,
+  CONTROLLER_BUTTON_DPAD_RIGHT: DPAD_RIGHT,
+  CONTROLLER_BUTTON_MISC1: MISC1,
+  SDL_CONTROLLER_BUTTON_PADDLE1: PADDLE1,
+  SDL_CONTROLLER_BUTTON_PADDLE2: PADDLE2,
+  SDL_CONTROLLER_BUTTON_PADDLE3: PADDLE3,
+  SDL_CONTROLLER_BUTTON_PADDLE4: PADDLE4,
+  SDL_CONTROLLER_BUTTON_TOUCHPAD: TOUCHPAD
+}.toTable()
+
 # InputHandler singleton
 var Input*: InputHandler
 
@@ -166,29 +191,47 @@ proc initInputHandlerSingleton*(windowScaling: Vector) =
   if init(INIT_GAMECONTROLLER) != 0:
     raise newException(Exception, "Unable to init controller support")
 
-proc addEventListener*(this: InputHandler, eventKind: EventKind, listener: EventListener) =
+proc addListener*(this: InputHandler, eventKind: EventKind, listener: EventListener) =
   if not this.eventListeners.hasKey(eventKind):
     this.eventListeners[eventKind] = newSafeSet[EventListener]()
   this.eventListeners[eventKind].add(listener)
 
-proc removeEventListener*(this: InputHandler, eventKind: EventKind, listener: EventListener) =
+proc removeListener*(this: InputHandler, eventKind: EventKind, listener: EventListener) =
   if this.eventListeners.hasKey(eventKind):
     this.eventListeners[eventKind].remove(listener)
 
-proc addKeyEventListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
+proc addKeyListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
   if not this.keyboard.keyListeners.hasKey(key):
     this.keyboard.keyListeners[key] = newSafeSet[KeyListener]()
   this.keyboard.keyListeners[key].add(listener)
 
-proc removeKeyEventListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
+proc removeKeyListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
   if this.keyboard.keyListeners.hasKey(key):
     this.keyboard.keyListeners[key].remove(listener)
 
-proc addMousePressedEventListener*(this: InputHandler, listener: MouseButtonEventListener) =
+proc addMousePressedListener*(this: InputHandler, listener: MouseButtonEventListener) =
   this.mouse.buttonPressedListeners.add(listener)
 
-proc addMouseReleasedEventListener*(this: InputHandler, listener: MouseButtonEventListener) =
+proc addMouseReleasedListener*(this: InputHandler, listener: MouseButtonEventListener) =
   this.mouse.buttonReleasedListeners.add(listener)
+
+proc addControllerButtonPressedListener*(
+  this: InputHandler,
+  button: ControllerButton,
+  listener: ControllerButtonEventListener
+) =
+  if not this.controller.buttonPressedListeners.hasKey(button):
+    this.controller.buttonPressedListeners[button] = newSafeSet[ControllerButtonEventListener]()
+  this.controller.buttonPressedListeners[button].add(listener)
+
+proc addControllerButtonReleasedListener*(
+  this: InputHandler,
+  button: ControllerButton,
+  listener: ControllerButtonEventListener
+) =
+  if not this.controller.buttonReleasedListeners.hasKey(button):
+    this.controller.buttonReleasedListeners[button] = newSafeSet[ControllerButtonEventListener]()
+  this.controller.buttonReleasedListeners[button].add(listener)
 
 ## Custom Events
 
@@ -210,11 +253,28 @@ proc addCustomEventListener*(this: InputHandler, eventName: string, listener: Cu
     this.customEventListeners[eventName] = newSafeSet[CustomEventListener]()
   this.customEventListeners[eventName].add(listener)
 
-# proc addCustomEventTrigger*(this: InputHandler, eventName: string, button: GameControllerButton) =
-#   if this.customEventTriggers.hasKey(eventName):
-#     this.customEventTriggers[eventName].controllerButtons.add(button)
+proc addCustomEventTrigger*(
+  this: InputHandler,
+  eventName: string,
+  button: ControllerButton,
+  action: ButtonAction = ButtonAction.PRESSED
+) =
+  if not this.customEventTriggers.hasKey(eventName):
+    raise newException(Exception, "Custom event " & eventName & " has not been registered")
 
-# TODO: Make an example with mouse buttons first
+  # TODO: Is this line even needed?
+  # this.customEventTriggers[eventName].controllerButtons[button] = action
+
+  # TODO: How do we remove this listener when we remove the custom event?
+  let listener =
+    proc(button: int, state: ButtonState, x, y, clicks: int) =
+      this.dispatchCustomEvent(eventName)
+
+  if action == ButtonAction.PRESSED:
+    this.addMousePressedListener(listener)
+  elif action == ButtonAction.RELEASED:
+    this.addMouseReleasedListener(listener)
+
 proc addCustomEventTrigger*(
   this: InputHandler,
   eventName: string,
@@ -226,19 +286,15 @@ proc addCustomEventTrigger*(
 
   this.customEventTriggers[eventName].mouseButtons[mouseButton] = action
 
-  # TODO:
-  # Would be nice if I could just add a new button event listener that triggers the custom event,
-  # but then how do we remove that listener when we remove the custom event?
-  # Maybe worry about that later.
-
+  # TODO: How do we remove this listener when we remove the custom event?
   let listener =
     proc(button: int, state: ButtonState, x, y, clicks: int) =
       this.dispatchCustomEvent(eventName)
 
   if action == ButtonAction.PRESSED:
-    this.addMousePressedEventListener(listener)
+    this.addMousePressedListener(listener)
   elif action == ButtonAction.RELEASED:
-    this.addMouseReleasedEventListener(listener)
+    this.addMouseReleasedListener(listener)
 
 # proc addCustomEventTrigger*(this: InputHandler, eventName: string, stick: Stick, dir: Direction) =
 #   this.customEventTriggers[eventName] = CustomEventTriggers()
@@ -266,113 +322,131 @@ proc setController(this: InputHandler, id: JoystickID) =
     # TODO: Need some sort of better logging for non-fatal errors.
     echo "Error opening newly connected controller"
 
+template handleMouseMotionEvent(this: InputHandler, e: MouseMotionEventObj) =
+  this.mouse.location.x = float(e.x) * this.windowScaling.x
+  this.mouse.location.y = float(e.y) * this.windowScaling.y
+
+template handleMouseButtonEvent(this: InputHandler, e: MouseButtonEventObj) =
+  let
+    button = e.button
+    buttonX: int = int(float(e.x) * this.windowScaling.x)
+    buttonY: int = int(float(e.y) * this.windowScaling.y)
+
+  if not this.mouse.buttons.hasKey(button):
+    this.mouse.buttons[button] = ButtonState()
+
+  let eventIsPressed = event.kind == MOUSEBUTTONDOWN
+  this.mouse.buttons[button].pressed = eventIsPressed
+  this.mouse.buttons[button].justPressed = eventIsPressed
+  this.mouse.buttons[button].justReleased = not eventIsPressed
+
+  if eventIsPressed:
+    for listener in this.mouse.buttonPressedListeners:
+      listener(button, this.mouse.buttons[button], buttonX, buttonY, int e.clicks)
+  else:
+    for listener in this.mouse.buttonReleasedListeners:
+      listener(button, this.mouse.buttons[button], buttonX, buttonY, int e.clicks)
+
+template handleMouseWheelEvent(this: InputHandler, e: MouseWheelEventObj) =
+  this.mouse.vScrolled = e.y
+
+template handleKeyboardEvent(this: InputHandler, e: KeyboardEventObj) =
+  let
+    keycode = event.key.keysym.sym
+    pressed = event.key.state == PRESSED
+
+  if not this.keyboard.keys.hasKey(keycode):
+    this.keyboard.keys[keycode] = KeyState()
+
+  this.keyboard.keys[keycode].justPressed = pressed and not this.keyboard.keys[keycode].pressed
+  this.keyboard.keys[keycode].pressed = pressed
+  this.keyboard.keys[keycode].justReleased = not pressed
+
+  if this.keyboard.keyListeners.hasKey(keycode):
+    for listener in this.keyboard.keyListeners[keycode]:
+      listener(keycode, this.keyboard.keys[keycode])
+
+template handleControllerDeviceEvent(this: InputHandler, e: ControllerDeviceEventObj) =
+  if e.kind == CONTROLLERDEVICEADDED:
+    this.setController(event.cdevice.which)
+  elif e.kind == CONTROLLERDEVICEREMOVED:
+    this.clearController()
+
+template handleControllerButtonEvent(this: InputHandler, e: ControllerButtonEventObj) =
+  if CONTROLLER_BUTTON_REVERSE_LOOKUP.hasKey(e.button):
+    let 
+      pressed = e.state == PRESSED
+      button = CONTROLLER_BUTTON_REVERSE_LOOKUP[e.button]
+
+    template buttonState: ButtonState =
+      this.controller.buttons[button]
+
+    if not this.controller.buttons.hasKey(button):
+      this.controller.buttons[button] = ButtonState()
+
+    buttonState.justPressed = pressed and not buttonState.pressed
+    buttonState.pressed = pressed
+    buttonState.justReleased = not pressed
+
+    if pressed:
+      if this.controller.buttonPressedListeners.hasKey(button):
+        for listener in this.controller.buttonPressedListeners[button]:
+          listener(button, buttonState)
+    else:
+      if this.controller.buttonReleasedListeners.hasKey(button):
+        for listener in this.controller.buttonReleasedListeners[button]:
+          listener(button, buttonState)
+
+template handleControllerAxisEvent(this: InputHandler, e: ControllerAxisEventObj) =
+  let axis = e.axis
+  var value = float e.value
+  value =
+    if value < 0:
+      -value / float int16.low
+    else:
+      value / float int16.high
+
+  if abs(value) <= this.controller.deadzoneRadius:
+    value = 0.0
+
+  case axis:
+    of CONTROLLER_AXIS_LEFTX:
+      this.controller.leftStick.x = value
+    of CONTROLLER_AXIS_LEFTY:
+      this.controller.leftStick.y = value
+    of CONTROLLER_AXIS_RIGHTX:
+      this.controller.rightStick.x = value
+    of CONTROLLER_AXIS_RIGHTY:
+      this.controller.rightStick.y = value
+    else:
+      # TODO: Triggers
+      discard
+
 proc processEvent*(this: InputHandler, event: Event) =
-  ## Processes events.
-  ## Returns if the user wants to exit the application.
   case event.kind:
     # Mouse
     of MOUSEMOTION:
-      this.mouse.location.x = float(event.motion.x) * this.windowScaling.x
-      this.mouse.location.y = float(event.motion.y) * this.windowScaling.y
+      this.handleMouseMotionEvent(event.motion)
 
-    of MOUSEBUTTONDOWN:
-      let
-        buttonEvent = event.button
-        button = buttonEvent.button
-        buttonX: int = int(float(buttonEvent.x) * this.windowScaling.x)
-        buttonY: int = int(float(buttonEvent.y) * this.windowScaling.y)
-      if not this.mouse.buttons.hasKey(button):
-        this.mouse.buttons[button] = ButtonState()
-      this.mouse.buttons[button].pressed = true
-      this.mouse.buttons[button].justPressed = true
-
-      for listener in this.mouse.buttonPressedListeners:
-        listener(button, this.mouse.buttons[button], buttonX, buttonY, int buttonEvent.clicks)
-
-    of MOUSEBUTTONUP:
-      let
-        buttonEvent = event.button
-        button = buttonEvent.button
-        buttonX: int = int(float(buttonEvent.x) * this.windowScaling.x)
-        buttonY: int = int(float(buttonEvent.y) * this.windowScaling.y)
-
-      if not this.mouse.buttons.hasKey(button):
-        this.mouse.buttons[button] = ButtonState()
-      this.mouse.buttons[button].pressed = false
-      this.mouse.buttons[button].justPressed = false
-      this.mouse.buttons[button].justReleased = true
-
-      for listener in this.mouse.buttonReleasedListeners:
-        listener(button, this.mouse.buttons[button], buttonX, buttonY, int buttonEvent.clicks)
+    of MOUSEBUTTONDOWN, MOUSEBUTTONUP:
+      this.handleMouseButtonEvent(event.button)
 
     of MOUSEWHEEL:
-      this.mouse.vScrolled = event.wheel.y
+      this.handleMouseWheelEvent(event.wheel)
 
     # Keyboard
     of KEYDOWN, KEYUP:
-      let
-        keycode = event.key.keysym.sym
-        pressed = event.key.state == PRESSED
+      this.handleKeyboardEvent(event.key)
 
-      if not this.keyboard.keys.hasKey(keycode):
-        this.keyboard.keys[keycode] = KeyState()
-
-      this.keyboard.keys[keycode].justPressed = pressed and not this.keyboard.keys[keycode].pressed
-      this.keyboard.keys[keycode].pressed = pressed
-      this.keyboard.keys[keycode].justReleased = not pressed
-
-      if this.keyboard.keyListeners.hasKey(keycode):
-        for listener in this.keyboard.keyListeners[keycode]:
-          listener(keycode, this.keyboard.keys[keycode])
-
-    of CONTROLLERDEVICEADDED:
-      this.setController(event.cdevice.which)
-
-    of CONTROLLERDEVICEREMOVED:
-      this.clearController()
+    # Controller
+    of CONTROLLERDEVICEADDED, CONTROLLERDEVICEREMOVED:
+      this.handleControllerDeviceEvent(event.cdevice)
 
     of CONTROLLERBUTTONDOWN, CONTROLLERBUTTONUP:
-      let
-        e = event.cbutton
-        pressed = e.state == PRESSED
-
-      template buttonState: ButtonState =
-        this.controller.buttons[e.button]
-
-      if not this.controller.buttons.hasKey(e.button):
-        this.controller.buttons[e.button] = ButtonState()
-
-      buttonState.justPressed = pressed and not this.controller.buttons[e.button].pressed
-      buttonState.pressed = pressed
-      buttonState.justReleased = not pressed
+      this.handleControllerButtonEvent(event.cbutton)
 
     of CONTROLLERAXISMOTION:
-      let
-        e = event.caxis
-        axis = e.axis
-
-      var value = float e.value
-      value =
-        if value < 0:
-          -value / float int16.low
-        else:
-          value / float int16.high
-
-      if abs(value) <= this.controller.deadzoneRadius:
-        value = 0.0
-
-      case axis:
-        of CONTROLLER_AXIS_LEFTX:
-          this.controller.leftStick.x = value
-        of CONTROLLER_AXIS_LEFTY:
-          this.controller.leftStick.y = value
-        of CONTROLLER_AXIS_RIGHTX:
-          this.controller.rightStick.x = value
-        of CONTROLLER_AXIS_RIGHTY:
-          this.controller.rightStick.y = value
-        else:
-          # TODO: Triggers
-          discard
+      this.handleControllerAxisEvent(event.caxis)
 
     else:
       discard
@@ -452,18 +526,18 @@ proc leftStick*(this: InputHandler): ControllerStickState =
 proc rightStick*(this: InputHandler): ControllerStickState =
   result = this.controller.rightStick
 
-proc getControllerButtonState*(this: InputHandler, button: GameControllerButton): ButtonState =
+proc getControllerButtonState*(this: InputHandler, button: ControllerButton): ButtonState =
   if not this.controller.buttons.hasKey(button):
     this.controller.buttons[button] = ButtonState()
   return this.controller.buttons[button]
 
-template isControllerButtonPressed*(this: InputHandler, button: GameControllerButton): bool =
+template isControllerButtonPressed*(this: InputHandler, button: ControllerButton): bool =
   this.getControllerButtonState(button).pressed
 
-template wasControllerButtonJustPressed*(this: InputHandler, button: GameControllerButton): bool =
+template wasControllerButtonJustPressed*(this: InputHandler, button: ControllerButton): bool =
   this.getControllerButtonState(button).justPressed
 
-template wasControllerButtonJustReleased*(this: InputHandler, button: GameControllerButton): bool =
+template wasControllerButtonJustReleased*(this: InputHandler, button: ControllerButton): bool =
   this.getControllerButtonState(button).justReleased
 
 proc resetFrameSpecificState*(this: InputHandler) =
