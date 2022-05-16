@@ -1,5 +1,5 @@
 import 
-  std/[tables, hashes]
+  std/[tables, hashes, decls]
 
 import
   sdl2_nim/sdl,
@@ -125,19 +125,22 @@ type
     rightStickListeners: seq[ControllerStickEventListener]
     leftStickListeners: seq[ControllerStickEventListener]
 
+    # TODO: Triggers
+
     buttons: Table[ControllerButton, ButtonState]
     buttonPressedListeners: Table[ControllerButton, SafeSet[ControllerButtonEventListener]]
     buttonReleasedListeners: Table[ControllerButton, SafeSet[ControllerButtonEventListener]]
 
-  CustomEventListener* = proc(state: InputState)
+  CustomActionListener* = proc(state: InputState)
 
   EventListener* = proc(e: Event): bool
   ## Return true to remove the listener from the InputHandler.
   InputHandler* = ref object
     eventListeners: Table[EventKind, SafeSet[EventListener]]
 
-    customEvents: Table[string, InputState]
-    customEventListeners: Table[string, SafeSet[CustomEventListener]]
+    customActions: seq[string]
+    customActionsFiredThisFrame: SafeSet[string]
+    customActionListeners: Table[string, SafeSet[CustomActionListener]]
 
     mouse: Mouse
     keyboard: Keyboard
@@ -178,7 +181,8 @@ proc initInputHandlerSingleton*(windowScaling: Vector) =
     mouse: Mouse(),
     keyboard: Keyboard(),
     controller: Controller(deadzoneRadius: DEFAULT_DEADZONE),
-    windowScaling: windowScaling
+    windowScaling: windowScaling,
+    customActionsFiredThisFrame: newSafeSet[string]()
   )
 
   if init(INIT_GAMECONTROLLER) != 0:
@@ -258,92 +262,90 @@ proc addControllerStickListener*(
 
 ## Custom Events
 
-proc registerCustomEvent*(this: InputHandler, eventName: string) =
-  this.customEvents[eventName] = InputState()
-  this.customEventListeners[eventName] = newSafeSet[CustomEventListener]()
+proc registerCustomAction*(this: InputHandler, eventName: string) =
+  this.customActions.add(eventName)
+  this.customActionListeners[eventName] = newSafeSet[CustomActionListener]()
 
-template isCustomEventRegistered*(this: InputHandler, eventName: string): bool =
-  this.customEvents.hasKey(eventName)
+template isCustomActionRegistered*(this: InputHandler, eventName: string): bool =
+  eventName in this.customActions
 
-proc dispatchCustomEvent*(this: InputHandler, eventName: string) =
-  if not this.customEventListeners.hasKey(eventName) or not this.isCustomEventRegistered(eventName):
-    raise newException(Exception, "Custom event " & eventName & " has not been registered")
+proc addCustomActionListener*(this: InputHandler, eventName: string, listener: CustomActionListener) =
+  if not this.customActionListeners.hasKey(eventName):
+    this.customActionListeners[eventName] = newSafeSet[CustomActionListener]()
+  this.customActionListeners[eventName].add(listener)
 
-  let state = this.customEvents[eventName]
-  for listener in this.customEventListeners[eventName]:
-    listener(state)
-
-proc addCustomEventListener*(this: InputHandler, eventName: string, listener: CustomEventListener) =
-  if not this.customEventListeners.hasKey(eventName):
-    this.customEventListeners[eventName] = newSafeSet[CustomEventListener]()
-  this.customEventListeners[eventName].add(listener)
-
-proc addCustomEventTrigger*(
+proc addCustomActionTrigger*(
   this: InputHandler,
   eventName: string,
   key: Keycode,
   action: KeyAction = KeyAction.PRESSED
 ) =
-  if not this.isCustomEventRegistered(eventName):
+  if not this.isCustomActionRegistered(eventName):
     raise newException(Exception, "Custom event " & eventName & " has not been registered")
 
-  let listener =
-    proc(key: Keycode, state: KeyState) =
-      this.dispatchCustomEvent(eventName)
-
   if action == KeyAction.PRESSED:
+    let listener = 
+      proc(key: Keycode, state: KeyState) =
+        if state.justPressed:
+          this.customActionsFiredThisFrame.add(eventName)
+
     this.addKeyPressedListener(key, listener)
   elif action == KeyAction.RELEASED:
+    let listener =
+      proc(key: Keycode, state: KeyState) =
+        if state.justReleased:
+          this.customActionsFiredThisFrame.add(eventName)
     this.addKeyReleasedListener(key, listener)
 
-proc addCustomEventTrigger*(
+proc addCustomActionTrigger*(
   this: InputHandler,
   eventName: string,
   button: ControllerButton,
   action: ButtonAction = ButtonAction.PRESSED
 ) =
-  if not this.isCustomEventRegistered(eventName):
+  if not this.isCustomActionRegistered(eventName):
     raise newException(Exception, "Custom event " & eventName & " has not been registered")
 
   let listener =
     proc(button: ControllerButton, state: ButtonState) =
-      this.dispatchCustomEvent(eventName)
+      this.customActionsFiredThisFrame.add(eventName)
 
   if action == ButtonAction.PRESSED:
     this.addControllerButtonPressedListener(button, listener)
   elif action == ButtonAction.RELEASED:
     this.addControllerButtonReleasedListener(button, listener)
 
-proc addCustomEventTrigger*(
+proc addCustomActionTrigger*(
   this: InputHandler,
   eventName: string,
   mouseButton: MouseButton,
   action: ButtonAction = ButtonAction.PRESSED
 ) =
-  if not this.isCustomEventRegistered(eventName):
+  if not this.isCustomActionRegistered(eventName):
     raise newException(Exception, "Custom event " & eventName & " has not been registered")
 
   let listener =
     proc(button: int, state: ButtonState, x, y, clicks: int) =
-      this.dispatchCustomEvent(eventName)
+      if button == (int) mouseButton:
+        this.customActionsFiredThisFrame.add(eventName)
 
   if action == ButtonAction.PRESSED:
     this.addMousePressedListener(listener)
   elif action == ButtonAction.RELEASED:
     this.addMouseReleasedListener(listener)
 
-proc addCustomEventTrigger*(
+proc addCustomActionTrigger*(
   this: InputHandler,
   eventName: string,
   stick: ControllerStick,
   dir: Direction
 ) =
-  if not this.customEvents.hasKey(eventName):
+  if not this.isCustomActionRegistered(eventName):
     raise newException(Exception, "Custom event " & eventName & " has not been registered")
-  
+
   let callback =
     proc(state: ControllerStickState) =
-      this.dispatchCustomEvent(eventName)
+      this.customActionsFiredThisFrame.add(eventName)
 
   var filter: ControllerStickEventFilter = nil
 
@@ -621,6 +623,11 @@ template wasControllerButtonJustPressed*(this: InputHandler, button: ControllerB
 template wasControllerButtonJustReleased*(this: InputHandler, button: ControllerButton): bool =
   this.getControllerButtonState(button).justReleased
 
+# Custom Events
+
+proc wasActionJustPressed*(this: InputHandler, action: string): bool =
+  return this.customActionsFiredThisFrame.contains(action)
+
 proc resetFrameSpecificState*(this: InputHandler) =
   # Update justPressed props (invoked _after_ the game was updated).
   for button in this.mouse.buttons.mvalues:
@@ -634,6 +641,8 @@ proc resetFrameSpecificState*(this: InputHandler) =
   for button in this.controller.buttons.mvalues:
     button.justPressed = false
     button.justReleased = false
+
+  this.customActionsFiredThisFrame.clear()
 
   this.mouse.vScrolled = 0
 

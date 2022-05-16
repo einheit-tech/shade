@@ -134,6 +134,9 @@ proc physicsProcess(this: Node, deltaTime: float) =
   friction()
   run(x, y)
 
+  if player.isOnGround and Input.wasActionJustPressed("jump"):
+    y += jumpForce
+
   player.velocity = vector(x, y)
 
   camera.z += Input.wheelScrolledLastFrame.float * 0.03
@@ -166,17 +169,11 @@ when not defined(debug):
     echo "Error playing music"
 
 # NOTE: Testing custom input events
-Input.registerCustomEvent("jump")
-Input.addCustomEventTrigger("jump", MouseButton.LEFT)
-Input.addCustomEventTrigger("jump", ControllerButton.A)
-Input.addCustomEventTrigger("jump", K_SPACE)
-Input.addCustomEventTrigger("jump", ControllerStick.RIGHT, Direction.UP)
-Input.addCustomEventListener(
-  "jump",
-  proc(state: InputState) =
-    if player.isOnGround:
-      player.velocity.y += jumpForce
-)
+Input.registerCustomAction("jump")
+Input.addCustomActionTrigger("jump", MouseButton.LEFT)
+Input.addCustomActionTrigger("jump", ControllerButton.A)
+Input.addCustomActionTrigger("jump", K_SPACE)
+Input.addCustomActionTrigger("jump", ControllerStick.RIGHT, Direction.UP)
 
 Game.start()
 
