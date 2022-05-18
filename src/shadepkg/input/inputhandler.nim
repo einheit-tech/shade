@@ -370,7 +370,7 @@ proc addCustomActionTrigger*(
   case dir:
     of Direction.UP:
       filter = proc(state: ControllerStickState): bool =
-        state.y < 0 and -abs(state.x) > abs(state.y)
+        state.y < 0 and -abs(state.x) > state.y
     of Direction.DOWN:
       filter = proc(state: ControllerStickState): bool =
         state.y > 0 and abs(state.x) < state.y
