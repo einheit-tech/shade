@@ -174,6 +174,7 @@ Input.addCustomActionTrigger("jump", MouseButton.LEFT)
 Input.addCustomActionTrigger("jump", ControllerButton.A)
 Input.addCustomActionTrigger("jump", K_SPACE)
 Input.addCustomActionTrigger("jump", ControllerStick.RIGHT, Direction.UP)
+Input.addCustomActionTrigger("jump", ControllerTrigger.RIGHT)
 
 Game.start()
 

@@ -82,8 +82,8 @@ type
     RIGHT
 
   ControllerTrigger* {.pure, size: sizeof(uint8).} = enum
-    TRIGGER_LEFT = CONTROLLER_AXIS_TRIGGERLEFT,
-    TRIGGER_RIGHT = CONTROLLER_AXIS_TRIGGERRIGHT
+    LEFT = CONTROLLER_AXIS_TRIGGERLEFT,
+    RIGHT = CONTROLLER_AXIS_TRIGGERRIGHT
 
   Mouse* = ref object
     location: Vector
@@ -103,6 +103,9 @@ type
     x*: float
     y*: float
 
+  ControllerTriggerState* = object
+    value*: CompletionRatio
+
   ControllerStickEventCallback* = proc(state: ControllerStickState)
   ControllerStickEventFilter* = proc(state: ControllerStickState): bool
   ControllerStickEventListener* = object
@@ -114,9 +117,15 @@ type
     justPressed: bool
     justReleased: bool
 
+  ControllerTriggerEventCallback* = proc(value: CompletionRatio)
+  ControllerTriggerEventListener* = object
+    triggerThreshhold: CompletionRatio
+    callback: ControllerTriggerEventCallback
+
   Controller* = ref object
     # NOTE: Will add support for multiple controllers, touchpads, etc. later when needed.
     sdlGameController: GameController
+    ## Deadzone applied to all controller axis inputs (analog sticks and triggers).
     deadzoneRadius*: float
     name: string
 
@@ -125,7 +134,10 @@ type
     rightStickListeners: seq[ControllerStickEventListener]
     leftStickListeners: seq[ControllerStickEventListener]
 
-    # TODO: Triggers
+    leftTrigger: ControllerTriggerState
+    rightTrigger: ControllerTriggerState
+    rightTriggerListeners: seq[ControllerTriggerEventListener]
+    leftTriggerListeners: seq[ControllerTriggerEventListener]
 
     buttons: Table[ControllerButton, ButtonState]
     buttonPressedListeners: Table[ControllerButton, SafeSet[ControllerButtonEventListener]]
@@ -245,20 +257,26 @@ proc addControllerStickListener*(
   callback: ControllerStickEventCallback,
   filter: ControllerStickEventFilter = nil
 ) =
+  let eventListener = ControllerStickEventListener(callback: callback, filter: filter)
   if stick == ControllerStick.LEFT:
-    this.controller.leftStickListeners.add(
-      ControllerStickEventListener(
-        callback: callback,
-        filter: filter
-      )
-    )
+    this.controller.leftStickListeners.add(eventListener)
   else:
-    this.controller.rightStickListeners.add(
-      ControllerStickEventListener(
-        callback: callback,
-        filter: filter
-      )
-    )
+    this.controller.rightStickListeners.add(eventListener)
+
+proc addControllerTriggerListener*(
+  this: InputHandler,
+  trigger: ControllerTrigger,
+  callback: ControllerTriggerEventCallback,
+  triggerThreshhold: CompletionRatio = 1.0
+) =
+  let eventListener = ControllerTriggerEventListener(
+    callback: callback,
+    triggerThreshhold: triggerThreshhold
+  )
+  if trigger == ControllerTrigger.LEFT:
+    this.controller.leftTriggerListeners.add(eventListener)
+  else:
+    this.controller.rightTriggerListeners.add(eventListener)
 
 ## Custom Events
 
@@ -365,12 +383,28 @@ proc addCustomActionTrigger*(
 
   this.addControllerStickListener(stick, callback, filter)
 
+proc addCustomActionTrigger*(
+  this: InputHandler,
+  eventName: string,
+  trigger: ControllerTrigger,
+  triggerThreshhold: CompletionRatio = 1.0
+) =
+  if not this.isCustomActionRegistered(eventName):
+    raise newException(Exception, "Custom event " & eventName & " has not been registered")
+
+  let callback: ControllerTriggerEventCallback =
+    proc(value: CompletionRatio) =
+      this.customActionsFiredThisFrame.add(eventName)
+
+  this.addControllerTriggerListener(trigger, callback, triggerThreshhold)
+
 proc clearController(this: InputHandler) =
   this.controller.sdlGameController = nil
   this.controller.name = ""
   this.controller.leftStick = ControllerStickState()
   this.controller.rightStick = ControllerStickState()
-  # this.controller.triggers.clear()
+  this.controller.leftTrigger = ControllerTriggerState()
+  this.controller.rightTrigger = ControllerTriggerState()
   this.controller.buttons.clear()
 
 proc setController(this: InputHandler, id: JoystickID) =
@@ -380,7 +414,8 @@ proc setController(this: InputHandler, id: JoystickID) =
     this.controller.name = $sdlGameController.gameControllerName()
     this.controller.leftStick = ControllerStickState()
     this.controller.rightStick = ControllerStickState()
-    # this.controller.triggers.clear()
+    this.controller.leftTrigger = ControllerTriggerState()
+    this.controller.rightTrigger = ControllerTriggerState()
     this.controller.buttons.clear()
   else:
     # TODO: Need some sort of better logging for non-fatal errors.
@@ -476,6 +511,16 @@ template notifyRightStickListeners(this: InputHandler) =
     if listener.filter == nil or listener.filter(this.controller.rightStick):
       listener.callback(this.controller.rightStick)
 
+template notifyLeftTriggerListeners(this: InputHandler) =
+  for listener in this.controller.leftTriggerListeners:
+    if listener.triggerThreshhold <= this.controller.leftTrigger.value:
+      listener.callback(this.controller.leftTrigger.value)
+
+template notifyRightTriggerListeners(this: InputHandler) =
+  for listener in this.controller.rightTriggerListeners:
+    if listener.triggerThreshhold <= this.controller.rightTrigger.value:
+      listener.callback(this.controller.rightTrigger.value)
+
 template handleControllerAxisEvent(this: InputHandler, e: ControllerAxisEventObj) =
   let axis = e.axis
   var value = float e.value
@@ -501,8 +546,13 @@ template handleControllerAxisEvent(this: InputHandler, e: ControllerAxisEventObj
     of CONTROLLER_AXIS_RIGHTY:
       this.controller.rightStick.y = value
       this.notifyRightStickListeners()
+    of CONTROLLER_AXIS_TRIGGERLEFT:
+      this.controller.leftTrigger.value = value
+      this.notifyLeftTriggerListeners()
+    of CONTROLLER_AXIS_TRIGGERRIGHT:
+      this.controller.rightTrigger.value = value
+      this.notifyRightTriggerListeners()
     else:
-      # TODO: Triggers
       discard
 
 proc processEvent*(this: InputHandler, event: Event) =
