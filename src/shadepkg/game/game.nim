@@ -11,9 +11,7 @@ import
   ../audio/audioplayer,
   ../render/color
 
-const
-  ONE_BILLION = 1000000000
-  ONE_MILLION = 1000000
+const ONE_BILLION = 1000000000
 
 type
   Engine* = ref object of RootObj

@@ -1,13 +1,11 @@
 import 
-  std/[tables, hashes, decls]
+  std/[tables]
 
 import
   sdl2_nim/sdl,
   safeset
 
-import
-  ../math/mathutils,
-  ../util/types
+import ../math/mathutils
 
 export
   Scancode,
@@ -151,7 +149,7 @@ type
     eventListeners: Table[EventKind, SafeSet[EventListener]]
 
     customActions: seq[string]
-    customActionsFiredThisFrame: SafeSet[string]
+    customActionsToFireThisFrame: SafeSet[string]
     customActionListeners: Table[string, SafeSet[CustomActionListener]]
 
     mouse: Mouse
@@ -194,7 +192,7 @@ proc initInputHandlerSingleton*(windowScaling: Vector) =
     keyboard: Keyboard(),
     controller: Controller(deadzoneRadius: DEFAULT_DEADZONE),
     windowScaling: windowScaling,
-    customActionsFiredThisFrame: newSafeSet[string]()
+    customActionsToFireThisFrame: newSafeSet[string]()
   )
 
   if init(INIT_GAMECONTROLLER) != 0:
@@ -305,14 +303,14 @@ proc addCustomActionTrigger*(
     let listener = 
       proc(key: Keycode, state: KeyState) =
         if state.justPressed:
-          this.customActionsFiredThisFrame.add(eventName)
+          this.customActionsToFireThisFrame.add(eventName)
 
     this.addKeyPressedListener(key, listener)
   elif action == KeyAction.RELEASED:
     let listener =
       proc(key: Keycode, state: KeyState) =
         if state.justReleased:
-          this.customActionsFiredThisFrame.add(eventName)
+          this.customActionsToFireThisFrame.add(eventName)
     this.addKeyReleasedListener(key, listener)
 
 proc addCustomActionTrigger*(
@@ -326,7 +324,7 @@ proc addCustomActionTrigger*(
 
   let listener =
     proc(button: ControllerButton, state: ButtonState) =
-      this.customActionsFiredThisFrame.add(eventName)
+      this.customActionsToFireThisFrame.add(eventName)
 
   if action == ButtonAction.PRESSED:
     this.addControllerButtonPressedListener(button, listener)
@@ -345,7 +343,7 @@ proc addCustomActionTrigger*(
   let listener =
     proc(button: int, state: ButtonState, x, y, clicks: int) =
       if button == (int) mouseButton:
-        this.customActionsFiredThisFrame.add(eventName)
+        this.customActionsToFireThisFrame.add(eventName)
 
   if action == ButtonAction.PRESSED:
     this.addMousePressedListener(listener)
@@ -363,7 +361,7 @@ proc addCustomActionTrigger*(
 
   let callback =
     proc(state: ControllerStickState) =
-      this.customActionsFiredThisFrame.add(eventName)
+      this.customActionsToFireThisFrame.add(eventName)
 
   var filter: ControllerStickEventFilter = nil
 
@@ -394,7 +392,7 @@ proc addCustomActionTrigger*(
 
   let callback: ControllerTriggerEventCallback =
     proc(value: CompletionRatio) =
-      this.customActionsFiredThisFrame.add(eventName)
+      this.customActionsToFireThisFrame.add(eventName)
 
   this.addControllerTriggerListener(trigger, callback, triggerThreshhold)
 
@@ -676,7 +674,7 @@ template wasControllerButtonJustReleased*(this: InputHandler, button: Controller
 # Custom Events
 
 proc wasActionJustPressed*(this: InputHandler, action: string): bool =
-  return this.customActionsFiredThisFrame.contains(action)
+  return this.customActionsToFireThisFrame.contains(action)
 
 proc resetFrameSpecificState*(this: InputHandler) =
   # Update justPressed props (invoked _after_ the game was updated).
@@ -692,7 +690,7 @@ proc resetFrameSpecificState*(this: InputHandler) =
     button.justPressed = false
     button.justReleased = false
 
-  this.customActionsFiredThisFrame.clear()
+  this.customActionsToFireThisFrame.clear()
 
   this.mouse.vScrolled = 0
 
