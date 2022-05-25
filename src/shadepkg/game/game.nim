@@ -11,9 +11,7 @@ import
   ../audio/audioplayer,
   ../render/color
 
-const
-  ONE_BILLION = 1000000000
-  ONE_MILLION = 1000000
+const ONE_BILLION = 1000000000
 
 type
   Engine* = ref object of RootObj
@@ -99,8 +97,8 @@ proc initEngineSingleton*(
       gamestate.updateResolution(float e.window.data1, float e.window.data2)
       Input.windowScaling = Game.detectWindowScaling()
 
-  Input.addEventListener(WINDOWEVENT, handleWindowEvents)
-  Input.addEventListener(QUIT,
+  Input.addListener(WINDOWEVENT, handleWindowEvents)
+  Input.addListener(QUIT,
     proc(e: Event): bool =
       Game.shouldExit = true
   )

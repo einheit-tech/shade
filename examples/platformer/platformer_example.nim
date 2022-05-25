@@ -97,7 +97,7 @@ proc physicsProcess(this: Node, deltaTime: float) =
     return
 
   let
-    leftStickX = Input.leftStickX()
+    leftStickX = Input.leftStick.x
     leftPressed = Input.isKeyPressed(K_LEFT) or leftStickX < 0
     rightPressed = Input.isKeyPressed(K_RIGHT) or leftStickX > 0
 
@@ -128,18 +128,14 @@ proc physicsProcess(this: Node, deltaTime: float) =
 
     player.playAnimation("run")
 
-  proc jump() =
-    if player.isOnGround and (
-      Input.wasKeyJustPressed(K_SPACE) or Input.wasControllerButtonJustPressed(CONTROLLER_BUTTON_A)
-    ):
-      y += jumpForce
-
   proc friction() =
     x *= (1 - ground.collisionShape.material.friction)
 
   friction()
   run(x, y)
-  jump()
+
+  if player.isOnGround and Input.wasActionJustPressed("jump"):
+    y += jumpForce
 
   player.velocity = vector(x, y)
 
@@ -152,7 +148,7 @@ rightWall.scale = vector(-1, 1)
 
 # Toggle transparency upon pressing "t"
 var isTransparent = false
-Input.addKeyEventListener(
+Input.addKeyPressedListener(
   K_t,
   proc(key: Keycode, state: KeyState) =
     if state.justPressed:
@@ -171,6 +167,14 @@ when not defined(debug):
     fadeInMusic(someSong, 2.0, 0.15)
   else:
     echo "Error playing music"
+
+# NOTE: Testing custom input events
+Input.registerCustomAction("jump")
+Input.addCustomActionTrigger("jump", MouseButton.LEFT)
+Input.addCustomActionTrigger("jump", ControllerButton.A)
+Input.addCustomActionTrigger("jump", K_SPACE)
+Input.addCustomActionTrigger("jump", ControllerStick.RIGHT, Direction.UP)
+Input.addCustomActionTrigger("jump", ControllerTrigger.RIGHT)
 
 Game.start()
 
