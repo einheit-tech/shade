@@ -17,7 +17,6 @@ king.scale = vector(8, 8)
 king.setLocation(vector(320, height / 2))
 
 let kingSprite = newSprite(image, 11, 8)
-
 king.onRender = proc(this: Node, ctx: Target) =
   kingSprite.render(ctx)
 
@@ -30,6 +29,12 @@ const
 
 let shaderProgram = newShader(vertShaderPath, fragShaderPath)
 king.shader = shaderProgram
+
+Input.addKeyEventListener(
+  K_ESCAPE,
+  proc(key: Keycode, state: KeyState) =
+    Game.stop()
+)
 
 Game.start()
 
