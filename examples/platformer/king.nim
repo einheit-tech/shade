@@ -2,9 +2,9 @@ import ../../src/shade
 
 proc createIdleAnimation(king: Sprite): Animation =
   const
-    frameSpeed = 0.10
+    frameDuration = 0.10
     frameCount = 8
-    animDuration = frameCount * frameSpeed
+    animDuration = frameCount * frameDuration
 
   # Set up the idle animation
   let idleAnim = newAnimation(animDuration, true)
@@ -13,7 +13,7 @@ proc createIdleAnimation(king: Sprite): Animation =
   let animCoordFrames: seq[KeyFrame[IVector]] =
     @[
       (ivector(0, 5), 0.0),
-      (ivector(10, 5), animDuration - frameSpeed),
+      (ivector(10, 5), animDuration - frameDuration),
     ]
   idleAnim.addNewAnimationTrack(
     king.frameCoords,
@@ -23,9 +23,9 @@ proc createIdleAnimation(king: Sprite): Animation =
 
 proc createRunAnimation(king: Sprite): Animation =
   const
-    frameSpeed = 0.08
+    frameDuration = 0.08
     frameCount = 8
-    animDuration = frameCount * frameSpeed
+    animDuration = frameCount * frameDuration
 
   # Set up the run animation
   var runAnim = newAnimation(animDuration, true)
@@ -34,7 +34,7 @@ proc createRunAnimation(king: Sprite): Animation =
   let animCoordFrames: seq[KeyFrame[IVector]] =
     @[
       (ivector(0, 7), 0.0),
-      (ivector(7, 7), animDuration - frameSpeed),
+      (ivector(7, 7), animDuration - frameDuration),
     ]
   runAnim.addNewAnimationTrack(
     king.frameCoords,
@@ -73,7 +73,8 @@ proc createNewKing*(): King =
   result.collisionShape = collisionShape
 
 proc playAnimation*(king: King, name: string) =
-  king.animationPlayer.playAnimation(name)
+  if king.animationPlayer.currentAnimationName != name:
+    king.animationPlayer.playAnimation(name)
 
 method update*(this: King, deltaTime: float) =
   procCall PhysicsBody(this).update(deltaTime)

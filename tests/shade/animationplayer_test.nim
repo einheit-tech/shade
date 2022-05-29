@@ -75,6 +75,17 @@ describe "AnimationPlayer":
         vecFrames
       )
 
+      # IVector
+      const ivecFrames: seq[KeyFrame[IVector]] = @[
+        (ivector(0, 2), 0.0),
+        (ivector(14, 124), 0.5),
+        (ivector(19, 305), 1.1)
+      ]
+      testAnim.addNewAnimationTrack(
+        fakeNode.ivecVal,
+        ivecFrames
+      )
+
       var
         proc1CallCount = 0
         proc2CallCount = 0
@@ -97,6 +108,7 @@ describe "AnimationPlayer":
       assertEquals(fakeNode.intVal, startingIntVal)
       assertEquals(fakeNode.floatVal, startingFloatVal)
       assertEquals(fakeNode.vecVal, startingVectorVal)
+      assertEquals(fakeNode.ivecVal, startingIVectorVal)
       assertEquals(proc1CallCount, 0)
       assertEquals(proc2CallCount, 0)
       assertEquals(proc3CallCount, 0)
@@ -124,6 +136,14 @@ describe "AnimationPlayer":
         animPlayer.currentTime / (vecFrames[1].time - vecFrames[0].time),
       )
       assertEquals(fakeNode.vecVal, expectedVectorVal)
+
+      # IVector
+      var expectedIVectorVal = lerp(
+        ivecFrames[0].value,
+        ivecFrames[1].value,
+        animPlayer.currentTime / (ivecFrames[1].time - ivecFrames[0].time),
+      )
+      assertEquals(fakeNode.ivecVal, expectedIVectorVal)
 
       # Proc calls
       assertEquals(proc1CallCount, 1)
