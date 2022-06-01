@@ -163,11 +163,11 @@ method update*(this: PhysicsBody, deltaTime: float) =
     this.isOnWall = false
 
 PhysicsBody.renderAsNodeChild:
+  if callback != nil:
+    callback()
+
   when defined(collisionoutlines):
     if this.collisionShape != nil:
       ctx.scale(1.0 / this.scale.x, 1.0 / this.scale.y):
         this.collisionShape.render(ctx)
-
-  if callback != nil:
-    callback()
 
