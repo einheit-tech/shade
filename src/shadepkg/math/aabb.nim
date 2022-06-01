@@ -71,6 +71,13 @@ template contains*(this: AABB, v: Vector): bool =
 template contains*(this, aabb: AABB): bool =
   this.contains(aabb.topLeft) and this.contains(aabb.bottomRight)
 
+proc getOverlap*(this, aabb: AABB): float =
+  let
+    dx = min(this.right, aabb.right) - max(this.left, aabb.left)
+    dy = min(this.bottom, aabb.bottom) - max(this.top, aabb.top)
+  if dx > 0 and dy > 0:
+    return dx * dy
+
 template overlaps*(this, aabb: AABB): bool =
   # One aabb is left of the other
   if this.topLeft.x >= aabb.bottomRight.x or aabb.topLeft.x >= this.bottomRight.x:
@@ -96,6 +103,12 @@ template createBoundsAround*(r1, r2: AABB): AABB =
     max(r1.bottomRight.x, r2.bottomRight.x),
     max(r1.bottomRight.y, r2.bottomRight.y)
   )
+
+template merge*(r1, r2: AABB): AABB =
+  createBoundsAround(r1, r2)
+
+template perimeter*(this: AABB): float =
+  (this.width + this.height) * 2
 
 proc vertices*(this: AABB): array[4, Vector] =
   [

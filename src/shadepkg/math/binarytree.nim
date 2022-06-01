@@ -29,9 +29,9 @@ proc setBranch*(branch, left, right: BinaryTree) =
 proc getSibling*(this: BinaryTree): BinaryTree =
   ## Retrieves the sibling of the given node.
   if this == this.parent.left:
-    return this.parent.left
-  else:
     return this.parent.right
+  else:
+    return this.parent.left
 
 iterator preorder*[T](this: BinaryTree[T]): BinaryTree[T] =
   ## Preorder traversal of a binary tree.
