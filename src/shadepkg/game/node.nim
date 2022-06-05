@@ -104,11 +104,11 @@ method render*(this: Node, ctx: Target, callback: proc() = nil) {.base.} =
   if this.shader != nil:
     this.shader.render(gamestate.time, gamestate.resolution)
 
-  if callback != nil:
-    callback()
-
   if this.onRender != nil:
     this.onRender(this, ctx)
+
+  if callback != nil:
+    callback()
 
   if this.shader != nil:
     activateShaderProgram(0, nil)
