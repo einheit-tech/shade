@@ -73,7 +73,8 @@ proc createNewKing*(): King =
   result.collisionShape = collisionShape
 
 proc playAnimation*(king: King, name: string) =
-  king.animationPlayer.playAnimation(name)
+  if king.animationPlayer.currentAnimationName != name:
+    king.animationPlayer.playAnimation(name)
 
 method update*(this: King, deltaTime: float) =
   procCall PhysicsBody(this).update(deltaTime)

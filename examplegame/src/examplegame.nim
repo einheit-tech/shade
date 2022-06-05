@@ -97,7 +97,7 @@ proc physicsProcess(this: Node, deltaTime: float) =
     return
 
   let
-    leftStickX = Input.leftStickX()
+    leftStickX = Input.leftStick().x
     leftPressed = Input.isKeyPressed(K_LEFT) or leftStickX < -0.01
     rightPressed = Input.isKeyPressed(K_RIGHT) or leftStickX > 0.01
 
@@ -130,7 +130,7 @@ proc physicsProcess(this: Node, deltaTime: float) =
 
   proc jump() =
     if player.isOnGround and (
-      Input.wasKeyJustPressed(K_SPACE) or Input.wasControllerButtonJustPressed(CONTROLLER_BUTTON_A)
+      Input.wasKeyJustPressed(K_SPACE) or Input.wasControllerButtonJustPressed(ControllerButton.A)
     ):
       y += jumpForce
 
@@ -159,5 +159,4 @@ when not defined(debug):
     echo "Error playing music"
 
 Game.start()
-
 
