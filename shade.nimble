@@ -34,7 +34,8 @@ task build_deps, "Runs the shader example":
   when defined(linux):
     let localUsrPath = joinPath(thisDir(), ".usr")
     withDir "submodules/sdl":
-      exec fmt"./configure --prefix={localUsrPath}"
+      # See https://github.com/libsdl-org/SDL/issues/4199#issuecomment-800831414 regarding --enable-hidapi-libusb
+      exec fmt"./configure --prefix={localUsrPath} --enable-hidapi-libusb"
       exec "make -j install"
 
     withDir "submodules/sdl-gpu":
