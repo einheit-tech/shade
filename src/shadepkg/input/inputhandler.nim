@@ -533,23 +533,29 @@ template handleControllerAxisEvent(this: InputHandler, e: ControllerAxisEventObj
 
   case axis:
     of CONTROLLER_AXIS_LEFTX:
-      this.controller.leftStick.x = value
-      this.notifyLeftStickListeners()
+      if value != this.controller.leftStick.x:
+        this.controller.leftStick.x = value
+        this.notifyLeftStickListeners()
     of CONTROLLER_AXIS_LEFTY:
-      this.controller.leftStick.y = value
-      this.notifyLeftStickListeners()
+      if value != this.controller.leftStick.y:
+        this.controller.leftStick.y = value
+        this.notifyLeftStickListeners()
     of CONTROLLER_AXIS_RIGHTX:
-      this.controller.rightStick.x = value
-      this.notifyRightStickListeners()
+      if value != this.controller.rightStick.x:
+        this.controller.rightStick.x = value
+        this.notifyRightStickListeners()
     of CONTROLLER_AXIS_RIGHTY:
-      this.controller.rightStick.y = value
-      this.notifyRightStickListeners()
+      if value != this.controller.rightStick.y:
+        this.controller.rightStick.y = value
+        this.notifyRightStickListeners()
     of CONTROLLER_AXIS_TRIGGERLEFT:
-      this.controller.leftTrigger.value = value
-      this.notifyLeftTriggerListeners()
+      if value != this.controller.leftTrigger.value:
+        this.controller.leftTrigger.value = value
+        this.notifyLeftTriggerListeners()
     of CONTROLLER_AXIS_TRIGGERRIGHT:
-      this.controller.rightTrigger.value = value
-      this.notifyRightTriggerListeners()
+      if value != this.controller.rightTrigger.value:
+        this.controller.rightTrigger.value = value
+        this.notifyRightTriggerListeners()
     else:
       discard
 
