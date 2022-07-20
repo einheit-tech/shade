@@ -1,4 +1,5 @@
-import tables, sets, math
+import std/[tables, sets, math]
+
 import
   ../vector2,
   ../aabb,
@@ -11,25 +12,26 @@ export
   node
 
 type
-  CellID = string
+  CellID = uint32
   SpatialCell = object
     cellID: CellID
-    entities: HashSet[PhysicsBody]
+    bodies: HashSet[PhysicsBody]
   SpatialGrid* = ref object
-    # All entities is the grid.
-    entities: HashSet[PhysicsBody]
+    # All bodies is the grid.
+    bodies: HashSet[PhysicsBody]
     cells: TableRef[CellID, SpatialCell]
     cellSize: Positive
     # Scalar from grid coords to game coords.
     gridToPixelScalar: float
 
-proc newSpatialCell(cellID: CellID): SpatialCell = SpatialCell(cellID: cellID)
+proc newSpatialCell(cellID: CellID): SpatialCell =
+  SpatialCell(cellID: cellID)
 
 template add(this: var SpatialCell, body: PhysicsBody) =
-  this.entities.incl(body)
+  this.bodies.incl(body)
 
 iterator forEachPhysicsBody(this: SpatialCell): PhysicsBody =
-  for body in this.entities:
+  for body in this.bodies:
     yield body
 
 proc newSpatialGrid*(width, height, cellSize: Positive): SpatialGrid =
@@ -49,16 +51,17 @@ proc newSpatialGrid*(width, height, cellSize: Positive): SpatialGrid =
   )
 
 iterator items*(this: SpatialGrid): PhysicsBody =
-  for e in this.entities:
+  for e in this.bodies:
     yield e
 
-template getCellID(cellX, cellY: int): CellID =
-  $cellX & "," & $cellY
+template getCellID(cellX, cellY: uint16): CellID = 
+  ## Aligns bits beside each other to create a unique cell id.
+  (cellX.uint32 shl 16) or cellY
 
 template scaleToGrid*(this: SpatialGrid, aabb: AABB): AABB =
   aabb.getScaledInstance(this.gridToPixelScalar)
 
-iterator cellInBounds*(this: SpatialGrid, queryRect: AABB): tuple[x, y: int] =
+iterator cellCoordsInBounds*(this: SpatialGrid, queryRect: AABB): tuple[x, y: uint16] =
   ## Finds each cell in the given bounds.
   ## @param queryRect:
   ##   A rectangle scaled to the size of the grid.
@@ -67,17 +70,21 @@ iterator cellInBounds*(this: SpatialGrid, queryRect: AABB): tuple[x, y: int] =
     bottomRight = queryRect.bottomRight
   for x in floor(topLeft.x).int .. floor(bottomRight.x).int:
     for y in floor(topLeft.y).int .. floor(bottomRight.y).int:
-      yield (x, y)
+      yield (uint16 x, uint16 y)
 
 template addPhysicsBodyWithBounds(this: SpatialGrid, body: PhysicsBody, bounds: AABB) =
   ## Adds an body to the grid.
   ## Assumes the bounds are not nil.
-  this.entities.incl(body)
-  for cell in this.cellInBounds(bounds):
-    let cellID = getCellID(cell.x, cell.y)
-    var cell = this.cells.getOrDefault(cellID, newSpatialCell(cellID))
-    cell.add(body)
-    this.cells[cellID] = cell
+  this.bodies.incl(body)
+  for x, y in this.cellCoordsInBounds(bounds):
+    let cellID = getCellID(x, y)
+    if this.cells.hasKey(cellID):
+      var cell = this.cells[cellID]
+      cell.add(body)
+    else:
+      var cell = newSpatialCell(cellID)
+      this.cells[cellID] = cell
+      cell.add(body)
 
 template canPhysicsBodyBeAdded(this: SpatialGrid, body: PhysicsBody): bool =
   body.getBounds() != nil
@@ -118,26 +125,26 @@ proc removeFromCells*(
   ## Removes the body from all given cells.
   for id in cellIDs:
     if this.cells.hasKey(id):
-      this.cells[id].entities.excl(body)
+      this.cells[id].bodies.excl(body)
 
 proc query*(
   this: SpatialGrid,
   bounds: AABB
-): tuple[entities: HashSet[PhysicsBody], cellIDs: seq[CellID]] =
+): tuple[bodies: HashSet[PhysicsBody], cellIDs: seq[CellID]] =
 
   let scaledBounds: AABB = this.scaleToGrid(bounds)
   # Find all cells that intersect with the bounds.
-  for x, y in this.cellInBounds(scaledBounds):
+  for x, y in this.cellCoordsInBounds(scaledBounds):
     let cellID = getCellID(x, y)
     if this.cells.hasKey(cellID):
       result.cellIDs.add(cellID)
       let cell = this.cells[cellID]
       # Add all body in each cell.
       for body in cell.forEachPhysicsBody:
-        result.entities.incl(body)
+        result.bodies.incl(body)
 
 proc clear*(this: SpatialGrid) =
   ## Clears the entire grid.
   this.cells.clear()
-  this.entities.clear()
+  this.bodies.clear()
 
