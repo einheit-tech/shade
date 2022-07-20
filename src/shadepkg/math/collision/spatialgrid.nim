@@ -55,8 +55,8 @@ iterator items*(this: SpatialGrid): PhysicsBody =
 template getCellID(cellX, cellY: int): CellID =
   $cellX & "," & $cellY
 
-template scaleToGrid*(this: SpatialGrid, rect: AABB): AABB =
-  rect.getScaledInstance(this.gridToPixelScalar)
+template scaleToGrid*(this: SpatialGrid, aabb: AABB): AABB =
+  aabb.getScaledInstance(this.gridToPixelScalar)
 
 iterator cellInBounds*(this: SpatialGrid, queryRect: AABB): tuple[x, y: int] =
   ## Finds each cell in the given bounds.
@@ -94,8 +94,8 @@ proc addStaticPhysicsBody*(this: SpatialGrid, body: PhysicsBody) =
 
 proc getRectangleMovementBounds(this: AABB, delta: Vector): AABB =
   let
-    minX = if delta.x > 0.0: this.x else: this.x + delta.x
-    minY = if delta.y > 0.0: this.y else: this.y + delta.y
+    minX = if delta.x > 0.0: this.left else: this.left + delta.x
+    minY = if delta.y > 0.0: this.top else: this.top + delta.y
     width = this.width + abs(delta.x)
     height = this.height + abs(delta.y)
 
@@ -107,8 +107,8 @@ proc addPhysicsBody*(this: SpatialGrid, body: PhysicsBody, deltaMovement: Vector
   if not this.canPhysicsBodyBeAdded(body):
     return
 
-  let bounds = body.bounds.getRectangleMovementBounds(deltaMovement)
-  this.addPhysicsBodyBounds(body, this.scaleToGrid(bounds))
+  let bounds = body.getBounds().getRectangleMovementBounds(deltaMovement)
+  this.addPhysicsBodyWithBounds(body, this.scaleToGrid(bounds))
 
 proc removeFromCells*(
   this: var SpatialGrid,

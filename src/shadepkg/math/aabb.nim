@@ -57,12 +57,12 @@ proc getTranslatedInstance*(this: AABB, offset: Vector): AABB =
 proc getScaledInstance*(this: AABB, scale: Vector): AABB =
   if scale.x == 0 or scale.y == 0:
     raise newException(Exception, "Scaled size cannot be 0!")
-  newAABB(
-    this.left * scale.x,
-    this.top * scale.y,
-    this.right * scale.x,
-    this.bottom * scale.y
-  )
+  return newAABB(this.left * scale.x, this.top * scale.y, this.right * scale.x, this.bottom * scale.y)
+
+proc getScaledInstance*(this: AABB, scale: float): AABB =
+  if scale == 0.0:
+    raise newException(Exception, "Scaled size cannot be 0!")
+  return newAABB(this.left * scale, this.top * scale, this.right * scale, this.bottom * scale)
 
 template contains*(this: AABB, v: Vector): bool =
   v.x >= this.left and v.x <= this.right and
