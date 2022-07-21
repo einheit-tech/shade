@@ -81,16 +81,6 @@ template addPhysicsBodyWithBounds(this: SpatialGrid, body: PhysicsBody, bounds: 
 template canPhysicsBodyBeAdded(this: SpatialGrid, body: PhysicsBody): bool =
   body.getBounds() != nil
 
-proc addStaticPhysicsBody*(this: SpatialGrid, body: PhysicsBody) =
-  ## Adds an body to the grid.
-  ## If the body's bounds are nil, this proc will do nothing.
-  if not this.canPhysicsBodyBeAdded(body):
-    return
-
-  # Add the body to all cells its bounds intersect with.
-  let bounds = this.scaleToGrid(body.getBounds())
-  this.addPhysicsBodyWithBounds(body, bounds)
-
 proc getRectangleMovementBounds(this: AABB, delta: Vector): AABB =
   let
     minX = min(this.left, this.left + delta.x)
@@ -99,13 +89,18 @@ proc getRectangleMovementBounds(this: AABB, delta: Vector): AABB =
     height = this.height + abs(delta.y)
   return newAABB(minX, minY, minX + width, minY + height)
 
-proc addPhysicsBody*(this: SpatialGrid, body: PhysicsBody, deltaMovement: Vector) =
-  ## Adds an body to the grid.
+proc add*(this: SpatialGrid, body: PhysicsBody, deltaMovement: Vector = VECTOR_ZERO) =
+  ## Adds a body to the grid.
   ## If the body's bounds are nil, this proc will do nothing.
   if not this.canPhysicsBodyBeAdded(body):
     return
 
-  let bounds = body.getBounds().getRectangleMovementBounds(deltaMovement)
+  let bounds =
+    if deltaMovement == VECTOR_ZERO:
+      body.getBounds()
+    else:
+      body.getBounds().getRectangleMovementBounds(deltaMovement)
+
   this.addPhysicsBodyWithBounds(body, this.scaleToGrid(bounds))
 
 proc removeFromCells*(this: var SpatialGrid, body: PhysicsBody, cellIDs: openArray[CellID]) =

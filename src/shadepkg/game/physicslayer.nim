@@ -8,7 +8,7 @@ import
   ../math/mathutils,
   ../math/collision/sat,
   ../math/collision/collisionresult,
-  ../math/collision/aabbtree
+  ../math/collision/spatialgrid
 
 export
   layer,
@@ -20,15 +20,16 @@ const
   COLLISION_ITERATIONS* = 20
 
 type
+  BodyPair = tuple[bodyA: PhysicsBody, bodyB: PhysicsBody]
   PhysicsLayer* = ref object of Layer
     gravity: Vector
     gravityNormal: Vector
     physicsBodyChildren: seq[PhysicsBody]
-    aabbTree: AABBTree[PhysicsBody]
     # Collisions that happened this frame.
     # Only tracks collisions for PhysicsBodies that have collision callbacks.
     currentFrameCollisions: Table[tuple[owner: PhysicsBody, other: PhysicsBody], CollisionResult]
     collisionFilter*: proc(this: PhysicsLayer, bodyA, bodyB: PhysicsBody): bool
+    spatialGrid: SpatialGrid
 
 template gravity*(this: PhysicsLayer): Vector =
   this.gravity
@@ -39,22 +40,26 @@ template `gravity=`*(this: PhysicsLayer, gravity: Vector) =
 
 proc initPhysicsLayer*(
   layer: PhysicsLayer,
+  spatialgrid: SpatialGrid = nil,
   gravity: Vector = DEFAULT_GRAVITY,
   z: float = 1.0
 ) =
   initLayer(layer, z)
   `gravity=`(layer, gravity)
-  layer.aabbTree = newAABBTree[PhysicsBody]()
+  layer.spatialgrid = spatialgrid
 
-proc newPhysicsLayer*(gravity: Vector = DEFAULT_GRAVITY, z: float = 1.0): PhysicsLayer =
+proc newPhysicsLayer*(
+  spatialgrid: SpatialGrid = nil,
+  gravity: Vector = DEFAULT_GRAVITY,
+  z: float = 1.0
+): PhysicsLayer =
   result = PhysicsLayer()
-  initPhysicsLayer(result, gravity, z)
+  initPhysicsLayer(result, spatialgrid, gravity, z)
 
 method addChild(this: PhysicsLayer, child: Node) =
   procCall Layer(this).addChild(child)
   if child of PhysicsBody:
     this.physicsBodyChildren.add((PhysicsBody) child)
-    # this.aabbTree.addObject((PhysicsBody) child)
 
 method removeChild*(this: PhysicsLayer, child: Node) =
   procCall Layer(this).removeChild(child)
@@ -67,7 +72,6 @@ method removeChild*(this: PhysicsLayer, child: Node) =
         break
     
     if index >= 0:
-      # this.aabbTree.removeObject((PhysicsBody) child)
       this.physicsBodyChildren.delete(index)
 
 template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
@@ -100,34 +104,48 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
     bodyA.velocity -= impulse * iMassA
     bodyB.velocity += impulse * iMassB
 
-template handleCollisions*(this: PhysicsLayer, deltaTime: float) =
-  for i, bodyA in this.physicsBodyChildren:
+template handleCollision*(this: PhysicsLayer, bodyA, bodyB: PhysicsBody) =
+  if bodyA.kind == PhysicsBodyKind.STATIC and bodyB.kind == PhysicsBodyKind.STATIC:
+    continue
+  
+  if this.collisionFilter == nil or this.collisionFilter(this, bodyA, bodyB):
+    let collision = collides(
+      bodyA.getLocation(),
+      bodyA.collisionShape,
+      bodyB.getLocation(),
+      bodyB.collisionShape
+    )
 
-    # TODO: Left half of objects not seen as colliding?
-    # let bodies = this.aabbTree.findOverlappingObjects(bodyA.getBounds())
-    # for bodyB in bodies:
+    if collision == nil:
+      continue
+
+    collision.resolve(bodyA, bodyB)
+
+    # Register the collision for any existing callbacks.
+    if bodyA.collisionListenerCount > 0 or bodyB.collisionListenerCount > 0:
+      this.currentFrameCollisions[(bodyA, bodyB)] = collision
+
+proc handleCollisions*(
+  this: PhysicsLayer,
+  bodyPairs: iterator(layer: PhysicsLayer): BodyPair
+) =
+  for bodyA, bodyB in bodyPairs(this):
+    this.handleCollision(bodyA, bodyB)
+
+iterator bruteForceBodyPairs*(this: PhysicsLayer): BodyPair {.closure.} =
+  for i, bodyA in this.physicsBodyChildren:
     for j in countup(i + 1, this.physicsBodyChildren.len - 1):
       let bodyB = this.physicsBodyChildren[j]
+      yield(bodyA, bodyB)
 
-      if bodyA.kind == PhysicsBodyKind.STATIC and bodyB.kind == PhysicsBodyKind.STATIC:
-        continue
-      
-      if this.collisionFilter == nil or this.collisionFilter(this, bodyA, bodyB):
-        let collision = collides(
-          bodyA.getLocation(),
-          bodyA.collisionShape,
-          bodyB.getLocation(),
-          bodyB.collisionShape
-        )
-
-        if collision == nil:
-          continue
-
-        collision.resolve(bodyA, bodyB)
-
-        # Register the collision for any existing callbacks.
-        if bodyA.collisionListenerCount > 0 or bodyB.collisionListenerCount > 0:
-          this.currentFrameCollisions[(bodyA, bodyB)] = collision
+iterator spatialBodyPairs*(this: PhysicsLayer): BodyPair {.closure.} =
+  for bodyA in this.spatialGrid:
+    let boundsA = bodyA.getBounds()
+    let (bodiesInBounds, cellIDs) = this.spatialGrid.query(boundsA)
+    defer: this.spatialGrid.removeFromCells(bodyA, cellIDs)
+    for bodyB in bodiesInBounds:
+      if bodyA != bodyB:
+        yield(bodyA, bodyB)
 
 template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
   for body in this.physicsBodyChildren:
@@ -146,12 +164,25 @@ template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
     else:
       body.forces.setLen(0)
 
+macro repeat(qty: static int, body: untyped) =
+  result = newStmtList()
+  for i in 0..<qty:
+    result.add quote do:
+      `body`
+
 method update*(this: PhysicsLayer, deltaTime: float, onChildUpdate: proc(child: Node) = nil) =
   procCall Layer(this).update(deltaTime)
 
-  let subdividedDeltaTime = deltaTime / COLLISION_ITERATIONS
-  for i in 1..COLLISION_ITERATIONS:
-    this.handleCollisions(subdividedDeltaTime)
+  if this.spatialGrid != nil:
+    for body in this.physicsBodyChildren:
+      this.spatialGrid.add(body, body.lastMoveVector)
+
+  if this.spatialGrid != nil:
+    repeat(COLLISION_ITERATIONS):
+      this.handleCollisions(spatialBodyPairs)
+  else:
+    repeat(COLLISION_ITERATIONS):
+      this.handleCollisions(bruteForceBodyPairs)
 
   this.applyForcesToBodies(deltaTime)
 
@@ -161,8 +192,6 @@ method update*(this: PhysicsLayer, deltaTime: float, onChildUpdate: proc(child: 
     bodies.other.notifyCollisionListeners(bodies.owner, collision.invert(), this.gravityNormal)
 
   this.currentFrameCollisions.clear()
-
-when defined(aabbtreeOutlines):
-  PhysicsLayer.renderAsChildOf(Layer):
-    this.aabbTree.render(ctx)
+  if this.spatialGrid != nil:
+    this.spatialGrid.clear()
 

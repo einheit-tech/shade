@@ -32,7 +32,8 @@ else:
     math/aabb,
     math/circle,
     math/collision/collisionshape,
-    math/collision/sat
+    math/collision/sat,
+    math/collision/spatialgrid
   ]
 
   import sdl2_nim/[sdl, sdl_ttf]
@@ -69,5 +70,6 @@ else:
     circle,
     collisionshape,
     sat,
+    spatialgrid,
     sdl,
     sdl_ttf
