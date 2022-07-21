@@ -30,6 +30,7 @@ type
     # TODO: Make collisionShape required.
     collisionShape: CollisionShape
     velocity*: Vector
+    lastMoveVector*: Vector
     bounds: AABB
 
     case kind*: PhysicsBodyKind:
@@ -45,8 +46,12 @@ type
 
 proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener)
 proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener)
-proc wallAndGroundSetter(this, other: PhysicsBody, collisionResult: CollisionResult, gravityNormal: Vector): bool
 proc getBounds*(this: PhysicsBody): AABB
+proc wallAndGroundSetter(
+  this, other: PhysicsBody,
+  collisionResult: CollisionResult,
+  gravityNormal: Vector
+): bool
 
 proc initPhysicsBody*(
   physicsBody: var PhysicsBody,
@@ -154,8 +159,9 @@ proc wallAndGroundSetter(
 method update*(this: PhysicsBody, deltaTime: float) =
   procCall Node(this).update(deltaTime)
 
+  this.lastMoveVector = this.velocity * deltaTime
   if this.velocity != VECTOR_ZERO:
-    this.move(this.velocity * deltaTime)
+    this.move(this.lastMoveVector)
 
   if this.kind != PhysicsBodyKind.STATIC:
     # Reset the state every update.

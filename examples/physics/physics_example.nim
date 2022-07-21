@@ -16,7 +16,8 @@ initEngineSingleton(
   clearColor = newColor(20, 20, 20)
 )
 
-let layer = newPhysicsLayer()
+let grid = newSpatialGrid(32, 32, 400)
+let layer = newPhysicsLayer(grid)
 Game.scene.addLayer(layer)
 
 # Create and add the platform.
@@ -65,7 +66,7 @@ proc addRandomBodyToLayer(mouseButton: int, state: ButtonState, x, y, clicks: in
 
   body.onUpdate = proc(this: Node, deltaTime: float) =
     # Remove the body if off screen
-    if this.y > height + 200:
+    if this.y > height + 100:
       layer.removeChild(this)
 
   body.buildCollisionListener:
