@@ -167,8 +167,7 @@ template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
 macro repeat(qty: static int, body: untyped) =
   result = newStmtList()
   for i in 0..<qty:
-    result.add quote do:
-      `body`
+    result.add `body`
 
 method update*(this: PhysicsLayer, deltaTime: float, onChildUpdate: proc(child: Node) = nil) =
   procCall Layer(this).update(deltaTime)
