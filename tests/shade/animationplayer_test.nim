@@ -5,7 +5,7 @@ import
 
 describe "AnimationPlayer":
 
-  type FakeNode* = ref object
+  type FakeNode = ref object
     intVal*: int
     floatVal*: float
     boolVal*: bool
