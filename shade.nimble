@@ -67,7 +67,7 @@ task physics, "Runs the physics example":
   exec "nim r -d:release examples/physics/physics_example.nim"
 
 task physicsd, "Runs the physics example in debug mode":
-  exec "nim r -d:debug -d:collisionoutlines examples/physics/physics_example.nim"
+  exec "nim r -d:debug -d:collisionoutlines -d:spatialgrid examples/physics/physics_example.nim"
 
 task platformer, "Runs the platformer example":
   exec "nim r -d:release examples/platformer/platformer_example.nim"

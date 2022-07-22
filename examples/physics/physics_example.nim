@@ -16,7 +16,7 @@ initEngineSingleton(
   clearColor = newColor(20, 20, 20)
 )
 
-let grid = newSpatialGrid(32, 32, 400)
+let grid = newSpatialGrid(10, 6, 200)
 let layer = newPhysicsLayer(grid)
 Game.scene.addLayer(layer)
 

@@ -194,3 +194,11 @@ method update*(this: PhysicsLayer, deltaTime: float, onChildUpdate: proc(child: 
   if this.spatialGrid != nil:
     this.spatialGrid.clear()
 
+when defined(spatialgrid):
+  PhysicsLayer.renderAsChildOf(Layer):
+    if this.spatialGrid != nil:
+      this.spatialGrid.render(ctx)
+
+    if callback != nil:
+      callback()
+

@@ -3,7 +3,8 @@ import std/[tables, sets, math]
 import
   ../vector2,
   ../aabb,
-  ../../game/physicsbody
+  ../../game/physicsbody,
+  ../../render/[render, color]
 
 export
   sets,
@@ -17,6 +18,9 @@ type
     cellID: CellID
     bodies: HashSet[PhysicsBody]
   SpatialGrid* = ref object
+    # Size in grid cells
+    width: int
+    height: int
     # All bodies is the grid.
     bodies: HashSet[PhysicsBody]
     cells: TableRef[CellID, SpatialCell]
@@ -41,6 +45,8 @@ proc newSpatialGrid*(width, height, cellSize: Positive): SpatialGrid =
   ##  The size of each cell in the grid.
   ##  This should be approx. double the size of the average body.
   SpatialGrid(
+    width: width,
+    height: height,
     cells: newTable[CellID, SpatialCell](width * height),
     cellSize: cellSize,
     gridToPixelScalar: 1.0 / cellSize.float
@@ -123,4 +129,17 @@ proc clear*(this: SpatialGrid) =
   ## Clears the entire grid.
   this.cells.clear()
   this.bodies.clear()
+
+SpatialGrid.render:
+  let
+    widthInPixels = float(this.width * this.cellSize)
+    heightInPixels = float(this.height * this.cellSize)
+
+  for x in 0..<this.width:
+    let xInPixels = float(x * this.cellSize)
+    ctx.line(xInPixels, 0, xInPixels, heightInPixels, GREEN)
+
+  for y in 0..<this.height:
+    let yInPixels = float(y * this.cellSize)
+    ctx.line(0, yInPixels, widthInPixels, yInPixels, GREEN)
 
