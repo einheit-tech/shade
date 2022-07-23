@@ -3,13 +3,9 @@ import
   ../render/render,
   ../render/color
 
-type
-  Boundable* = concept b
-    b is ref object
-    getBounds(b) is AABB
-  AABB* = object
-    topLeft*: Vector
-    bottomRight*: Vector
+type AABB* = object
+  topLeft*: Vector
+  bottomRight*: Vector
 
 template aabb*(left, top, right, bottom: float): AABB =
   AABB(topLeft: vector(left, top), bottomRight: vector(right, bottom))

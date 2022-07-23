@@ -46,7 +46,7 @@ proc initNode*(node: Node, flags: set[LayerObjectFlags] = UPDATE_RENDER_FLAGS) =
   node.flags = flags
   node.scale = VECTOR_ONE
 
-proc newNode*(flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}): Node =
+proc newNode*(flags: set[LayerObjectFlags] = UPDATE_RENDER_FLAGS): Node =
   result = Node()
   initNode(result, flags)
 
