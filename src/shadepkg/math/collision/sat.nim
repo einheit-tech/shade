@@ -14,9 +14,9 @@ template getOverlap(projectionA, projectionB: Vector): float =
 
 func collides*(
   locA: Vector,
-  hullA: CollisionShape,
+  hullA: var CollisionShape,
   locB: Vector,
-  hullB: CollisionShape
+  hullB: var CollisionShape
 ): CollisionResult =
   ## Performs the SAT algorithm on the given collision hulls
   ## to determine whether they are colliding or will collide.

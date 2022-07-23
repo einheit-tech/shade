@@ -8,7 +8,7 @@ import
   aabb,
   ../render/color
 
-type Circle* = ref object
+type Circle* = object
   center*: Vector
   radius*: float
   area: Option[float]
@@ -22,7 +22,7 @@ proc newCircle*(center: Vector, radius: float): Circle =
 proc newCircle*(centerX, centerY, radius: float): Circle =
   return newCircle(vector(centerX, centerY), radius)
 
-proc area*(this: Circle): float =
+proc area*(this: var Circle): float =
   if this.area.isNone:
     this.area = (PI * this.radius * this.radius).option
   return this.area.get
@@ -33,7 +33,7 @@ proc getScaledInstance*(this: Circle, scale: Vector): Circle =
   return newCircle(this.center, this.radius * max(scale.x, scale.y))
 
 func calcBounds*(circ: Circle): AABB =
-  return newAABB(
+  return aabb(
     circ.center.x - circ.radius,
     circ.center.y - circ.radius,
     circ.radius * 2,

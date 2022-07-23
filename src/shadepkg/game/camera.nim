@@ -21,7 +21,8 @@ proc updateViewport*(this: Camera)
 
 proc initCamera*(camera: Camera) =
   initNode(Node(camera), {LayerObjectFlags.UPDATE})
-  camera.bounds = nil
+  camera.bounds = AABB_ZERO
+  camera.viewport = AABB_ZERO
   camera.offset = VECTOR_ZERO
   camera.trackedNode = nil
   camera.completionRatioPerFrame = 1.0
@@ -51,8 +52,8 @@ proc newCamera*(
 
 proc updateViewport*(this: Camera) =
   ## Updates the camera's viewport to fit the gamestate's resolution.
-  if this.viewport == nil:
-    this.viewport = newAABB(
+  if this.viewport == AABB_ZERO:
+    this.viewport = aabb(
       this.x - gamestate.resolution.x * 0.5,
       this.y - gamestate.resolution.y * 0.5,
       this.x + gamestate.resolution.x * 0.5,
@@ -75,12 +76,12 @@ proc setTrackedNode*(this: Camera, n: Node) =
   this.trackedNode = n
 
 proc bounds*(this: Camera): AABB =
-  if this.bounds == nil:
-    this.bounds = newAABB(float.low, float.low, float.high, float.high)
+  if this.bounds == AABB_ZERO:
+    this.bounds = aabb(float.low, float.low, float.high, float.high)
   return this.bounds
 
 template confineToBounds(this: Camera) =
-  if this.bounds != nil:
+  if this.bounds != AABB_ZERO:
     let
       halfViewportWidth = this.viewport.width * 0.5
       halfViewportHeight = this.viewport.height * 0.5

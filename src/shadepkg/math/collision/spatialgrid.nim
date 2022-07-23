@@ -85,7 +85,7 @@ template addPhysicsBodyWithBounds(this: SpatialGrid, body: PhysicsBody, bounds: 
       this.cells[cellID] = cell
 
 template canPhysicsBodyBeAdded(this: SpatialGrid, body: PhysicsBody): bool =
-  body.getBounds() != nil
+  body.getBounds() != AABB_ZERO
 
 proc getRectangleMovementBounds(this: AABB, delta: Vector): AABB =
   let
@@ -93,11 +93,11 @@ proc getRectangleMovementBounds(this: AABB, delta: Vector): AABB =
     minY = min(this.top, this.top + delta.y)
     width = this.width + abs(delta.x)
     height = this.height + abs(delta.y)
-  return newAABB(minX, minY, minX + width, minY + height)
+  return aabb(minX, minY, minX + width, minY + height)
 
 proc add*(this: SpatialGrid, body: PhysicsBody, deltaMovement: Vector = VECTOR_ZERO) =
   ## Adds a body to the grid.
-  ## If the body's bounds are nil, this proc will do nothing.
+  ## If the body's bounds are == AABB_ZERO, this proc will do nothing.
   if not this.canPhysicsBodyBeAdded(body):
     return
 
