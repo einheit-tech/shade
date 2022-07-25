@@ -18,6 +18,7 @@ requires "zippy == 0.9.7"
 requires "https://github.com/avahe-kellenberger/sdl2_nim#head"
 requires "https://github.com/avahe-kellenberger/safeset"
 requires "https://github.com/avahe-kellenberger/nimtest"
+requires "seq2d >= 0.1.0"
 
 task create_deps_artifact, "Compresses contents of .usr dir needed for development":
   exec "nim r -d:release src/shade.nim --compress"

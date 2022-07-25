@@ -31,7 +31,7 @@ let
   halfGroundWidth = groundImage.w.float / 2
   halfGroundHeight = groundImage.h.float / 2
 
-let groundShape = newCollisionShape(
+var groundShape = newCollisionShape(
   newPolygon([
     vector(halfGroundWidth, halfGroundHeight),
     vector(halfGroundWidth, -halfGroundHeight),
@@ -42,7 +42,8 @@ let groundShape = newCollisionShape(
 groundShape.material = PLATFORM
 
 let ground = newPhysicsBody(
-  kind = PhysicsBodyKind.STATIC
+  kind = PhysicsBodyKind.STATIC,
+  groundShape
 )
 
 ground.x = 1920 / 2
@@ -64,9 +65,9 @@ let wallSprite = newSprite(wallImage)
 
 proc createWall(): PhysicsBody =
   # Left wall
-  let wallShape = newCollisionShape(wallShapePolygon)
+  var wallShape = newCollisionShape(wallShapePolygon)
   wallShape.material = PLATFORM
-  result = newPhysicsBody(kind = PhysicsBodyKind.STATIC)
+  result = newPhysicsBody(kind = PhysicsBodyKind.STATIC, wallShape)
   result.collisionShape = wallShape
   
   result.onRender = proc(this: Node, ctx: Target) =

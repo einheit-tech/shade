@@ -30,7 +30,7 @@ const
 let shaderProgram = newShader(vertShaderPath, fragShaderPath)
 king.shader = shaderProgram
 
-Input.addKeyEventListener(
+Input.addKeyPressedListener(
   K_ESCAPE,
   proc(key: Keycode, state: KeyState) =
     Game.stop()

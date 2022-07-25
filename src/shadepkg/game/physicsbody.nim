@@ -53,22 +53,30 @@ proc wallAndGroundSetter(
   gravityNormal: Vector
 ): bool
 
+template `collisionShape=`*(this: PhysicsBody, shape: var CollisionShape) =
+  this.collisionShape = shape
+  if this.kind == PhysicsBodyKind.STATIC:
+    this.collisionShape.mass = 0
+
 proc initPhysicsBody*(
   physicsBody: var PhysicsBody,
+  shape: var CollisionShape,
   flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}
 ) =
   initNode(Node(physicsBody), flags)
+  `collisionShape=`(physicsBody, shape)
   physicsBody.collisionListeners = newSafeSet[CollisionListener]()
   if physicsBody.kind != PhysicsBodyKind.STATIC:
     physicsBody.addCollisionListener(wallAndGroundSetter)
 
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
+  shape: var CollisionShape,
   flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}
 ): PhysicsBody =
   ## Creates a new PhysicsBody.
   result = PhysicsBody(kind: kind)
-  initPhysicsBody(result, flags)
+  initPhysicsBody(result, shape, flags)
 
 proc collisionListenerCount*(this: PhysicsBody): int =
   this.collisionListeners.len
@@ -76,22 +84,11 @@ proc collisionListenerCount*(this: PhysicsBody): int =
 template collisionShape*(this: PhysicsBody): CollisionShape =
   this.collisionShape
 
-template `collisionShape=`*(this: PhysicsBody, shape: CollisionShape) =
-  this.collisionShape = shape
-  if this.kind == PhysicsBodyKind.STATIC and this.collisionShape != nil:
-    this.collisionShape.mass = 0
-
 template width*(this: PhysicsBody): float =
-  if this.collisionShape != nil:
-    this.collisionShape.width()
-  else:
-    0
+  this.collisionShape.width()
 
 template height*(this: PhysicsBody): float =
-  if this.collisionShape != nil:
-    this.collisionShape.height()
-  else:
-    0
+  this.collisionShape.height()
 
 template velocityX*(this: PhysicsBody): float =
   this.velocity.x
@@ -107,7 +104,7 @@ template `velocityY=`*(this: PhysicsBody, y: float) =
 
 method setLocation*(this: PhysicsBody, x, y: float) =
   # Move the bounds accordingly.
-  if this.bounds != nil:
+  if this.bounds != AABB_ZERO:
     let delta = vector(x, y) - this.getLocation()
     this.bounds.topLeft += delta
     this.bounds.bottomRight += delta
@@ -115,7 +112,7 @@ method setLocation*(this: PhysicsBody, x, y: float) =
   procCall setLocation((Node) this, x, y)
 
 proc getBounds*(this: PhysicsBody): AABB =
-  if this.bounds == nil and this.collisionShape != nil:
+  if this.bounds == AABB_ZERO:
     this.bounds = this.collisionShape.getBounds().getTranslatedInstance(this.getLocation())
   return this.bounds
 
@@ -173,7 +170,6 @@ PhysicsBody.renderAsNodeChild:
     callback()
 
   when defined(collisionoutlines):
-    if this.collisionShape != nil:
-      ctx.scale(1.0 / this.scale.x, 1.0 / this.scale.y):
-        this.collisionShape.render(ctx)
+    ctx.scale(1.0 / this.scale.x, 1.0 / this.scale.y):
+      this.collisionShape.render(ctx)
 

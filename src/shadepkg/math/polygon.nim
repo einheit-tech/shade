@@ -115,8 +115,9 @@ func getAverage*(this: Polygon): Vector =
 func getBounds*(this: Polygon): AABB =
   ## Gets the bounds of the polygon.
   ## Bounds are lazy initialized.
-  if this.bounds != nil:
+  if this.bounds != AABB_ZERO:
     return this.bounds
+
   var
     minX = float.high
     minY = float.high
@@ -129,7 +130,7 @@ func getBounds*(this: Polygon): AABB =
     maxY = max(maxY, v.y)
 
   this.bounds =
-    newAABB(
+    aabb(
       minX,
       minY,
       maxX,

@@ -31,7 +31,7 @@ type
     POLYGON
     AABB
 
-  CollisionShape* = ref object
+  CollisionShape* = object
     inverseMass: float
 
     material*: Material
@@ -46,7 +46,7 @@ type
     of CollisionShapeKind.AABB:
       aabb*: AABB
 
-proc getBounds*(this: CollisionShape): AABB
+proc getBounds*(this: var CollisionShape): AABB
 
 template area*(this: CollisionShape): float =
   case this.kind:
@@ -75,7 +75,7 @@ template mass*(this: CollisionShape): float =
   else:
     1.0 / this.inverseMass
 
-template `mass=`*(this: CollisionShape, mass: float) =
+template `mass=`*(this: var CollisionShape, mass: float) =
   ## Sets the mass of the object.
   ## Should be for internal use only, for calculations.
   if mass == 0:
@@ -102,7 +102,7 @@ template friction*(this: CollisionShape): float =
 template `friction=`*(this: CollisionShape, friction: CompletionRatio) =
   this.material.friction = friction
 
-proc initCollisionShape*(collisionShape: CollisionShape, shape: Shape, material = DEFAULT_MATERIAL) =
+proc initCollisionShape*(collisionShape: var CollisionShape, shape: Shape, material = DEFAULT_MATERIAL) =
   when shape is Circle:
     collisionShape.circle = shape
   elif shape is Polygon:
@@ -130,8 +130,8 @@ proc newCollisionShape*(shape: Shape, material = DEFAULT_MATERIAL): CollisionSha
 proc newCollisionShape*(vertices: openArray[Vector], material = DEFAULT_MATERIAL): CollisionShape =
   return newCollisionShape(newPolygon(vertices), material)
 
-proc getBounds*(this: CollisionShape): AABB =
-  if this.bounds == nil:
+proc getBounds*(this: var CollisionShape): AABB =
+  if this.bounds == AABB_ZERO:
     case this.kind:
       of CollisionShapeKind.POLYGON:
         this.bounds = this.polygon.getBounds()
@@ -209,7 +209,7 @@ func getCircleToAABBProjectionAxes*(
     result.add(normalize(v - circle.center + circleToAABB))
 
 func getProjectionAxes*(
-  this: CollisionShape,
+  this: var CollisionShape,
   otherShape: CollisionShape,
   toOther: Vector
 ): seq[Vector] =

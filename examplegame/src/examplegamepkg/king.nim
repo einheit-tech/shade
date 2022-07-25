@@ -53,7 +53,7 @@ proc createAnimPlayer(sprite: Sprite): AnimationPlayer =
   result.playAnimation("idle")
 
 proc createCollisionShape(): CollisionShape =
-  result = newCollisionShape(newAABB(-8, -13, 8, 13))
+  result = newCollisionShape(aabb(-8, -13, 8, 13))
   result.material = initMaterial(1, 0, 0.97)
 
 type King* = ref object of PhysicsBody

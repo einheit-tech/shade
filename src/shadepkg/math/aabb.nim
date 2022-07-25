@@ -3,21 +3,14 @@ import
   ../render/render,
   ../render/color
 
-type
-  Boundable* = concept b
-    b is ref object
-    getBounds(b) is AABB
-  AABB* = ref object
-    topLeft*: Vector
-    bottomRight*: Vector
+type AABB* = object
+  topLeft*: Vector
+  bottomRight*: Vector
 
-proc initAABB*(aabb: AABB, left, top, right, bottom: float) =
-  aabb.topLeft = vector(left, top)
-  aabb.bottomRight = vector(right, bottom)
+template aabb*(left, top, right, bottom: float): AABB =
+  AABB(topLeft: vector(left, top), bottomRight: vector(right, bottom))
 
-proc newAABB*(left, top, right, bottom: float): AABB =
-  result = AABB()
-  initAABB(result, left, top, right, bottom)
+const AABB_ZERO* = aabb(0, 0, 0, 0)
 
 template left*(this: AABB): float =
   this.topLeft.x
@@ -47,7 +40,7 @@ template center*(this: AABB): Vector =
   (this.topLeft + this.bottomRight) * 0.5
 
 proc getTranslatedInstance*(this: AABB, offset: Vector): AABB =
-  newAABB(
+  aabb(
     this.left + offset.x,
     this.top + offset.y,
     this.right + offset.x,
@@ -57,12 +50,12 @@ proc getTranslatedInstance*(this: AABB, offset: Vector): AABB =
 proc getScaledInstance*(this: AABB, scale: Vector): AABB =
   if scale.x == 0 or scale.y == 0:
     raise newException(Exception, "Scaled size cannot be 0!")
-  return newAABB(this.left * scale.x, this.top * scale.y, this.right * scale.x, this.bottom * scale.y)
+  return aabb(this.left * scale.x, this.top * scale.y, this.right * scale.x, this.bottom * scale.y)
 
 proc getScaledInstance*(this: AABB, scale: float): AABB =
   if scale == 0.0:
     raise newException(Exception, "Scaled size cannot be 0!")
-  return newAABB(this.left * scale, this.top * scale, this.right * scale, this.bottom * scale)
+  return aabb(this.left * scale, this.top * scale, this.right * scale, this.bottom * scale)
 
 template contains*(this: AABB, v: Vector): bool =
   v.x >= this.left and v.x <= this.right and
@@ -90,7 +83,7 @@ template intersects*(this: AABB, aabb: AABB): bool =
   )
 
 template createBoundsAround*(r1, r2: AABB): AABB =
-  newAABB(
+  aabb(
     min(r1.topLeft.x, r2.topLeft.x),
     min(r1.topLeft.y, r2.topLeft.y),
     max(r1.bottomRight.x, r2.bottomRight.x),

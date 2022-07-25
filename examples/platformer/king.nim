@@ -53,7 +53,7 @@ proc createAnimPlayer(sprite: Sprite): AnimationPlayer =
   result.playAnimation("idle")
 
 proc createCollisionShape(): CollisionShape =
-  result = newCollisionShape(newAABB(-8, -13, 8, 13))
+  result = newCollisionShape(aabb(-8, -13, 8, 13))
   result.material = initMaterial(1, 0, 0.97)
 
 type King* = ref object of PhysicsBody
@@ -62,15 +62,13 @@ type King* = ref object of PhysicsBody
 
 proc createNewKing*(): King =
   result = King()
-  initPhysicsBody(PhysicsBody(result))
+  var collisionShape = createCollisionShape()
+  initPhysicsBody(PhysicsBody(result), collisionShape)
 
   let sprite = createKingSprite()
   sprite.offset = vector(8.0, 1.0)
   result.sprite = sprite
   result.animationPlayer = createAnimPlayer(sprite)
-
-  let collisionShape = createCollisionShape()
-  result.collisionShape = collisionShape
 
 proc playAnimation*(king: King, name: string) =
   if king.animationPlayer.currentAnimationName != name:
