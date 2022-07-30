@@ -28,7 +28,6 @@ type
     flags*: set[LayerObjectFlags]
 
     location: Vector
-    scale*: Vector
     # Rotation in degrees (clockwise).
     rotation*: float
 
@@ -40,7 +39,6 @@ method update*(this: Node, deltaTime: float) {.base.}
 
 proc initNode*(node: Node, flags: set[LayerObjectFlags] = UPDATE_RENDER_FLAGS) =
   node.flags = flags
-  node.scale = VECTOR_ONE
 
 proc newNode*(flags: set[LayerObjectFlags] = UPDATE_RENDER_FLAGS): Node =
   result = Node()
@@ -82,7 +80,6 @@ method update*(this: Node, deltaTime: float) {.base.} =
     this.onUpdate(this, deltaTime)
 
 Node.renderAsParent:
-  ## Renders the node with its given position, rotation, and scale.
   if this.shader != nil:
     this.shader.render(gamestate.runTime, gamestate.resolution)
 

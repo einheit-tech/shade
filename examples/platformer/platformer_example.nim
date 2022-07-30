@@ -1,6 +1,16 @@
 import ../../src/shade
 import king
 
+type Terrain = ref object of PhysicsBody
+  sprite: Sprite
+
+proc newTerrain(shape: var CollisionShape, sprite: Sprite): Terrain =
+  result = Terrain(kind: PhysicsBodyKind.STATIC, sprite: sprite)
+  initPhysicsBody(PhysicsBody(result), shape)
+
+Terrain.renderAsChildOf(PhysicsBody):
+  this.sprite.render(ctx, this.x + offsetX, this.y + offsetY)
+
 initEngineSingleton(
   "Physics Example",
   1920,
@@ -19,12 +29,16 @@ player.y = 640
 
 # Track the player with the camera.
 let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
-camera.z = 0.55
+# camera.z = 0.55
 Game.scene.camera = camera
 
 let
   (_, groundImage) = Images.loadImage("./examples/assets/images/ground.png", FILTER_NEAREST)
-  (_, wallImage) = Images.loadImage("./examples/assets/images/wall.png", FILTER_NEAREST)
+  (_, leftWallImage) = Images.loadImage("./examples/assets/images/wall.png", FILTER_NEAREST)
+  # rightWallImage = createTransformedImage(leftWallImage, scaleX = -1.0)
+  rightWallImage = leftWallImage
+
+discard Images.registerImage(rightWallImage)
 
 # Ground
 let
@@ -41,43 +55,35 @@ var groundShape = newCollisionShape(
 )
 groundShape.material = PLATFORM
 
-let ground = newPhysicsBody(
-  kind = PhysicsBodyKind.STATIC,
-  groundShape
-)
+let
+  groundSprite = newSprite(groundImage)
+  ground = newTerrain(groundShape, groundSprite)
 
 ground.x = 1920 / 2
 ground.y = 1080 - groundShape.getBounds().height / 2
 
 ground.collisionShape = groundShape
-let groundSprite = newSprite(groundImage)
-ground.onRender = proc(this: Node, ctx: Target) =
-  groundSprite.render(ctx)
 
 let wallShapePolygon = newPolygon([
-  vector(wallImage.w.float / 2, wallImage.h.float / 2),
-  vector(wallImage.w.float / 2, -wallImage.h.float / 2),
-  vector(-wallImage.w.float / 2, -wallImage.h.float / 2),
-  vector(-wallImage.w.float / 2, wallImage.h.float / 2),
+  vector(leftWallImage.w.float / 2, leftWallImage.h.float / 2),
+  vector(leftWallImage.w.float / 2, -leftWallImage.h.float / 2),
+  vector(-leftWallImage.w.float / 2, -leftWallImage.h.float / 2),
+  vector(-leftWallImage.w.float / 2, leftWallImage.h.float / 2),
 ])
 
-let wallSprite = newSprite(wallImage)
 
-proc createWall(): PhysicsBody =
-  # Left wall
-  var wallShape = newCollisionShape(wallShapePolygon)
-  wallShape.material = PLATFORM
-  result = newPhysicsBody(kind = PhysicsBodyKind.STATIC, wallShape)
-  result.collisionShape = wallShape
-  
-  result.onRender = proc(this: Node, ctx: Target) =
-    wallSprite.render(ctx)
+let
+  leftWallSprite = newSprite(leftWallImage)
+  rightWallSprite = newSprite(rightWallImage)
 
-let leftWall = createWall()
+var wallShape = newCollisionShape(wallShapePolygon)
+wallShape.material = PLATFORM
+
+let leftWall = newTerrain(wallShape, leftWallSprite)
 leftWall.x = ground.x - ground.width / 2 + leftWall.width / 2
 leftWall.y = ground.y - ground.height / 2 - leftWall.height / 2
 
-let rightWall = createWall()
+let rightWall = newTerrain(wallShape, rightWallSprite)
 rightWall.x = ground.x + ground.width / 2 - rightWall.width / 2
 rightWall.y = leftWall.y
 
@@ -120,12 +126,12 @@ proc physicsProcess(this: Node, deltaTime: float) =
 
     if rightPressed:
       x = min(player.velocityX + accel, maxSpeed)
-      if player.scale.x < 0.0:
-        player.scale = vector(abs(player.scale.x), player.scale.y)
+      # if player.scale.x < 0.0:
+      #   player.scale = vector(abs(player.scale.x), player.scale.y)
     else:
       x = max(player.velocityX - accel, -maxSpeed)
-      if player.scale.y > 0.0:
-        player.scale = vector(-1 * abs(player.scale.x), player.scale.y)
+      # if player.scale.y > 0.0:
+      #   player.scale = vector(-1 * abs(player.scale.x), player.scale.y)
 
     player.playAnimation("run")
 
@@ -143,9 +149,6 @@ proc physicsProcess(this: Node, deltaTime: float) =
   camera.z += Input.wheelScrolledLastFrame.float * 0.03
 
 player.onUpdate = physicsProcess
-
-# Use a negative x scale to flip the image
-rightWall.scale = vector(-1, 1)
 
 # Toggle transparency upon pressing "t"
 var isTransparent = false

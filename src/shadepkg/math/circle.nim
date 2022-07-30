@@ -47,10 +47,9 @@ proc stroke*(
   offsetY: float = 0,
   color: Color = RED
 ) =
-  echo this.center.y + offsetY
   ctx.circle(
     cfloat this.center.x + offsetX,
-    cfloat this.center.y * offsetY,
+    cfloat this.center.y + offsetY,
     cfloat this.radius,
     color
   )

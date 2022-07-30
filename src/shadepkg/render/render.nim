@@ -15,7 +15,7 @@ template renderAsChildOf*(ChildType, ParentType: typedesc, body: untyped): untyp
     offsetX {.inject.}: float = 0,
     offsetY {.inject.}: float = 0
   ) =
-    procCall `ParentType`(this).render(ctx, offsetX, offsetY)
+    procCall `ParentType`(this).render(ctx, this.x + offsetX, this.y + offsetY)
     `body`
 
 template renderAsNodeChild*(ChildType: typedesc, body: untyped): untyped =

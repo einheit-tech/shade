@@ -15,7 +15,7 @@ proc newImageAtlas(): ImageAtlas =
 # Singleton
 var Images* = newImageAtlas()
 
-proc registerImage(this: ImageAtlas, image: Image): int =
+proc registerImage*(this: ImageAtlas, image: Image): int =
   result = this.nextTextureID
   this.images[result] = image
   this.nextTextureID.inc
