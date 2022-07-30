@@ -11,6 +11,7 @@ type
     color: Color
     imageOfText: Image
     filter: Filter
+    scale*: Vector
 
   TextBox* = ref TextBoxObj
 
@@ -21,7 +22,8 @@ proc initTextBox*(
   font: Font,
   text: string,
   color: Color = BLACK,
-  renderFilter: Filter = FILTER_LINEAR_MIPMAP
+  renderFilter: Filter = FILTER_LINEAR_MIPMAP,
+  scale: Vector = VECTOR_ONE
 ) =
   initNode(textBox)
   textBox.font = font
@@ -29,15 +31,17 @@ proc initTextBox*(
   textBox.color = color
   textBox.imageOfText = nil
   textBox.filter = renderFilter
+  textBox.scale = scale
 
 proc newTextBox*(
   font: Font,
   text: string,
   color: Color = BLACK,
-  renderFilter: Filter = FILTER_LINEAR_MIPMAP
+  renderFilter: Filter = FILTER_LINEAR_MIPMAP,
+  scale: Vector = VECTOR_ONE
 ): TextBox =
   result = TextBox()
-  initTextBox(result, font, text, color, renderFilter)
+  initTextBox(result, font, text, color, renderFilter, scale)
 
 proc setText*(this: TextBox, text: string) =
   this.text = text
@@ -63,7 +67,15 @@ TextBox.renderAsNodeChild:
     this.imageOfText.setImageFilter(this.filter)
     freeSurface(surface)
 
-  blit(this.imageOfText, nil, ctx, this.x + offsetX, this.y + offsetY)
+  blitScale(
+    this.imageOfText,
+    nil,
+    ctx,
+    offsetX,
+    offsetY,
+    this.scale.x,
+    this.scale.y
+  )
 
 proc `=destroy`(this: var TextBoxObj) =
   if this.imageOfText != nil:
