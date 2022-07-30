@@ -32,7 +32,8 @@ else:
     math/circle,
     math/collision/collisionshape,
     math/collision/sat,
-    math/collision/spatialgrid
+    math/collision/spatialgrid,
+    util/timer
   ]
 
   import sdl2_nim/[sdl, sdl_ttf]
@@ -69,5 +70,6 @@ else:
     collisionshape,
     sat,
     spatialgrid,
+    timer,
     sdl,
     sdl_ttf

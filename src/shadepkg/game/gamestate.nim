@@ -3,7 +3,7 @@ import ../math/mathutils
 type ResolutionCallback = proc()
 
 var
-  time*: float
+  runTime*: float
   # NOTE: Do not update the resolution directly; use updateResolution
   resolution*: Vector
   resolutionCallbacks: seq[ResolutionCallback]
