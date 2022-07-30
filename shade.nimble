@@ -59,7 +59,7 @@ task build_deps, "Runs the shader example":
       exec "rm -r *.a *.la cmake pkgconfig"
 
 task shaders, "Runs the shader example":
-  exec "nim r examples/shaders/simple.nim"
+  exec "nim r examples/shaders/shaders.nim"
 
 task animations, "Runs the animation player example":
   exec "nim r examples/basic/animationplayer_example.nim"
