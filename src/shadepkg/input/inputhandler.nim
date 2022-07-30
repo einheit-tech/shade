@@ -203,6 +203,9 @@ proc addListener*(this: InputHandler, eventKind: EventKind, listener: EventListe
     this.eventListeners[eventKind] = newSafeSet[EventListener]()
   this.eventListeners[eventKind].add(listener)
 
+template onEvent*(this: InputHandler, eventKind: EventKind, body: untyped) =
+  this.addListener(eventKind, proc(e {.inject.} : Event): bool = body)
+
 proc removeListener*(this: InputHandler, eventKind: EventKind, listener: EventListener) =
   if this.eventListeners.hasKey(eventKind):
     this.eventListeners[eventKind].remove(listener)
