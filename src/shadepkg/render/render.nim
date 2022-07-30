@@ -4,34 +4,26 @@ export sdl_gpu except Camera
 
 template renderAsChildOf*(ChildType, ParentType: typedesc, body: untyped): untyped =
   ## Helper for the render method.
-  ## `this`, `ctx`, and `callback` are all injected.
-  ## All code in the macro is ran inside the parent's render callback.
   ##
   ## Example:
   ## renderChild(B, A):
-  ##   ctx.blit(...)
-  ##   if callback != nil:
-  ##    callback()
+  ##   ctx.blit(image, this.x + offsetX, this.y + offsetY)
 
   method render*(
     this {.inject.}: `ChildType`,
     ctx {.inject.}: Target,
-    callback {.inject.}: proc() = nil
+    offsetX {.inject.}: float = 0,
+    offsetY {.inject.}: float = 0
   ) =
-    procCall `ParentType`(this).render(ctx, proc =
-      `body`
-    )
+    procCall `ParentType`(this).render(ctx, offsetX, offsetY)
+    `body`
 
 template renderAsNodeChild*(ChildType: typedesc, body: untyped): untyped =
   ## Helper for the render method.
-  ## `this`, `ctx`, and `callback` are all injected.
-  ## All code in the macro is ran inside the parent's render callback.
   ##
   ## Example:
   ## renderNodeChild(T):
-  ##   ctx.blit(...)
-  ##   if callback != nil:
-  ##    callback()
+  ##   ctx.blit(image, this.x + offsetX, this.y + offsetY)
   ChildType.renderAsChildOf(Node):
     body
 
@@ -40,13 +32,19 @@ template renderAsParent*(T: typedesc, body: untyped): untyped =
   method render*(
     this {.inject.}: `T`,
     ctx {.inject.}: Target,
-    callback {.inject.}: proc() = nil
+    offsetX {.inject.}: float = 0,
+    offsetY {.inject.}: float = 0
   ) {.base.} =
     `body`
 
 template render*(T: typedesc, body: untyped): untyped =
   ## Creates a standalone render proc.
-  proc render*(this {.inject.}: `T`, ctx {.inject.}: Target) =
+  proc render*(
+    this {.inject.}: `T`,
+    ctx {.inject.}: Target,
+    offsetX {.inject.}: float = 0,
+    offsetY {.inject.}: float = 0,
+  ) =
     `body`
 
 template translate*(ctx: Target, x, y, z: float, body: untyped) =

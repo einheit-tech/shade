@@ -165,11 +165,7 @@ method update*(this: PhysicsBody, deltaTime: float) =
     this.isOnGround = false
     this.isOnWall = false
 
-PhysicsBody.renderAsNodeChild:
-  if callback != nil:
-    callback()
-
-  when defined(collisionoutlines):
-    ctx.scale(1.0 / this.scale.x, 1.0 / this.scale.y):
-      this.collisionShape.render(ctx)
+when defined(collisionoutlines):
+  PhysicsBody.renderAsNodeChild:
+    this.collisionShape.render(ctx, this.x + offsetX, this.y + offsetY)
 

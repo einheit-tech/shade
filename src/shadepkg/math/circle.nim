@@ -40,18 +40,31 @@ func calcBounds*(circ: Circle): AABB =
     circ.radius * 2
   )
 
-proc stroke*(this: Circle, ctx: Target, color: Color = RED) =
+proc stroke*(
+  this: Circle,
+  ctx: Target,
+  offsetX: float = 0,
+  offsetY: float = 0,
+  color: Color = RED
+) =
+  echo this.center.y + offsetY
   ctx.circle(
-    cfloat this.center.x,
-    cfloat this.center.y,
+    cfloat this.center.x + offsetX,
+    cfloat this.center.y * offsetY,
     cfloat this.radius,
     color
   )
 
-proc fill*(this: Circle, ctx: Target, color: Color = RED) =
+proc fill*(
+  this: Circle,
+  ctx: Target,
+  offsetX: float = 0,
+  offsetY: float = 0,
+  color: Color = RED
+) =
   ctx.circleFilled(
-    cfloat this.center.x,
-    cfloat this.center.y,
+    cfloat this.center.x + offsetX,
+    cfloat this.center.y + offsetY,
     cfloat this.radius,
     color
   )

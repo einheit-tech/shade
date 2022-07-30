@@ -48,25 +48,24 @@ proc size*(this: Sprite): Vector =
   this.spritesheet.spriteSize
 
 Sprite.render:
-  translate(ctx, this.offset.x, this.offset.y):
-    ctx.scale(this.scale.x, this.scale.y):
-      # `blit` renders the image centered at the given location.
-      blit(
-        this.spritesheet.image,
-        this.spritesheet[this.frameCoords].addr,
-        ctx,
-        0,
-        0
-      )
+  # `blit` renders the image centered at the given location.
+  blit(
+    this.spritesheet.image,
+    this.spritesheet[this.frameCoords].addr,
+    ctx,
+    this.offset.x + offsetX,
+    this.offset.y + offsetY
+  )
 
-      when defined(spriteBounds):
-        ## Renders the bounds or sprites.
-        let rect = this.spritesheet[this.frameCoords]
-        ctx.rectangle(
-          -rect.w / 2,
-          -rect.h / 2,
-          rect.w / 2,
-          rect.h / 2,
-          BLUE
-        )
+  when defined(spriteBounds):
+    ## Renders the bounds or sprites.
+    let rect = this.spritesheet[this.frameCoords]
+    # TODO: Needs to be offset
+    ctx.rectangle(
+      -rect.w / 2,
+      -rect.h / 2,
+      rect.w / 2,
+      rect.h / 2,
+      BLUE
+    )
 

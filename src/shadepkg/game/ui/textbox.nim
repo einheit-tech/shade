@@ -63,7 +63,7 @@ TextBox.renderAsNodeChild:
     this.imageOfText.setImageFilter(this.filter)
     freeSurface(surface)
 
-  blit(this.imageOfText, nil, ctx, 0, 0)
+  blit(this.imageOfText, nil, ctx, this.x + offsetX, this.y + offsetY)
 
 proc `=destroy`(this: var TextBoxObj) =
   if this.imageOfText != nil:
