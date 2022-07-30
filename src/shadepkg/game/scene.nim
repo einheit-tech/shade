@@ -58,7 +58,7 @@ proc renderWithCamera(this: Scene, ctx: Target) =
       inversedScalar = 1.0 / relativeZ
       let halfViewportSize = this.camera.viewport.getSize() * 0.5
 
-      let trans = this.camera.getLocation() * inversedScalar - halfViewportSize
+      let trans = this.camera.getLocation() - halfViewportSize * relativeZ
       scale(inversedScalar, inversedScalar, 1.0)
       l.render(ctx, -trans.x, -trans.y)
       scale(relativeZ, relativeZ, 1.0)

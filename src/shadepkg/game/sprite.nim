@@ -49,12 +49,14 @@ proc size*(this: Sprite): Vector =
 
 Sprite.render:
   # `blit` renders the image centered at the given location.
-  blit(
+  blitScale(
     this.spritesheet.image,
     this.spritesheet[this.frameCoords].addr,
     ctx,
-    this.offset.x + offsetX,
-    this.offset.y + offsetY
+    offsetX + (this.scale.x * this.offset.x),
+    offsetY + (this.scale.y * this.offset.y),
+    this.scale.x,
+    this.scale.y
   )
 
   when defined(spriteBounds):

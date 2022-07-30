@@ -25,20 +25,16 @@ Game.scene.addLayer layer
 # King
 let player = createNewKing()
 player.x = 1920 / 2
-player.y = 640
+player.y = 900
 
 # Track the player with the camera.
 let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
-# camera.z = 0.55
+camera.z = 0.55
 Game.scene.camera = camera
 
 let
   (_, groundImage) = Images.loadImage("./examples/assets/images/ground.png", FILTER_NEAREST)
-  (_, leftWallImage) = Images.loadImage("./examples/assets/images/wall.png", FILTER_NEAREST)
-  # rightWallImage = createTransformedImage(leftWallImage, scaleX = -1.0)
-  rightWallImage = leftWallImage
-
-discard Images.registerImage(rightWallImage)
+  (_, wallImage) = Images.loadImage("./examples/assets/images/wall.png", FILTER_NEAREST)
 
 # Ground
 let
@@ -65,16 +61,18 @@ ground.y = 1080 - groundShape.getBounds().height / 2
 ground.collisionShape = groundShape
 
 let wallShapePolygon = newPolygon([
-  vector(leftWallImage.w.float / 2, leftWallImage.h.float / 2),
-  vector(leftWallImage.w.float / 2, -leftWallImage.h.float / 2),
-  vector(-leftWallImage.w.float / 2, -leftWallImage.h.float / 2),
-  vector(-leftWallImage.w.float / 2, leftWallImage.h.float / 2),
+  vector(wallImage.w.float / 2, wallImage.h.float / 2),
+  vector(wallImage.w.float / 2, -wallImage.h.float / 2),
+  vector(-wallImage.w.float / 2, -wallImage.h.float / 2),
+  vector(-wallImage.w.float / 2, wallImage.h.float / 2),
 ])
 
 
 let
-  leftWallSprite = newSprite(leftWallImage)
-  rightWallSprite = newSprite(rightWallImage)
+  leftWallSprite = newSprite(wallImage)
+  rightWallSprite = newSprite(wallImage)
+
+rightWallSprite.scale.x = -1
 
 var wallShape = newCollisionShape(wallShapePolygon)
 wallShape.material = PLATFORM
@@ -126,12 +124,12 @@ proc physicsProcess(this: Node, deltaTime: float) =
 
     if rightPressed:
       x = min(player.velocityX + accel, maxSpeed)
-      # if player.scale.x < 0.0:
-      #   player.scale = vector(abs(player.scale.x), player.scale.y)
+      if player.sprite.scale.x < 0.0:
+        player.sprite.scale = vector(abs(player.sprite.scale.x), player.sprite.scale.y)
     else:
       x = max(player.velocityX - accel, -maxSpeed)
-      # if player.scale.y > 0.0:
-      #   player.scale = vector(-1 * abs(player.scale.x), player.scale.y)
+      if player.sprite.scale.y > 0.0:
+        player.sprite.scale = vector(-1 * abs(player.sprite.scale.x), player.sprite.scale.y)
 
     player.playAnimation("run")
 
