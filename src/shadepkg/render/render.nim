@@ -15,8 +15,12 @@ template renderAsChildOf*(ChildType, ParentType: typedesc, body: untyped): untyp
     offsetX {.inject.}: float = 0,
     offsetY {.inject.}: float = 0
   ) =
-    procCall `ParentType`(this).render(ctx, this.x + offsetX, this.y + offsetY)
-    `body`
+    when compiles(this.x) and compiles(this.y):
+      procCall `ParentType`(this).render(ctx, this.x + offsetX, this.y + offsetY)
+      `body`
+    else:
+      procCall `ParentType`(this).render(ctx, offsetX, offsetY)
+      `body`
 
 template renderAsNodeChild*(ChildType: typedesc, body: untyped): untyped =
   ## Helper for the render method.
