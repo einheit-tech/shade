@@ -244,23 +244,35 @@ template project*(this: CollisionShape, relativeLoc, axis: Vector): Vector =
   of CollisionShapeKind.AABB:
     this.aabb.projectOnAxis(relativeLoc, axis)
 
-proc stroke*(this: CollisionShape, ctx: Target, color: Color = RED) =
+proc stroke*(
+  this: CollisionShape,
+  ctx: Target,
+  offsetX: float = 0,
+  offsetY: float = 0,
+  color: Color = RED
+) =
   case this.kind:
   of CollisionShapeKind.POLYGON:
-    this.polygon.stroke(ctx, color)
+    this.polygon.stroke(ctx, offsetX, offsetY, color)
   of CollisionShapeKind.CIRCLE:
-    this.circle.stroke(ctx, color)
+    this.circle.stroke(ctx, offsetX, offsetY, color)
   of CollisionShapeKind.AABB:
-    this.aabb.stroke(ctx, color)
+    this.aabb.stroke(ctx, offsetX, offsetY, color)
 
-proc fill*(this: CollisionShape, ctx: Target, color: Color) =
+proc fill*(
+  this: CollisionShape,
+  ctx: Target,
+  offsetX: float = 0,
+  offsetY: float = 0,
+  color: Color = RED
+) =
   case this.kind:
   of CollisionShapeKind.POLYGON:
-    this.polygon.fill(ctx, color)
+    this.polygon.fill(ctx, offsetX, offsetY, color)
   of CollisionShapeKind.CIRCLE:
-    this.circle.fill(ctx, color)
+    this.circle.fill(ctx, offsetX, offsetY, color)
   of CollisionShapeKind.AABB:
-    this.aabb.fill(ctx, color)
+    this.aabb.fill(ctx, offsetX, offsetY, color)
 
 render(CollisionShape):
   this.stroke(ctx)

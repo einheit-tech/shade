@@ -1,10 +1,12 @@
-import
-  std/monotimes
+import std/monotimes
 
 export monotimes
 
-template time*(body: untyped): float =
+const ONE_BILLION = 1_000_000_000
+
+template measureRuntime*(body: untyped): float =
+  ## Reports the runtime in seconds.
   let startTimeNanos = getMonoTime().ticks
   body
   let endTimeNanos = getMonoTime().ticks
-  float(endTimeNanos - startTimeNanos) / 1000000
+  float(endTimeNanos - startTimeNanos) / ONE_BILLION

@@ -8,6 +8,28 @@ const
   width = 1920
   height = 1080
 
+type PhysicsShape = ref object of PhysicsBody
+  color: Color
+
+proc newPhysicsShape(shape: var CollisionShape, color: Color): PhysicsShape =
+  result = PhysicsShape(kind: PhysicsBodyKind.DYNAMIC, color: color)
+  initPhysicsBody(PhysicsBody(result), shape)
+
+PhysicsShape.renderAsChildOf(PhysicsBody):
+  PhysicsBody(this).collisionShape.fill(
+    ctx,
+    this.x + offsetX,
+    this.y + offsetY,
+    this.color
+  )
+
+  PhysicsBody(this).collisionShape.stroke(
+    ctx,
+    this.x + offsetX,
+    this.y + offsetY,
+    WHITE
+  )
+
 initEngineSingleton(
   "Physics Example",
   width,
@@ -54,14 +76,9 @@ proc createRandomCollisionShape(mouseButton: int): CollisionShape =
 
 proc addRandomBodyToLayer(mouseButton: int, state: ButtonState, x, y, clicks: int) =
   var shape = createRandomCollisionShape(mouseButton)
-  let body = newPhysicsBody(PhysicsBodyKind.DYNAMIC, shape)
+  let body = newPhysicsShape(shape, getRandomColor())
 
   body.setLocation(vector(x, y))
-
-  let randColor = getRandomColor()
-  body.onRender = proc(this: Node, ctx: Target) =
-    PhysicsBody(this).collisionShape.fill(ctx, randColor)
-    PhysicsBody(this).collisionShape.stroke(ctx, WHITE)
 
   body.onUpdate = proc(this: Node, deltaTime: float) =
     # Remove the body if off screen

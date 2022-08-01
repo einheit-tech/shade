@@ -107,21 +107,33 @@ proc `$`*(this: AABB): string =
     "Top Left: (" & $this.left & ", " & $this.top & ")" & "\n" &
     "Bottom Right: (" & $this.right & ", " & $this.bottom & ")"
 
-proc stroke*(this: AABB, ctx: Target, color: Color = RED) =
+proc stroke*(
+  this: AABB,
+  ctx: Target,
+  offsetX: float = 0,
+  offsetY: float = 0,
+  color: Color = RED
+) =
   ctx.rectangle(
-    this.left,
-    this.top,
-    this.right,
-    this.bottom,
+    this.left + offsetX,
+    this.top + offsetY,
+    this.right + offsetX,
+    this.bottom + offsetY,
     color
   )
 
-proc fill*(this: AABB, ctx: Target, color: Color = RED) =
+proc fill*(
+  this: AABB,
+  ctx: Target,
+  offsetX: float = 0,
+  offsetY: float = 0,
+  color: Color = RED
+) =
   ctx.rectangleFilled(
-    this.left,
-    this.top,
-    this.right,
-    this.bottom,
+    this.left + offsetX,
+    this.top + offsetY,
+    this.right + offsetX,
+    this.bottom + offsetY,
     color
   )
 

@@ -79,5 +79,5 @@ method update*(this: King, deltaTime: float) =
   this.animationPlayer.update(deltaTime)
 
 King.renderAsChildOf(PhysicsBody):
-  this.sprite.render(ctx)
+  this.sprite.render(ctx, this.x + offsetX, this.y + offsetY)
 

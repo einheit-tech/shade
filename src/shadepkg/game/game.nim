@@ -53,7 +53,7 @@ proc initEngineSingleton*(
   # Squeeze in fullscreen flags if requested.
   let windowFlags =
     if fullscreen:
-      windowFlags or WINDOW_FULLSCREEN_DESKTOP
+      windowFlags or WINDOW_FULLSCREEN
     else:
       windowFlags
 
@@ -103,7 +103,6 @@ proc initEngineSingleton*(
       Game.shouldExit = true
   )
 
-template time*(this: Engine): float = this.time
 template screen*(this: Engine): Target = this.screen
 template scene*(this: Engine): Scene = this.scene
 template `scene=`*(this: Engine, scene: Scene) = this.scene = scene
@@ -182,7 +181,7 @@ proc teardown(this: Engine) =
   logInfo(LogCategoryApplication, "SDL shutdown completed")
 
 proc update*(this: Engine, deltaTime: float) =
-  gamestate.time += deltaTime
+  gamestate.runTime += deltaTime
   if this.scene != nil:
     this.scene.update(deltaTime)
 

@@ -19,5 +19,5 @@ proc newSpriteNode*(image: Image, flags = UPDATE_RENDER_FLAGS): SpriteNode =
   result = newSpriteNode(newSprite(image), flags)
 
 SpriteNode.renderAsNodeChild:
-  this.sprite.render(ctx)
+  this.sprite.render(ctx, this.x + offsetX, this.y + offsetY)
 

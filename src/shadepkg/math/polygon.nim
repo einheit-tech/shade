@@ -331,11 +331,17 @@ proc rotate*(this: var Polygon, deltaRotation: float) =
 
   this.center = none(Vector)
 
-proc fill*(this: Polygon, ctx: Target, color: Color = RED) =
+proc fill*(
+  this: Polygon,
+  ctx: Target,
+  offsetX: float = 0,
+  offsetY: float = 0,
+  color: Color = RED
+) =
   var verts: seq[float32]
   for v in this.vertices:
-    verts.add(float32 v.x)
-    verts.add(float32 v.y)
+    verts.add(float32 v.x + offsetX)
+    verts.add(float32 v.y + offsetY)
 
   ctx.polygonFilled(
     cuint this.vertices.len,
@@ -343,7 +349,13 @@ proc fill*(this: Polygon, ctx: Target, color: Color = RED) =
     color
   )
 
-proc stroke*(this: Polygon, ctx: Target, color: Color = RED) =
+proc stroke*(
+  this: Polygon,
+  ctx: Target,
+  offsetX: float = 0,
+  offsetY: float = 0,
+  color: Color = RED
+) =
   for i, v in this:
     var
       start: Vector = this[i]
@@ -354,10 +366,10 @@ proc stroke*(this: Polygon, ctx: Target, color: Color = RED) =
           this[i + 1]
 
     ctx.line(
-      start.x,
-      start.y,
-      finish.x,
-      finish.y,
+      start.x + offsetX,
+      start.y + offsetY,
+      finish.x + offsetX,
+      finish.y + offsetY,
       color
     )
 
