@@ -80,15 +80,13 @@ proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeLis
   this.zChangeListeners.add(onceListener)
   return onceListener
 
-method update*(this: Layer, deltaTime: float, onChildUpdate: proc(child: Node) = nil) {.base.} =
+method update*(this: Layer, deltaTime: float) {.base.} =
   if this.onUpdate != nil:
     this.onUpdate(this, deltaTime)
 
   for child in this.children:
     if LayerObjectFlags.UPDATE in child.flags:
       child.update(deltaTime)
-      if onChildUpdate != nil:
-        onChildUpdate(child)
 
 Layer.renderAsParent:
   this.forEachChild:

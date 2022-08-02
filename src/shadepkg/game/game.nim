@@ -53,7 +53,7 @@ proc initEngineSingleton*(
   # Squeeze in fullscreen flags if requested.
   let windowFlags =
     if fullscreen:
-      windowFlags or WINDOW_FULLSCREEN
+      windowFlags or WINDOW_FULLSCREEN_DESKTOP
     else:
       windowFlags
 
