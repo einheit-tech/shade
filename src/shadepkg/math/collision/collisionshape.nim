@@ -274,6 +274,6 @@ proc fill*(
   of CollisionShapeKind.AABB:
     this.aabb.fill(ctx, offsetX, offsetY, color)
 
-render(CollisionShape):
-  this.stroke(ctx)
+CollisionShape.render:
+  this.stroke(ctx, offsetX, offsetY)
 

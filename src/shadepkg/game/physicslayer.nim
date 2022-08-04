@@ -17,7 +17,7 @@ export
 # TODO: Tune and make configurable.
 const
   DEFAULT_GRAVITY* = vector(0, 577)
-  COLLISION_ITERATIONS* = 20
+  COLLISION_ITERATIONS* {.intdefine.}: int = 20
 
 type
   BodyPair = tuple[bodyA: PhysicsBody, bodyB: PhysicsBody]
@@ -204,5 +204,5 @@ when defined(spatialgrid):
     procCall Layer(this).render(ctx, offsetX, offsetY)
 
     if this.spatialGrid != nil:
-      this.spatialGrid.render(ctx)
+      this.spatialGrid.render(ctx, offsetX, offsetY)
 

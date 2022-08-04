@@ -125,9 +125,21 @@ SpatialGrid.render:
 
   for x in 0..<this.width:
     let xInPixels = float(x * this.cellSize)
-    ctx.line(xInPixels, 0, xInPixels, heightInPixels, GREEN)
+    ctx.line(
+      offsetX + xInPixels,
+      offsetY + 0,
+      offsetX + xInPixels,
+      offsetY + heightInPixels,
+      GREEN
+    )
 
   for y in 0..<this.height:
     let yInPixels = float(y * this.cellSize)
-    ctx.line(0, yInPixels, widthInPixels, yInPixels, GREEN)
+    ctx.line(
+      offsetX + 0,
+      offsetY + yInPixels,
+      offsetX + widthInPixels,
+      offsetY + yInPixels,
+      GREEN
+    )
 
