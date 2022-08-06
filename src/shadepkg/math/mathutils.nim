@@ -201,11 +201,11 @@ func easeInAndOutQuadratic*(startValue, endValue: float, completionRatio: Comple
   ## @param {float} startValue The starting value.
   ## @param {float} endValue The ending value.
   ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation.
-  let eased =
+  let eased: CompletionRatio =
     if completionRatio < 0.5:
-      2 * completionRatio * completionRatio
+      2 * float(completionRatio) * float(completionRatio)
     else:
-      1 - pow(-2 * completionRatio + 2, 2) / 2
+      1 - pow(-2 * float(completionRatio) + 2, 2) / 2
 
   return lerp(startValue, endValue, eased)
 

@@ -101,8 +101,12 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
     let
       restitution = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
       impulse = collision.normal * (-(1.0 + restitution) * velAlongNormal / (iMassA + iMassB))
-    bodyA.velocity -= impulse * iMassA
-    bodyB.velocity += impulse * iMassB
+
+    if bodyA.kind != PhysicsBodyKind.STATIC:
+      bodyA.velocity -= impulse * iMassA
+
+    if bodyB.kind != PhysicsBodyKind.STATIC:
+      bodyB.velocity += impulse * iMassB
 
 template handleCollision*(this: PhysicsLayer, bodyA, bodyB: PhysicsBody) =
   if bodyA.kind == PhysicsBodyKind.STATIC and bodyB.kind == PhysicsBodyKind.STATIC:
