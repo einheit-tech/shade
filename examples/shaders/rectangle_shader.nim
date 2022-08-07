@@ -3,20 +3,19 @@ import
   sdl2_nim/sdl_gpu
 
 const
-  width = 360
-  height = 720
+  width = 800
+  height = 600
 
-initEngineSingleton("Basic Example Game", width, height)
+initEngineSingleton("Rectangle Shader", width, height)
 let layer = newLayer()
 Game.scene.addLayer layer
 
 # Load a shader
 const
-  fragShaderPath = "./examples/shaders/hexagons.frag"
+  fragShaderPath = "./examples/shaders/rectangle.frag"
   vertShaderPath = "./examples/shaders/common.vert"
 
 let shaderProgram = newShader(vertShaderPath, fragShaderPath)
-
 
 type Background = ref object of Node
 

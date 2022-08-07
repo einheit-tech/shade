@@ -30,7 +30,7 @@ task extract_deps, "Extracts local dependencies (deps_artifact.tar.gz) to .usr/l
   exec "nim r -d:release -d:ssl src/shade.nim --extract"
 
 # Tasks
-task build_deps, "Runs the shader example":
+task build_deps, "Builds submodule dependencies":
   exec "git submodule update --init"
   when defined(linux):
     let localUsrPath = joinPath(thisDir(), ".usr")
@@ -59,7 +59,7 @@ task build_deps, "Runs the shader example":
       exec "rm -r *.a *.la cmake pkgconfig"
 
 task shaders, "Runs the shader example":
-  exec "nim r examples/shaders/shaders.nim"
+  exec "nim r examples/shaders/water_shader.nim"
 
 task animations, "Runs the animation player example":
   exec "nim r examples/basic/animationplayer_example.nim"
