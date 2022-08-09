@@ -7,7 +7,7 @@ var
   hasResolutionCallbackBeenSet = false
 
 type Shader* = ref object
-  programID: uint32
+  programID*: uint32
   vertShaderID: uint32
   fragShaderID: uint32
   shaderBlock: ShaderBlock
