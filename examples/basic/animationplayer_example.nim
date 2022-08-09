@@ -10,8 +10,7 @@ Game.scene.addLayer(layer)
 
 let (_, image) = Images.loadImage("./examples/assets/images/king.png", FILTER_NEAREST)
 
-let king = newNode({LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER})
-let kingSprite = newSprite(image, 11, 8)
+let king = newSpriteNode(newSprite(image, 11, 8))
 
 # Set up the run animation
 const
@@ -29,7 +28,7 @@ let animCoordFrames: seq[KeyFrame[IVector]] =
   ]
 
 runAnim.addNewAnimationTrack(
-  kingSprite.frameCoords,
+  king.sprite.frameCoords,
   animCoordFrames
 )
 
@@ -41,7 +40,7 @@ let scaleFrames: seq[KeyFrame[Vector]] =
   ]
 
 runAnim.addNewAnimationTrack(
-  king.scale,
+  king.sprite.scale,
   scaleFrames,
   true
 )
@@ -51,9 +50,6 @@ animPlayer.playAnimation("run")
 
 king.onUpdate = proc(this: Node, deltaTime: float) =
   animPlayer.update(deltaTime)
-
-king.onRender = proc(this: Node, ctx: Target) =
-  kingSprite.render(ctx)
 
 king.setLocation(vector(width / 2, height / 2))
 layer.addChild king

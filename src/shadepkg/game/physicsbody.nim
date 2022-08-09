@@ -116,7 +116,7 @@ proc getBounds*(this: PhysicsBody): AABB =
     this.bounds = this.collisionShape.getBounds().getTranslatedInstance(this.getLocation())
   return this.bounds
 
-proc addCollisionListener(this: PhysicsBody, listener: CollisionListener) =
+proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener) =
   this.collisionListeners.add(listener)
 
 template buildCollisionListener*(thisBody: PhysicsBody, body: untyped) =
@@ -165,11 +165,8 @@ method update*(this: PhysicsBody, deltaTime: float) =
     this.isOnGround = false
     this.isOnWall = false
 
-PhysicsBody.renderAsNodeChild:
-  if callback != nil:
-    callback()
-
-  when defined(collisionoutlines):
-    ctx.scale(1.0 / this.scale.x, 1.0 / this.scale.y):
-      this.collisionShape.render(ctx)
+when defined(collisionoutlines):
+  PhysicsBody.renderAsNodeChild:
+    discard setLineThickness(1.0)
+    this.collisionShape.render(ctx, this.x + offsetX, this.y + offsetY)
 

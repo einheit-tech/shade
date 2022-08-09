@@ -29,11 +29,6 @@ proc addLayer*(this: Scene, layer: Layer) =
   this.layers.add(layer)
   layer.addZChangeListener(proc(oldZ, newZ: float) = this.invalidateLayerOrder())
 
-template forEachLayer*(this: Scene, layer, body) =
-  for l in this.layers:
-    var layer: Layer = l
-    body
-
 proc sortLayers(this: Scene) =
   if not this.isLayerOrderValid:
     this.layers = this.layers.sortedByIt(it.z)
@@ -43,7 +38,7 @@ proc update*(this: Scene, deltaTime: float) =
     this.camera.update(deltaTime)
 
   this.sortLayers()
-  this.forEachLayer(layer):
+  for layer in this.layers:
     layer.update(deltaTime)
 
 proc renderWithCamera(this: Scene, ctx: Target) =
@@ -52,29 +47,22 @@ proc renderWithCamera(this: Scene, ctx: Target) =
     relativeZ: float
     inversedScalar: float
 
-  this.forEachLayer(l):
-    relativeZ = l.z - this.camera.z
+  for layer in this.layers:
+    relativeZ = layer.z - this.camera.z
     if relativeZ > 0:
-      # Save the normal matrix.
-      pushMatrix()
-
       inversedScalar = 1.0 / relativeZ
       let halfViewportSize = this.camera.viewport.getSize() * 0.5
 
-      let trans = this.camera.getLocation() * inversedScalar - halfViewportSize
-      translate(-trans.x, -trans.y, 0)
+      let trans = this.camera.getLocation() - halfViewportSize * relativeZ
       scale(inversedScalar, inversedScalar, 1.0)
+      layer.render(ctx, -trans.x, -trans.y)
+      scale(relativeZ, relativeZ, 1.0)
 
-      l.render(ctx)
-
-      # Restore normal matrix.
-      popMatrix()
-
-Scene.render:
+proc render*(this: Scene, ctx: Target) =
   this.sortLayers()
   if this.camera != nil:
     this.renderWithCamera(ctx)
   else:
-    this.forEachLayer(l):
-      l.render(ctx)
+    for layer in this.layers:
+      layer.render(ctx)
 

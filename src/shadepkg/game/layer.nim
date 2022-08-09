@@ -19,7 +19,6 @@ type
     z: float
     zChangeListeners: seq[ZChangeListener]
     onUpdate*: proc(this: Layer, deltaTime: float)
-    onRender*: proc(this: Layer, ctx: Target)
 
 proc initLayer*(layer: Layer, z: float = 1.0) =
   layer.z = z
@@ -81,24 +80,16 @@ proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeLis
   this.zChangeListeners.add(onceListener)
   return onceListener
 
-method update*(this: Layer, deltaTime: float, onChildUpdate: proc(child: Node) = nil) {.base.} =
+method update*(this: Layer, deltaTime: float) {.base.} =
   if this.onUpdate != nil:
     this.onUpdate(this, deltaTime)
 
   for child in this.children:
     if LayerObjectFlags.UPDATE in child.flags:
       child.update(deltaTime)
-      if onChildUpdate != nil:
-        onChildUpdate(child)
 
 Layer.renderAsParent:
   this.forEachChild:
     if LayerObjectFlags.RENDER in child.flags:
-      child.render(ctx)
-
-  if callback != nil:
-    callback()
-
-  if this.onRender != nil:
-    this.onRender(this, ctx)
+      child.render(ctx, offsetX, offsetY)
 

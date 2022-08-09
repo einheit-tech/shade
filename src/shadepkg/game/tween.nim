@@ -2,7 +2,7 @@ import task
 export task
 
 type Tween* = ref object of Task
-  duration: float
+  duration*: float
   interpolate: proc(this: Tween, deltaTime: float)
 
 proc initTween*(

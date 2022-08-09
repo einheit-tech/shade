@@ -1,6 +1,8 @@
 import sdl2_nim/sdl_mixer as mixer
 import sdl2_nim/sdl
 
+const DEFAULT_AUDIO_FREQUENCY* {.intdefine.} = mixer.DEFAULT_FREQUENCY
+
 type
   Music* = mixer.Music
   SoundEffect* = mixer.Chunk
@@ -24,7 +26,7 @@ proc destroyAudioPlayerSingleton*() =
 # TODO: Allow audio settings to be passed in via compiler flags.
 proc initAudioPlayerSingleton*(
   initFlags: int = INIT_OGG,
-  frequency: int = mixer.DEFAULT_FREQUENCY,
+  frequency: int = DEFAULT_AUDIO_FREQUENCY,
   format: int = mixer.DEFAULT_FORMAT,
   channels: int = mixer.DEFAULT_CHANNELS,
   chunksize: int = 1024

@@ -1,9 +1,13 @@
+import ../game/gamestate
 import sdl2_nim/sdl_gpu
-
 import ../math/mathutils
 
+var
+  resolution: array[2, cfloat] = [ cfloat 0, 0 ]
+  hasResolutionCallbackBeenSet = false
+
 type Shader* = ref object
-  programID: uint32
+  programID*: uint32
   vertShaderID: uint32
   fragShaderID: uint32
   shaderBlock: ShaderBlock
@@ -37,6 +41,14 @@ proc initShader*(shader: Shader, vertShaderPath, fragShaderPath: string) =
   shader.timeUniformID = getUniformLocation(shader.programID, "time")
   shader.resolutionUniformID = getUniformLocation(shader.programID, "resolution")
 
+  if not hasResolutionCallbackBeenSet:
+    resolution[0] = cfloat gamestate.resolution.x
+    resolution[1] = cfloat gamestate.resolution.y
+    gamestate.onResolutionChanged:
+      resolution[0] = cfloat gamestate.resolution.x
+      resolution[1] = cfloat gamestate.resolution.y
+    hasResolutionCallbackBeenSet = true
+
 proc newShader*(vertShaderPath, fragShaderPath: string): Shader =
   result = Shader()
   initShader(result, vertShaderPath, fragShaderPath)
@@ -44,10 +56,10 @@ proc newShader*(vertShaderPath, fragShaderPath: string): Shader =
 proc updateTimeUniform*(this: Shader, time: float) =
   setUniformf(this.timeUniformID, cfloat time)
 
-proc updateResolutionUniform(this: Shader, screenResolution: var Vector) =
-  setUniformfv(this.resolutionUniformID, 2, 1, cast[ptr cfloat](screenResolution.addr))
+proc updateResolutionUniform(this: Shader, screenResolution: Vector) =
+  setUniformfv(this.resolutionUniformID, 2, 1, cast[ptr cfloat](resolution.addr))
 
-proc render*(this: Shader, time: float, screenResolution: var Vector) =
+proc render*(this: Shader, time: float, screenResolution: Vector) =
   activateShaderProgram(this.programID, this.shaderBlock.addr)
   this.updateTimeUniform(time)
   this.updateResolutionUniform(screenResolution)

@@ -17,7 +17,7 @@ export
 # TODO: Tune and make configurable.
 const
   DEFAULT_GRAVITY* = vector(0, 577)
-  COLLISION_ITERATIONS* = 20
+  COLLISION_ITERATIONS* {.intdefine.}: int = 20
 
 type
   BodyPair = tuple[bodyA: PhysicsBody, bodyB: PhysicsBody]
@@ -101,8 +101,12 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
     let
       restitution = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
       impulse = collision.normal * (-(1.0 + restitution) * velAlongNormal / (iMassA + iMassB))
-    bodyA.velocity -= impulse * iMassA
-    bodyB.velocity += impulse * iMassB
+
+    if bodyA.kind != PhysicsBodyKind.STATIC:
+      bodyA.velocity -= impulse * iMassA
+
+    if bodyB.kind != PhysicsBodyKind.STATIC:
+      bodyB.velocity += impulse * iMassB
 
 template handleCollision*(this: PhysicsLayer, bodyA, bodyB: PhysicsBody) =
   if bodyA.kind == PhysicsBodyKind.STATIC and bodyB.kind == PhysicsBodyKind.STATIC:
@@ -169,7 +173,7 @@ macro repeat(qty: static int, body: untyped) =
   for i in 0..<qty:
     result.add `body`
 
-method update*(this: PhysicsLayer, deltaTime: float, onChildUpdate: proc(child: Node) = nil) =
+method update*(this: PhysicsLayer, deltaTime: float) =
   procCall Layer(this).update(deltaTime)
 
   if this.spatialGrid != nil:
@@ -195,10 +199,14 @@ method update*(this: PhysicsLayer, deltaTime: float, onChildUpdate: proc(child: 
     this.spatialGrid.clear()
 
 when defined(spatialgrid):
-  PhysicsLayer.renderAsChildOf(Layer):
-    if this.spatialGrid != nil:
-      this.spatialGrid.render(ctx)
+  method render*(
+    this: PhysicsLayer,
+    ctx: Target,
+    offsetX: float = 0,
+    offsetY: float = 0
+  ) =
+    procCall Layer(this).render(ctx, offsetX, offsetY)
 
-    if callback != nil:
-      callback()
+    if this.spatialGrid != nil:
+      this.spatialGrid.render(ctx, offsetX, offsetY)
 
