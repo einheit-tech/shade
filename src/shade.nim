@@ -33,6 +33,7 @@ else:
     math/collision/collisionshape,
     math/collision/sat,
     math/collision/spatialgrid,
+    ui/ui,
     util/timer
   ]
 
@@ -70,6 +71,7 @@ else:
     collisionshape,
     sat,
     spatialgrid,
+    ui,
     timer,
     sdl,
     sdl_ttf

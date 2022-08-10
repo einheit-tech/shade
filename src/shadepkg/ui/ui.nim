@@ -35,10 +35,13 @@ type
     InvalidChild
 
   UIComponent* = ref object of RootObj
+    ## Top-down design: child components cannot cause their parent components to resize.
+
+    # TODO: How do we render the root at a specific location?
     parent: UIComponent
     children: seq[UIComponent]
-    width*: float
-    height*: float
+    width: float
+    height: float
     margin*: Insets
     padding*: Insets
     alignHorizontal*: Alignment
@@ -49,13 +52,36 @@ type
     backgroundColor*: Color
     clipToBounds*: bool
 
-  UI* = object
-    root*: UIComponent
+proc newUIComponent*(): UIComponent =
+  return UIComponent(layoutValidationStatus: ValidationStatus.Valid)
 
-# UIComponent
+template invalidateLayout(this: UIComponent) =
+  # TODO: When should this be "Invalid" vs InvalidChild?
+  this.layoutValidationStatus = Invalid
 
-proc parent*(this: UIComponent): lent UIComponent =
+proc `width=`*(this: UIComponent, width: float) =
+  this.width = width
+  this.invalidateLayout()
+
+proc `height=`*(this: UIComponent, height: float) =
+  this.height = height
+  this.invalidateLayout()
+
+proc `size=`*(this: UIComponent, width, height: float) =
+  this.width = width
+  this.height = height
+  this.invalidateLayout()
+
+proc parent*(this: UIComponent): UIComponent =
   return this.parent
+
+proc children*(this: UIComponent): lent seq[UIComponent] =
+  return this.children
+
+proc addChild*(this, child: UIComponent) =
+  this.children.add(child)
+  child.parent = this
+  this.invalidateLayout()
 
 proc layoutValidationStatus*(this: UIComponent): lent ValidationStatus =
   return this.layoutValidationStatus
@@ -70,16 +96,5 @@ method preRender*(this: UIComponent, ctx: Target, width, height: float) {.base.}
   discard
 
 method postRender*(this: UIComponent, ctx: Target, width, height: float) {.base.} =
-  discard
-
-# UI
-
-proc update*(this: UI, deltaTime: float) =
-  discard
-
-proc preRender*(this: UI, ctx: Target, width, height: float) =
-  discard
-
-proc postRender*(this: UI, ctx: Target, width, height: float) =
   discard
 
