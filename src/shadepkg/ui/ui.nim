@@ -36,8 +36,6 @@ type
 
   UIComponent* = ref object of RootObj
     ## Top-down design: child components cannot cause their parent components to resize.
-
-    # TODO: How do we render the root at a specific location?
     parent: UIComponent
     children: seq[UIComponent]
     width: float
@@ -47,30 +45,40 @@ type
     alignHorizontal*: Alignment
     alignVertical*: Alignment
     stackDirection*: StackDirection
-    layoutValidationStatus: ValidationStatus
+    layoutStatus: ValidationStatus
     bounds: AABB
     backgroundColor*: Color
     clipToBounds*: bool
 
 proc newUIComponent*(): UIComponent =
-  return UIComponent(layoutValidationStatus: ValidationStatus.Valid)
+  return UIComponent(layoutStatus: Invalid)
 
-template invalidateLayout(this: UIComponent) =
-  # TODO: When should this be "Invalid" vs InvalidChild?
-  this.layoutValidationStatus = Invalid
+proc layoutValidationStatus*(this: UIComponent): lent ValidationStatus =
+  return this.layoutValidationStatus
+
+proc `layoutValidationStatus=`(this: UIComponent, status: ValidationStatus) =
+  this.layoutValidationStatus = status
+  case status:
+    of Valid:
+      discard
+    of Invalid:
+      if this.parent != nil and this.parent.layoutValidationStatus == Valid:
+        this.parent.layoutValidationStatus = InvalidChild
+    of InvalidChild:
+      discard
 
 proc `width=`*(this: UIComponent, width: float) =
   this.width = width
-  this.invalidateLayout()
+  this.layoutValidationStatus = Invalid
 
 proc `height=`*(this: UIComponent, height: float) =
   this.height = height
-  this.invalidateLayout()
+  this.layoutValidationStatus = Invalid
 
 proc `size=`*(this: UIComponent, width, height: float) =
   this.width = width
   this.height = height
-  this.invalidateLayout()
+  this.layoutValidationStatus = Invalid
 
 proc parent*(this: UIComponent): UIComponent =
   return this.parent
@@ -81,10 +89,7 @@ proc children*(this: UIComponent): lent seq[UIComponent] =
 proc addChild*(this, child: UIComponent) =
   this.children.add(child)
   child.parent = this
-  this.invalidateLayout()
-
-proc layoutValidationStatus*(this: UIComponent): lent ValidationStatus =
-  return this.layoutValidationStatus
+  this.layoutValidationStatus = Invalid
 
 proc bounds*(this: UIComponent): lent AABB =
   return this.bounds
@@ -93,7 +98,13 @@ method update*(this: UIComponent, deltaTime: float) {.base.} =
   discard
 
 method preRender*(this: UIComponent, ctx: Target, width, height: float) {.base.} =
-  discard
+  ctx.rectangleFilled(
+    this.margin.left,
+    this.margin.top,
+    width - this.margin.right,
+    height - this.margin.bottom,
+    this.backgroundColor
+  )
 
 method postRender*(this: UIComponent, ctx: Target, width, height: float) {.base.} =
   discard
