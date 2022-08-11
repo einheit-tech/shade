@@ -50,6 +50,8 @@ type
     backgroundColor*: Color
     clipToBounds*: bool
 
+method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) {.base.}
+
 proc newUIComponent*(): UIComponent =
   return UIComponent(layoutStatus: Invalid)
 
@@ -57,7 +59,7 @@ proc layoutValidationStatus*(this: UIComponent): lent ValidationStatus =
   return this.layoutValidationStatus
 
 proc `layoutValidationStatus=`(this: UIComponent, status: ValidationStatus) =
-  this.layoutValidationStatus = status
+  this.layoutStatus = status
   case status:
     of Valid:
       discard
@@ -97,15 +99,52 @@ proc bounds*(this: UIComponent): lent AABB =
 method update*(this: UIComponent, deltaTime: float) {.base.} =
   discard
 
-method preRender*(this: UIComponent, ctx: Target, width, height: float) {.base.} =
+proc renderChildren*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) =
+  let
+    left = offsetX + this.margin.left + this.padding.left
+    right = width + offsetX - this.margin.right - this.padding.right
+    top = offsetY + this.margin.top + this.padding.top
+    bottom = height + offsetY - this.margin.bottom - this.padding.bottom
+
+  let (childWidth, childHeight) =
+    case this.stackDirection:
+      of Vertical:
+        (right - left, (bottom - top) / float(this.children.len))
+      of Horizontal:
+        ((right - left) / float(this.children.len), bottom - top)
+
+  case this.stackDirection:
+    of Vertical:
+      for i, child in this.children:
+        child.preRender(
+          ctx, 
+          left,
+          top + childHeight * float i,
+          childWidth,
+          childHeight
+        )
+    of Horizontal:
+      for i, child in this.children:
+        child.preRender(
+          ctx, 
+          left + childWidth * float i,
+          top,
+          childWidth,
+          childHeight
+        )
+
+method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) {.base.} =
   ctx.rectangleFilled(
-    this.margin.left,
-    this.margin.top,
-    width - this.margin.right,
-    height - this.margin.bottom,
+    offsetX + this.margin.left,
+    offsetY + this.margin.top,
+    offsetX + width - this.margin.right,
+    offsetY + height - this.margin.bottom,
     this.backgroundColor
   )
 
-method postRender*(this: UIComponent, ctx: Target, width, height: float) {.base.} =
+  if this.children.len > 0:
+    this.renderChildren(ctx, offsetX, offsetY, width, height)
+
+method postRender*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) {.base.} =
   discard
 

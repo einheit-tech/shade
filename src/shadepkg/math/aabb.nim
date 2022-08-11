@@ -15,14 +15,26 @@ const AABB_ZERO* = aabb(0, 0, 0, 0)
 template left*(this: AABB): float =
   this.topLeft.x
 
+template `left=`*(this: AABB, left: float) =
+  this.topLeft.x = left
+
 template top*(this: AABB): float =
   this.topLeft.y
+
+template `top=`*(this: AABB, top: float) =
+  this.topLeft.y = top
 
 template right*(this: AABB): float =
   this.bottomRight.x
 
+template `right=`*(this: AABB, right: float) =
+  this.bottomRight.x = right
+
 template bottom*(this: AABB): float =
   this.bottomRight.y
+
+template `bottom=`*(this: AABB, bottom: float) =
+  this.bottomRight.y = bottom
 
 template width*(this: AABB): float =
   this.right - this.left
