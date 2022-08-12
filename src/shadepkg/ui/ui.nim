@@ -12,11 +12,9 @@ export
   Target
 
 type
-  Size* = Vector
+  Size* = float
   PixelSize* = Size
-  RatioSize* = object
-    x: CompletionRatio
-    y: CompletionRatio
+  RatioSize* = CompletionRatio
 
   Insets* = AABB
 
@@ -38,8 +36,9 @@ type
     ## Top-down design: child components cannot cause their parent components to resize.
     parent: UIComponent
     children: seq[UIComponent]
-    width: float
-    height: float
+    # If width or height are == 0, fill out all space available in layout.
+    width: Size
+    height: Size
     margin*: Insets
     padding*: Insets
     alignHorizontal*: Alignment
@@ -49,6 +48,8 @@ type
     bounds: AABB
     backgroundColor*: Color
     clipToBounds*: bool
+
+template insets(left, top, right, bottom: float): Insets = Insets(aabb(left, top, right, bottom))
 
 method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) {.base.}
 
@@ -99,39 +100,129 @@ proc bounds*(this: UIComponent): lent AABB =
 method update*(this: UIComponent, deltaTime: float) {.base.} =
   discard
 
-proc renderChildren*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) =
-  let
-    left = offsetX + this.margin.left + this.padding.left
-    right = width + offsetX - this.margin.right - this.padding.right
-    top = offsetY + this.margin.top + this.padding.top
-    bottom = height + offsetY - this.margin.bottom - this.padding.bottom
-
-  let (childWidth, childHeight) =
-    case this.stackDirection:
-      of Vertical:
-        (right - left, (bottom - top) / float(this.children.len))
-      of Horizontal:
-        ((right - left) / float(this.children.len), bottom - top)
-
+proc determineChildrenSize(this: UIComponent, thisBounds: AABB): Vector =
+  ## Calculates the size of children which do not have a fixed width or height.
+  ## These children have a width and height <= 0.
   case this.stackDirection:
     of Vertical:
-      for i, child in this.children:
-        child.preRender(
-          ctx, 
-          left,
-          top + childHeight * float i,
-          childWidth,
-          childHeight
-        )
+      result.x = thisBounds.width
+
+      var
+        unreservedHeight = thisBounds.height
+        numChildrenWithoutFixedHeight = this.children.len
+
+      for child in this.children:
+        if child.height > 0:
+          unreservedHeight -= child.height
+          numChildrenWithoutFixedHeight -= 1
+
+      if unreservedHeight > 0 and numChildrenWithoutFixedHeight > 0:
+        result.y = unreservedHeight / float(numChildrenWithoutFixedHeight)
+
     of Horizontal:
-      for i, child in this.children:
-        child.preRender(
-          ctx, 
-          left + childWidth * float i,
-          top,
-          childWidth,
-          childHeight
-        )
+      result.y = thisBounds.height
+
+      var
+        unreservedWidth = thisBounds.width
+        numChildrenWithoutFixedWidth = this.children.len
+
+      for child in this.children:
+        if child.width > 0:
+          unreservedWidth -= child.width
+          numChildrenWithoutFixedWidth -= 1
+
+      if unreservedWidth > 0 and numChildrenWithoutFixedWidth > 0:
+        result.x = unreservedWidth / float(numChildrenWithoutFixedWidth)
+
+proc calcChildRenderStartPosition(
+  this: UIComponent,
+  axis: static StackDirection,
+  availableLen: float,
+  maxChildLen: float
+): float =
+  ## Calculates the starting position to render a child on the x axis.
+  ## availableLen: Available space on the axis to render children.
+  ## maxChildWidth: Maximum length of a child along the axis that does not have a fixed width/height.
+  if this.stackDirection != axis:
+    return 0.0
+
+  template childLen(): Size =
+    when axis == Horizontal:
+      child.width
+    else:
+      child.height
+
+  template axisAlignment(): Alignment =
+    if axis == Horizontal:
+      this.alignHorizontal
+    else:
+      this.alignVertical
+
+  case axisAlignment:
+    of Start:
+      return 0.0
+
+    of Center:
+      var totalChildrenLen = 0.0
+      for child in this.children:
+        if childLen > 0:
+          totalChildrenLen += childLen
+        else:
+          totalChildrenLen += maxChildLen
+
+      return (availableLen - totalChildrenLen) / 2.0
+
+    of End:
+      result = availableLen
+      for child in this.children:
+        if childLen > 0:
+          result -= childLen
+        else:
+          result -= maxChildLen
+
+proc renderChildrenStartingAt(
+  this: UIComponent,
+  ctx: Target,
+  startX: float,
+  startY: float,
+  maxChildSize: Vector
+) =
+  var
+    x = startX
+    y = startY
+
+  for child in this.children:
+    let width = if child.width > 0: child.width else: maxChildSize.x
+    let height = if child.height > 0: child.height else: maxChildSize.y
+    # TODO: Need to offset if the alignment is Center or End
+    child.preRender(ctx, x, y, width, height)
+
+    case this.stackDirection:
+      of Vertical:
+        y += height
+      of Horizontal:
+        x += width
+
+proc renderChildren*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) =
+  # TODO: Not sure how to store bounds properly since offsets can be provided on the fly.
+  let thisBounds = aabb(
+    offsetX + this.margin.left + this.padding.left,
+    offsetY + this.margin.top + this.padding.top,
+    offsetX + width + - this.margin.right - this.padding.right,
+    offsetY + height - this.margin.bottom - this.padding.bottom
+  )
+
+  let maxChildSize = this.determineChildrenSize(thisBounds)
+  let
+    boundsWidth = thisBounds.width
+    maxChildWidth = maxChildSize.x
+    boundsHeight = thisBounds.height
+    maxChildHeight = maxChildSize.y
+  
+  let x = this.calcChildRenderStartPosition(Horizontal, boundsWidth, maxChildWidth)
+  let y = this.calcChildRenderStartPosition(Vertical, boundsHeight, maxChildHeight)
+
+  this.renderChildrenStartingAt(ctx, thisBounds.left + x, thisBounds.top + y, maxChildSize)
 
 method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) {.base.} =
   ctx.rectangleFilled(
