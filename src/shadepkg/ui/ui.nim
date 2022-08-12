@@ -49,6 +49,15 @@ type
     backgroundColor*: Color
     clipToBounds*: bool
 
+template insets*(left, top, right, bottom: float): Insets =
+  Insets(aabb(left, top, right, bottom))
+
+template margin*(left, top, right, bottom: float): Insets =
+  insets(left, top, right, bottom)
+
+template padding*(left, top, right, bottom: float): Insets =
+  insets(left, top, right, bottom)
+
 method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) {.base.}
 
 proc newUIComponent*(): UIComponent =
