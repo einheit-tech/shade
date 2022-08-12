@@ -58,7 +58,8 @@ template margin*(left, top, right, bottom: float): Insets =
 template padding*(left, top, right, bottom: float): Insets =
   insets(left, top, right, bottom)
 
-method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) {.base.}
+method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.}
+proc updateBounds*(this: UIComponent, x, y, width, height: float)
 
 proc newUIComponent*(): UIComponent =
   return UIComponent(layoutStatus: Valid)
@@ -107,15 +108,15 @@ proc bounds*(this: UIComponent): lent AABB =
 method update*(this: UIComponent, deltaTime: float) {.base.} =
   discard
 
-proc determineChildrenSize(this: UIComponent, thisBounds: AABB): Vector =
+proc determineChildrenSize(this: UIComponent): Vector =
   ## Calculates the size of children which do not have a fixed width or height.
   ## These children have a width and height <= 0.
   case this.stackDirection:
     of Vertical:
-      result.x = thisBounds.width
+      result.x = this.bounds.width
 
       var
-        unreservedHeight = thisBounds.height
+        unreservedHeight = this.bounds.height
         numChildrenWithoutFixedHeight = this.children.len
 
       for child in this.children:
@@ -127,10 +128,10 @@ proc determineChildrenSize(this: UIComponent, thisBounds: AABB): Vector =
         result.y = unreservedHeight / float(numChildrenWithoutFixedHeight)
 
     of Horizontal:
-      result.y = thisBounds.height
+      result.y = this.bounds.height
 
       var
-        unreservedWidth = thisBounds.width
+        unreservedWidth = this.bounds.width
         numChildrenWithoutFixedWidth = this.children.len
 
       for child in this.children:
@@ -187,9 +188,8 @@ proc calcChildRenderStartPosition(
         else:
           result -= maxChildLen
 
-proc renderChildrenStartingAt(
+proc updateChildrenBounds(
   this: UIComponent,
-  ctx: Target,
   startX: float,
   startY: float,
   maxChildSize: Vector,
@@ -221,7 +221,7 @@ proc renderChildrenStartingAt(
           of End:
             y = startY + thisBounds.height - height
 
-    child.preRender(ctx, x, y, width, height)
+    child.updateBounds(x, y, width, height)
 
     case this.stackDirection:
       of Vertical:
@@ -229,39 +229,35 @@ proc renderChildrenStartingAt(
       of Horizontal:
         x += width
 
-proc renderChildren*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) =
-  # TODO: Not sure how to store bounds properly since offsets can be provided on the fly.
-  let thisBounds = aabb(
-    offsetX + this.margin.left + this.padding.left,
-    offsetY + this.margin.top + this.padding.top,
-    offsetX + width + - this.margin.right - this.padding.right,
-    offsetY + height - this.margin.bottom - this.padding.bottom
+proc updateBounds*(this: UIComponent, x, y, width, height: float) =
+  this.bounds.topLeft.x = x + this.margin.left + this.padding.left
+  this.bounds.topLeft.y = y + this.margin.top + this.padding.top
+  this.bounds.bottomRight.x = x + width - this.margin.right - this.padding.right
+  this.bounds.bottomRight.y = y + height - this.margin.bottom - this.padding.bottom
+
+  let maxChildSize = this.determineChildrenSize()
+  let x = this.calcChildRenderStartPosition(Horizontal, this.bounds.width, maxChildSize.x)
+  let y = this.calcChildRenderStartPosition(Vertical, this.bounds.height, maxChildSize.y)
+
+  this.updateChildrenBounds(
+    x + this.bounds.left,
+    y + this.bounds.top,
+    maxChildSize,
+    this.bounds
   )
 
-  let maxChildSize = this.determineChildrenSize(thisBounds)
-  let
-    boundsWidth = thisBounds.width
-    maxChildWidth = maxChildSize.x
-    boundsHeight = thisBounds.height
-    maxChildHeight = maxChildSize.y
-  
-  let x = this.calcChildRenderStartPosition(Horizontal, boundsWidth, maxChildWidth)
-  let y = this.calcChildRenderStartPosition(Vertical, boundsHeight, maxChildHeight)
-
-  this.renderChildrenStartingAt(ctx, thisBounds.left + x, thisBounds.top + y, maxChildSize, thisBounds)
-
-method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) {.base.} =
+method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.} =
   ctx.rectangleFilled(
-    offsetX + this.margin.left,
-    offsetY + this.margin.top,
-    offsetX + width - this.margin.right,
-    offsetY + height - this.margin.bottom,
+    offsetX + this.bounds.left,
+    offsetY + this.bounds.top,
+    offsetX + this.bounds.right,
+    offsetY + this.bounds.bottom,
     this.backgroundColor
   )
 
-  if this.children.len > 0:
-    this.renderChildren(ctx, offsetX, offsetY, width, height)
+  for child in this.children:
+    child.preRender(ctx, offsetX, offsetY)
 
-method postRender*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) {.base.} =
+method postRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.} =
   discard
 

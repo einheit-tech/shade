@@ -9,13 +9,13 @@ let layer = newLayer()
 Game.scene.addLayer layer
 
 let root = newUIComponent()
-root.backgroundColor = newColor(125, 0, 125)
+root.backgroundColor = BLACK
 root.stackDirection = Horizontal
 
-# root.margin.left = 10
-# root.margin.top = 10
-# root.margin.right = 10
-# root.margin.bottom = 10
+root.margin.left = 10
+root.margin.top = 10
+root.margin.right = 10
+root.margin.bottom = 10
 
 # root.padding.left = 10
 # root.padding.top = 10
@@ -60,25 +60,12 @@ for i in 0 ..< 3:
   panel.height = 100
   panel3.addChild(panel)
 
+root.updateBounds(0, 0, gamestate.resolution.x, gamestate.resolution.y)
+
 type Foo = ref object of Node
 
 Foo.renderAsNodeChild:
-  root.preRender(ctx, 0, 0, gamestate.resolution.x, gamestate.resolution.y)
-
-let flipStackDirectionTask = newTask(
-  proc(this: Task, deltaTime: float) = discard,
-  proc(this: Task): bool = this.elapsedTime >= 1.5,
-  proc(this: Task) =
-    this.elapsedTime = 0.0
-    this.completed = false
-    if root.stackDirection == Vertical:
-      root.stackDirection = Horizontal
-    else:
-      root.stackDirection = Vertical
-)
-
-# Flip the stackDirection every few seconds
-# layer.addChild(flipStackDirectionTask)
+  root.preRender(ctx, 0, 0)
 
 let foo = Foo()
 initNode(Node foo)
