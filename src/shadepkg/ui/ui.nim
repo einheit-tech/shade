@@ -49,15 +49,13 @@ type
     backgroundColor*: Color
     clipToBounds*: bool
 
-template insets(left, top, right, bottom: float): Insets = Insets(aabb(left, top, right, bottom))
-
 method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) {.base.}
 
 proc newUIComponent*(): UIComponent =
-  return UIComponent(layoutStatus: Invalid)
+  return UIComponent(layoutStatus: Valid)
 
 proc layoutValidationStatus*(this: UIComponent): lent ValidationStatus =
-  return this.layoutValidationStatus
+  return this.layoutStatus
 
 proc `layoutValidationStatus=`(this: UIComponent, status: ValidationStatus) =
   this.layoutStatus = status
@@ -185,7 +183,8 @@ proc renderChildrenStartingAt(
   ctx: Target,
   startX: float,
   startY: float,
-  maxChildSize: Vector
+  maxChildSize: Vector,
+  thisBounds: AABB
 ) =
   var
     x = startX
@@ -194,7 +193,25 @@ proc renderChildrenStartingAt(
   for child in this.children:
     let width = if child.width > 0: child.width else: maxChildSize.x
     let height = if child.height > 0: child.height else: maxChildSize.y
-    # TODO: Need to offset if the alignment is Center or End
+    case this.stackDirection:
+      of Vertical:
+        case this.alignHorizontal:
+          of Start:
+            discard
+          of Center:
+            x = startX + (thisBounds.width - width) / 2.0
+          of End:
+            x = startX + thisBounds.width - width
+
+      of Horizontal:
+        case this.alignVertical:
+          of Start:
+            discard
+          of Center:
+            y = startY + (thisBounds.height - height) / 2.0
+          of End:
+            y = startY + thisBounds.height - height
+
     child.preRender(ctx, x, y, width, height)
 
     case this.stackDirection:
@@ -222,7 +239,7 @@ proc renderChildren*(this: UIComponent, ctx: Target, offsetX, offsetY, width, he
   let x = this.calcChildRenderStartPosition(Horizontal, boundsWidth, maxChildWidth)
   let y = this.calcChildRenderStartPosition(Vertical, boundsHeight, maxChildHeight)
 
-  this.renderChildrenStartingAt(ctx, thisBounds.left + x, thisBounds.top + y, maxChildSize)
+  this.renderChildrenStartingAt(ctx, thisBounds.left + x, thisBounds.top + y, maxChildSize, thisBounds)
 
 method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY, width, height: float) {.base.} =
   ctx.rectangleFilled(

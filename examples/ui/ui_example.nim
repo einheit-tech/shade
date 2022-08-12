@@ -10,7 +10,7 @@ Game.scene.addLayer layer
 
 let root = newUIComponent()
 root.backgroundColor = newColor(125, 0, 125)
-root.stackDirection = Horizontal
+root.stackDirection = Vertical
 
 # root.margin.left = 10
 # root.margin.top = 10
@@ -31,14 +31,15 @@ panel1.backgroundColor = GREEN
 panel2.backgroundColor = BLUE
 panel3.backgroundColor = ORANGE
 
-panel2.width = 100
+panel2.width = 200
+panel2.height = 100
 
 root.addChild(panel1)
 root.addChild(panel2)
 root.addChild(panel3)
 
 root.alignHorizontal = End
-root.alignVertical = Start
+root.alignVertical = Center
 
 type Foo = ref object of Node
 
