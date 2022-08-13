@@ -58,6 +58,18 @@ template margin*(left, top, right, bottom: float): Insets =
 template padding*(left, top, right, bottom: float): Insets =
   insets(left, top, right, bottom)
 
+template paddingMarginOffset(this: UIComponent, axis: StackDirection): float =
+  when axis == Horizontal:
+    this.padding.left + this.margin.left
+  else:
+    this.padding.top + this.margin.bottom
+
+template totalPaddingAndMargin(this: UIComponent, axis: StackDirection): float =
+  when axis == Horizontal:
+    this.padding.left + this.margin.left + this.padding.right + this.margin.right
+  else:
+    this.padding.top + this.margin.top + this.padding.bottom + this.margin.bottom
+
 method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.}
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
 
@@ -106,17 +118,25 @@ proc bounds*(this: UIComponent): lent AABB =
   return this.bounds
 
 method update*(this: UIComponent, deltaTime: float) {.base.} =
-  discard
+  # TODO:
+  case this.layoutValidationStatus:
+    of Valid:
+      discard
+    of Invalid:
+      this.updateBounds(0, 0, 0, 0)
+    of InvalidChild:
+      this.updateBounds(0, 0, 0, 0)
 
 proc determineChildrenSize(this: UIComponent): Vector =
   ## Calculates the size of children which do not have a fixed width or height.
   ## These children have a width and height <= 0.
+
   case this.stackDirection:
     of Vertical:
-      result.x = this.bounds.width
+      result.x = this.bounds.width - this.totalPaddingAndMargin(Horizontal)
 
       var
-        unreservedHeight = this.bounds.height
+        unreservedHeight = this.bounds.height - this.totalPaddingAndMargin(Vertical)
         numChildrenWithoutFixedHeight = this.children.len
 
       for child in this.children:
@@ -128,10 +148,10 @@ proc determineChildrenSize(this: UIComponent): Vector =
         result.y = unreservedHeight / float(numChildrenWithoutFixedHeight)
 
     of Horizontal:
-      result.y = this.bounds.height
+      result.y = this.bounds.height - this.totalPaddingAndMargin(Vertical)
 
       var
-        unreservedWidth = this.bounds.width
+        unreservedWidth = this.bounds.width - this.totalPaddingAndMargin(Horizontal)
         numChildrenWithoutFixedWidth = this.children.len
 
       for child in this.children:
@@ -145,20 +165,25 @@ proc determineChildrenSize(this: UIComponent): Vector =
 proc calcChildRenderStartPosition(
   this: UIComponent,
   axis: static StackDirection,
-  availableLen: float,
   maxChildLen: float
 ): float =
-  ## Calculates the starting position to render a child on the x axis.
+  ## Calculates the starting position to render a child along the given axis (relative to the parent).
   ## availableLen: Available space on the axis to render children.
   ## maxChildWidth: Maximum length of a child along the axis that does not have a fixed width/height.
   if this.stackDirection != axis:
-    return 0.0
+    return this.paddingMarginOffset(axis)
 
-  template childLen(): Size =
+  template fixedChildLen(): Size =
     when axis == Horizontal:
       child.width
     else:
       child.height
+
+  let availableLen: float =
+    when axis == Horizontal:
+      this.bounds.width - this.totalPaddingAndMargin(Horizontal)
+    else:
+      this.bounds.height - this.totalPaddingAndMargin(Vertical)
 
   template axisAlignment(): Alignment =
     if axis == Horizontal:
@@ -168,13 +193,13 @@ proc calcChildRenderStartPosition(
 
   case axisAlignment:
     of Start:
-      return 0.0
+      return this.paddingMarginOffset(axis)
 
     of Center:
       var totalChildrenLen = 0.0
       for child in this.children:
-        if childLen > 0:
-          totalChildrenLen += childLen
+        if fixedChildLen > 0:
+          totalChildrenLen += fixedChildLen
         else:
           totalChildrenLen += maxChildLen
 
@@ -183,8 +208,8 @@ proc calcChildRenderStartPosition(
     of End:
       result = availableLen
       for child in this.children:
-        if childLen > 0:
-          result -= childLen
+        if fixedChildLen > 0:
+          result -= fixedChildLen
         else:
           result -= maxChildLen
 
@@ -192,9 +217,10 @@ proc updateChildrenBounds(
   this: UIComponent,
   startX: float,
   startY: float,
-  maxChildSize: Vector,
-  thisBounds: AABB
+  maxChildSize: Vector
 ) =
+  ## startX: Starting x position (relative to parent).
+  ## startY: Starting y position (relative to parent).
   var
     x = startX
     y = startY
@@ -208,18 +234,18 @@ proc updateChildrenBounds(
           of Start:
             discard
           of Center:
-            x = startX + (thisBounds.width - width) / 2.0
+            x = startX + (this.bounds.width - width) / 2.0
           of End:
-            x = startX + thisBounds.width - width
+            x = startX + this.bounds.width - width
 
       of Horizontal:
         case this.alignVertical:
           of Start:
             discard
           of Center:
-            y = startY + (thisBounds.height - height) / 2.0
+            y = startY + (this.bounds.height - height) / 2.0
           of End:
-            y = startY + thisBounds.height - height
+            y = startY + this.bounds.height - height
 
     child.updateBounds(x, y, width, height)
 
@@ -229,29 +255,30 @@ proc updateChildrenBounds(
       of Horizontal:
         x += width
 
-proc updateBounds*(this: UIComponent, x, y, width, height: float) =
-  this.bounds.topLeft.x = x + this.margin.left + this.padding.left
-  this.bounds.topLeft.y = y + this.margin.top + this.padding.top
-  this.bounds.bottomRight.x = x + width - this.margin.right - this.padding.right
-  this.bounds.bottomRight.y = y + height - this.margin.bottom - this.padding.bottom
-
+proc updateChildrenBounds*(this: UIComponent) =
   let maxChildSize = this.determineChildrenSize()
-  let x = this.calcChildRenderStartPosition(Horizontal, this.bounds.width, maxChildSize.x)
-  let y = this.calcChildRenderStartPosition(Vertical, this.bounds.height, maxChildSize.y)
+  let x = this.calcChildRenderStartPosition(Horizontal, maxChildSize.x)
+  let y = this.calcChildRenderStartPosition(Vertical, maxChildSize.y)
 
   this.updateChildrenBounds(
     x + this.bounds.left,
     y + this.bounds.top,
-    maxChildSize,
-    this.bounds
+    maxChildSize
   )
+
+proc updateBounds*(this: UIComponent, x, y, width, height: float) =
+  this.bounds.topLeft.x = x
+  this.bounds.topLeft.y = y
+  this.bounds.bottomRight.x = x + width
+  this.bounds.bottomRight.y = y + height
+  this.updateChildrenBounds()
 
 method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.} =
   ctx.rectangleFilled(
-    offsetX + this.bounds.left,
-    offsetY + this.bounds.top,
-    offsetX + this.bounds.right,
-    offsetY + this.bounds.bottom,
+    offsetX + this.bounds.left + this.margin.left,
+    offsetY + this.bounds.top + this.margin.top,
+    offsetX + this.bounds.right - this.margin.right,
+    offsetY + this.bounds.bottom - this.margin.bottom,
     this.backgroundColor
   )
 
