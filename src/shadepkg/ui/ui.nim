@@ -81,14 +81,8 @@ proc layoutValidationStatus*(this: UIComponent): lent ValidationStatus =
 
 proc `layoutValidationStatus=`(this: UIComponent, status: ValidationStatus) =
   this.layoutStatus = status
-  case status:
-    of Valid:
-      discard
-    of Invalid:
-      if this.parent != nil and this.parent.layoutValidationStatus == Valid:
-        this.parent.layoutValidationStatus = InvalidChild
-    of InvalidChild:
-      discard
+  if status == Invalid and this.parent != nil and this.parent.layoutValidationStatus == Valid:
+    this.parent.layoutValidationStatus = InvalidChild
 
 proc `width=`*(this: UIComponent, width: float) =
   this.width = width
@@ -118,19 +112,16 @@ proc bounds*(this: UIComponent): lent AABB =
   return this.bounds
 
 method update*(this: UIComponent, deltaTime: float) {.base.} =
-  # TODO:
   case this.layoutValidationStatus:
     of Valid:
       discard
-    of Invalid:
-      this.updateBounds(0, 0, 0, 0)
-    of InvalidChild:
-      this.updateBounds(0, 0, 0, 0)
+    # TODO: Is there a better way to handle InvalidChild?
+    of Invalid, InvalidChild:
+      this.updateBounds(this.bounds.left, this.bounds.top, this.bounds.width, this.bounds.height)
 
 proc determineChildrenSize(this: UIComponent): Vector =
   ## Calculates the size of children which do not have a fixed width or height.
   ## These children have a width and height <= 0.
-
   case this.stackDirection:
     of Vertical:
       result.x = this.bounds.width - this.totalPaddingAndMargin(Horizontal)
@@ -267,10 +258,12 @@ proc updateChildrenBounds*(this: UIComponent) =
   )
 
 proc updateBounds*(this: UIComponent, x, y, width, height: float) =
+  ## Updates this bounds, and all children (deep).
   this.bounds.topLeft.x = x
   this.bounds.topLeft.y = y
   this.bounds.bottomRight.x = x + width
   this.bounds.bottomRight.y = y + height
+  this.layoutValidationStatus = Valid
   this.updateChildrenBounds()
 
 method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.} =

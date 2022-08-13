@@ -60,12 +60,18 @@ for i in 0 ..< 3:
   panel.height = 100
   panel3.addChild(panel)
 
+# TODO: What's the best way to do this?
 root.updateBounds(0, 0, gamestate.resolution.x, gamestate.resolution.y)
+gamestate.onResolutionChanged:
+  root.updateBounds(0, 0, gamestate.resolution.x, gamestate.resolution.y)
 
 type Foo = ref object of Node
 
 Foo.renderAsNodeChild:
   root.preRender(ctx, 0, 0)
+
+method update*(this: Foo, deltaTime: float) =
+  root.update(deltaTime)
 
 let foo = Foo()
 initNode(Node foo)
@@ -75,6 +81,14 @@ Input.addKeyPressedListener(
   K_ESCAPE,
   proc(key: Keycode, state: KeyState) =
     Game.stop()
+)
+
+var i = 1
+Input.addKeyPressedListener(
+  K_RETURN,
+  proc(key: Keycode, state: KeyState) =
+    panel2.width = float(50 * i)
+    i += 1
 )
 
 Game.start()
