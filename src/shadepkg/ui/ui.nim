@@ -12,9 +12,16 @@ export
   Target
 
 type
-  Size* = float
-  PixelSize* = Size
-  RatioSize* = CompletionRatio
+  SizeKind* = enum
+    Pixel
+    Ratio
+
+  Size* = object
+    case kind: SizeKind
+      of Pixel:
+        pixelValue: float
+      of Ratio:
+        ratioValue: CompletionRatio
 
   Insets* = AABB
 
@@ -49,6 +56,9 @@ type
     backgroundColor*: Color
     clipToBounds*: bool
 
+template ratio*(r: CompletionRatio): Size =
+  Size(kind: Ratio, ratioValue: r)
+
 template insets*(left, top, right, bottom: float): Insets =
   Insets(aabb(left, top, right, bottom))
 
@@ -70,6 +80,18 @@ template totalPaddingAndMargin(this: UIComponent, axis: StackDirection): float =
   else:
     this.padding.top + this.margin.top + this.padding.bottom + this.margin.bottom
 
+template pixelWidth*(this: UIComponent, availableParentWidth: float): float =
+  if this.width.kind == Pixel:
+    this.width.pixelValue
+  else:
+    this.width.ratioValue * availableParentWidth
+
+template pixelHeight*(this: UIComponent, availableParentHeight: float): float =
+  if this.height.kind == Pixel:
+    this.height.pixelValue
+  else:
+    this.height.ratioValue * availableParentHeight
+
 method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.}
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
 
@@ -79,23 +101,41 @@ proc newUIComponent*(): UIComponent =
 proc layoutValidationStatus*(this: UIComponent): lent ValidationStatus =
   return this.layoutStatus
 
-proc `layoutValidationStatus=`(this: UIComponent, status: ValidationStatus) =
+proc setLayoutValidationStatus(this: UIComponent, status: ValidationStatus) =
   this.layoutStatus = status
   if status == Invalid and this.parent != nil and this.parent.layoutValidationStatus == Valid:
-    this.parent.layoutValidationStatus = InvalidChild
+    this.parent.setLayoutValidationStatus(InvalidChild)
 
-proc `width=`*(this: UIComponent, width: float) =
-  this.width = width
-  this.layoutValidationStatus = Invalid
+proc setWidth(this: UIComponent, width: float|Size) =
+  when typeof(width) is Size:
+    this.width = width
+  else:
+    if this.width.kind == Pixel:
+      this.width.pixelValue = width
+    else:
+      this.width = Size(kind: Pixel, pixelValue: width)
 
-proc `height=`*(this: UIComponent, height: float) =
-  this.height = height
-  this.layoutValidationStatus = Invalid
+proc setHeight(this: UIComponent, height: float|Size) =
+  when typeof(height) is Size:
+    this.height = height
+  else:
+    if this.height.kind == Pixel:
+      this.height.pixelValue = height
+    else:
+      this.height = Size(kind: Pixel, pixelValue: height)
 
-proc `size=`*(this: UIComponent, width, height: float) =
-  this.width = width
-  this.height = height
-  this.layoutValidationStatus = Invalid
+proc `width=`*(this: UIComponent, width: float|Size) =
+  this.setWidth(width)
+  this.setLayoutValidationStatus(Invalid)
+
+proc `height=`*(this: UIComponent, height: float|Size) =
+  this.setHeight(height)
+  this.setLayoutValidationStatus(Invalid)
+
+proc `size=`*(this: UIComponent, width, height: float|Size) =
+  this.setWidth(width)
+  this.setHeight(height)
+  this.setLayoutValidationStatus(Invalid)
 
 proc parent*(this: UIComponent): UIComponent =
   return this.parent
@@ -106,7 +146,7 @@ proc children*(this: UIComponent): lent seq[UIComponent] =
 proc addChild*(this, child: UIComponent) =
   this.children.add(child)
   child.parent = this
-  this.layoutValidationStatus = Invalid
+  this.setLayoutValidationStatus(Invalid)
 
 proc bounds*(this: UIComponent): lent AABB =
   return this.bounds
@@ -121,7 +161,7 @@ method update*(this: UIComponent, deltaTime: float) {.base.} =
 
 proc determineChildrenSize(this: UIComponent): Vector =
   ## Calculates the size of children which do not have a fixed width or height.
-  ## These children have a width and height <= 0.
+  ## These children have a width or height <= 0.
   case this.stackDirection:
     of Vertical:
       result.x = this.bounds.width - this.totalPaddingAndMargin(Horizontal)
@@ -131,8 +171,9 @@ proc determineChildrenSize(this: UIComponent): Vector =
         numChildrenWithoutFixedHeight = this.children.len
 
       for child in this.children:
-        if child.height > 0:
-          unreservedHeight -= child.height
+        let childPixelHeight = child.pixelHeight(unreservedHeight)
+        if childPixelHeight > 0.0:
+          unreservedHeight -= childPixelHeight
           numChildrenWithoutFixedHeight -= 1
 
       if unreservedHeight > 0 and numChildrenWithoutFixedHeight > 0:
@@ -146,8 +187,9 @@ proc determineChildrenSize(this: UIComponent): Vector =
         numChildrenWithoutFixedWidth = this.children.len
 
       for child in this.children:
-        if child.width > 0:
-          unreservedWidth -= child.width
+        let childPixelWidth = child.pixelWidth(unreservedWidth)
+        if childPixelWidth > 0:
+          unreservedWidth -= childPixelWidth
           numChildrenWithoutFixedWidth -= 1
 
       if unreservedWidth > 0 and numChildrenWithoutFixedWidth > 0:
@@ -160,21 +202,21 @@ proc calcChildRenderStartPosition(
 ): float =
   ## Calculates the starting position to render a child along the given axis (relative to the parent).
   ## availableLen: Available space on the axis to render children.
-  ## maxChildWidth: Maximum length of a child along the axis that does not have a fixed width/height.
+  ## maxChildLen: Maximum length of a child along the axis that does not have a fixed width/height.
   if this.stackDirection != axis:
     return this.paddingMarginOffset(axis)
-
-  template fixedChildLen(): Size =
-    when axis == Horizontal:
-      child.width
-    else:
-      child.height
 
   let availableLen: float =
     when axis == Horizontal:
       this.bounds.width - this.totalPaddingAndMargin(Horizontal)
     else:
       this.bounds.height - this.totalPaddingAndMargin(Vertical)
+
+  template fixedChildLen(): float =
+    when axis == Horizontal:
+      child.pixelWidth(availableLen)
+    else:
+      child.pixelHeight(availableLen)
 
   template axisAlignment(): Alignment =
     if axis == Horizontal:
@@ -194,10 +236,10 @@ proc calcChildRenderStartPosition(
         else:
           totalChildrenLen += maxChildLen
 
-      return (availableLen - totalChildrenLen) / 2.0
+      return (availableLen - totalChildrenLen) / 2.0 + this.paddingMarginOffset(axis)
 
     of End:
-      result = availableLen
+      result = availableLen + this.paddingMarginOffset(axis)
       for child in this.children:
         if fixedChildLen > 0:
           result -= fixedChildLen
@@ -217,8 +259,12 @@ proc updateChildrenBounds(
     y = startY
 
   for child in this.children:
-    let width = if child.width > 0: child.width else: maxChildSize.x
-    let height = if child.height > 0: child.height else: maxChildSize.y
+    let
+      childPixelWidth = child.pixelWidth(this.bounds.width)
+      childPixelHeight = child.pixelHeight(this.bounds.height)
+      width = if childPixelWidth > 0: childPixelWidth else: maxChildSize.x
+      height = if childPixelHeight > 0: childPixelHeight else: maxChildSize.y
+
     case this.stackDirection:
       of Vertical:
         case this.alignHorizontal:
@@ -263,7 +309,7 @@ proc updateBounds*(this: UIComponent, x, y, width, height: float) =
   this.bounds.topLeft.y = y
   this.bounds.bottomRight.x = x + width
   this.bounds.bottomRight.y = y + height
-  this.layoutValidationStatus = Valid
+  this.setLayoutValidationStatus(Valid)
   this.updateChildrenBounds()
 
 method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.} =

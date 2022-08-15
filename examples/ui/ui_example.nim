@@ -11,6 +11,7 @@ Game.scene.addLayer layer
 let root = newUIComponent()
 root.backgroundColor = BLACK
 root.stackDirection = Horizontal
+root.alignHorizontal = Center
 
 root.margin.left = 10
 root.margin.top = 10
@@ -43,21 +44,21 @@ for i in 0 ..< 3:
   let panel = newUIComponent()
   panel.margin = margin(4, 4, 4, 4)
   panel.backgroundColor = PURPLE
-  panel.height = 100
+  panel.height = 100.0
   panel1.addChild(panel)
 
 for i in 0 ..< 3:
   let panel = newUIComponent()
   panel.margin = margin(4, 4, 4, 4)
   panel.backgroundColor = PURPLE
-  panel.height = 100
+  panel.height = ratio(0.25)
   panel2.addChild(panel)
 
 for i in 0 ..< 3:
   let panel = newUIComponent()
   panel.margin = margin(4, 4, 4, 4)
   panel.backgroundColor = PURPLE
-  panel.height = 100
+  panel.height = 100.0
   panel3.addChild(panel)
 
 # TODO: What's the best way to do this?
