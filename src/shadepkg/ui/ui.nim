@@ -54,6 +54,8 @@ type
     layoutStatus: ValidationStatus
     bounds: AABB
     backgroundColor*: Color
+    borderWidth*: float
+    borderColor*: Color
     clipToBounds*: bool
 
 template ratio*(r: CompletionRatio): Size =
@@ -96,7 +98,11 @@ method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.bas
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
 
 proc newUIComponent*(): UIComponent =
-  return UIComponent(layoutStatus: Valid)
+  return UIComponent(
+    layoutStatus: Valid,
+    borderWidth: 1.0,
+    borderColor: BLACK
+  )
 
 proc layoutValidationStatus*(this: UIComponent): lent ValidationStatus =
   return this.layoutStatus
@@ -320,6 +326,16 @@ method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.bas
     offsetY + this.bounds.bottom - this.margin.bottom,
     this.backgroundColor
   )
+
+  if this.borderWidth > 0.0:
+    discard setLineThickness(this.borderWidth)
+    ctx.rectangle(
+      offsetX + this.bounds.left + this.margin.left,
+      offsetY + this.bounds.top + this.margin.top,
+      offsetX + this.bounds.right - this.margin.right,
+      offsetY + this.bounds.bottom - this.margin.bottom,
+      this.borderColor
+    )
 
   for child in this.children:
     child.preRender(ctx, offsetX, offsetY)
