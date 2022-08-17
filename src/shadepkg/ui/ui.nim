@@ -8,7 +8,7 @@ import
 export
   CompletionRatio,
   Vector,
-  Color,
+  color,
   Target
 
 type
@@ -100,6 +100,8 @@ method preRender*(
   offsetY: float,
   parentRenderBounds: AABB = AABB_INF
 ) {.base.}
+
+method postRender*(this: UIComponent, ctx: Target, renderBounds: AABB) {.base.}
 
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
 
@@ -364,11 +366,13 @@ method preRender*(
       this.borderColor
     )
 
+  this.postRender(ctx, clippedRenderBounds)
+
   for child in this.children:
     child.preRender(ctx, offsetX, offsetY, clippedRenderBounds)
 
   ctx.unsetClip()
 
-method postRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.} =
+method postRender*(this: UIComponent, ctx: Target, renderBounds: AABB) {.base.} =
   discard
 

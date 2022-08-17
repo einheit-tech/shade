@@ -51,15 +51,13 @@ for i in 0 ..< 3:
   let panel = newUIComponent()
   panel.margin = margin(4, 4, 4, 4)
   panel.backgroundColor = PURPLE
-  panel.height = ratio(0.25)
-  panel2.addChild(panel)
-
-for i in 0 ..< 3:
-  let panel = newUIComponent()
-  panel.margin = margin(4, 4, 4, 4)
-  panel.backgroundColor = PURPLE
   panel.height = 100.0
   panel3.addChild(panel)
+
+# Load our font
+let (_, kennyPixel) = Fonts.load("./examples/textbox/kennypixel.ttf", 72)
+let text = newText(kennyPixel, "Foobar")
+panel2.addChild(text)
 
 # TODO: What's the best way to do this?
 root.updateBounds(0, 0, gamestate.resolution.x, gamestate.resolution.y)
