@@ -10,7 +10,9 @@ type AABB* = object
 template aabb*(left, top, right, bottom: float): AABB =
   AABB(topLeft: vector(left, top), bottomRight: vector(right, bottom))
 
-const AABB_ZERO* = aabb(0, 0, 0, 0)
+const
+  AABB_ZERO* = aabb(0, 0, 0, 0)
+  AABB_INF* = aabb(NegInf, NegInf, Inf, Inf)
 
 template left*(this: AABB): float =
   this.topLeft.x

@@ -56,7 +56,6 @@ type
     backgroundColor*: Color
     borderWidth*: float
     borderColor*: Color
-    clipToBounds*: bool
 
 template ratio*(r: CompletionRatio): Size =
   Size(kind: Ratio, ratioValue: r)
@@ -94,7 +93,14 @@ template pixelHeight*(this: UIComponent, availableParentHeight: float): float =
   else:
     this.height.ratioValue * availableParentHeight
 
-method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.}
+method preRender*(
+  this: UIComponent,
+  ctx: Target,
+  offsetX,
+  offsetY: float,
+  parentRenderBounds: AABB = AABB_INF
+) {.base.}
+
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
 
 proc newUIComponent*(): UIComponent =
@@ -318,7 +324,28 @@ proc updateBounds*(this: UIComponent, x, y, width, height: float) =
   this.setLayoutValidationStatus(Valid)
   this.updateChildrenBounds()
 
-method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.} =
+method preRender*(
+  this: UIComponent,
+  ctx: Target,
+  offsetX,
+  offsetY: float,
+  parentRenderBounds: AABB = AABB_INF
+) {.base.} =
+
+  let clippedRenderBounds = aabb(
+    max(parentRenderBounds.left, offsetX + this.bounds.left + this.margin.left),
+    max(parentRenderBounds.top, offsetY + this.bounds.top + this.margin.top),
+    min(parentRenderBounds.right, offsetX + this.bounds.right - this.margin.right),
+    min(parentRenderBounds.bottom, offsetY + this.bounds.bottom - this.margin.bottom)
+  )
+
+  discard ctx.setClip(
+    int16(clippedRenderBounds.left),
+    int16(clippedRenderBounds.top),
+    uint16(clippedRenderBounds.width),
+    uint16(clippedRenderBounds.height)
+  )
+
   ctx.rectangleFilled(
     offsetX + this.bounds.left + this.margin.left,
     offsetY + this.bounds.top + this.margin.top,
@@ -338,7 +365,9 @@ method preRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.bas
     )
 
   for child in this.children:
-    child.preRender(ctx, offsetX, offsetY)
+    child.preRender(ctx, offsetX, offsetY, clippedRenderBounds)
+
+  ctx.unsetClip()
 
 method postRender*(this: UIComponent, ctx: Target, offsetX, offsetY: float) {.base.} =
   discard
