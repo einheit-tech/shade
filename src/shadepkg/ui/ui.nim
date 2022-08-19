@@ -1,5 +1,5 @@
 import sdl2_nim/sdl_gpu
-from ../math/mathutils import CompletionRatio
+from ../math/mathutils import CompletionRatio, ceil, floor
 import
   ../math/vector2,
   ../math/aabb,
@@ -106,7 +106,7 @@ method postRender*(this: UIComponent, ctx: Target, renderBounds: AABB) {.base.}
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
 
 proc newUIComponent*(): UIComponent =
-  return UIComponent(
+  result = UIComponent(
     layoutStatus: Valid,
     borderWidth: 1.0,
     borderColor: BLACK
@@ -334,11 +334,25 @@ method preRender*(
   parentRenderBounds: AABB = AABB_INF
 ) {.base.} =
 
+  let renderArea = aabb(
+    offsetX + this.bounds.left + this.margin.left,
+    offsetY + this.bounds.top + this.margin.top,
+    offsetX + this.bounds.right - this.margin.right,
+    offsetY + this.bounds.bottom - this.margin.bottom
+  )
+
+  if renderArea.left >= parentRenderBounds.right or
+     renderArea.top >= parentRenderBounds.bottom or
+     renderArea.width <= 0 or renderArea.height <= 0:
+       # Prevents rendering outside parentRenderBounds.
+       # Maybe can be optimized.
+       return
+
   let clippedRenderBounds = aabb(
-    max(parentRenderBounds.left, offsetX + this.bounds.left + this.margin.left),
-    max(parentRenderBounds.top, offsetY + this.bounds.top + this.margin.top),
-    min(parentRenderBounds.right, offsetX + this.bounds.right - this.margin.right),
-    min(parentRenderBounds.bottom, offsetY + this.bounds.bottom - this.margin.bottom)
+    max(parentRenderBounds.left, renderArea.left),
+    max(parentRenderBounds.top, renderArea.top),
+    min(parentRenderBounds.right, renderArea.right),
+    min(parentRenderBounds.bottom, renderArea.bottom)
   )
 
   discard ctx.setClip(
@@ -349,10 +363,10 @@ method preRender*(
   )
 
   ctx.rectangleFilled(
-    offsetX + this.bounds.left + this.margin.left,
-    offsetY + this.bounds.top + this.margin.top,
-    offsetX + this.bounds.right - this.margin.right,
-    offsetY + this.bounds.bottom - this.margin.bottom,
+    clippedRenderBounds.left,
+    clippedRenderBounds.top,
+    clippedRenderBounds.right,
+    clippedRenderBounds.bottom,
     this.backgroundColor
   )
 

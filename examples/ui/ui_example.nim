@@ -9,19 +9,14 @@ let layer = newLayer()
 Game.scene.addLayer layer
 
 let root = newUIComponent()
-root.backgroundColor = BLACK
+root.backgroundColor = WHITE
 root.stackDirection = Horizontal
 root.alignHorizontal = Center
 
-root.margin.left = 10
-root.margin.top = 10
-root.margin.right = 10
-root.margin.bottom = 10
-
-# root.padding.left = 10
-# root.padding.top = 10
-# root.padding.right = 10
-# root.padding.bottom = 10
+root.padding.left = 10
+root.padding.top = 10
+root.padding.right = 10
+root.padding.bottom = 10
 
 let
   panel1 = newUIComponent()

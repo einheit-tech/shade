@@ -117,9 +117,7 @@ iterator items*(this: AABB): Vector =
     yield v
 
 proc `$`*(this: AABB): string =
-  return
-    "Top Left: (" & $this.left & ", " & $this.top & ")" & "\n" &
-    "Bottom Right: (" & $this.right & ", " & $this.bottom & ")"
+  return "(" & $this.left & ", " & $this.top & ", " & $this.right & ", " & $this.bottom & ")"
 
 proc stroke*(
   this: AABB,
