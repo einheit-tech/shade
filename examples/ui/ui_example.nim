@@ -33,6 +33,7 @@ root.addChild(panel3)
 
 panel1.alignVertical = Start
 panel2.alignVertical = Center
+panel2.alignHorizontal = Center
 panel3.alignVertical = End
 
 for i in 0 ..< 3:
@@ -53,7 +54,8 @@ for i in 0 ..< 3:
 let (_, kennyPixel) = Fonts.load("./examples/textbox/kennypixel.ttf", 72)
 let text = newText(kennyPixel, "Foobar", RED)
 text.textAlignHorizontal = Center
-text.height = 400.0
+text.setSize(200.0, 400.0)
+text.borderWidth = 2.0
 panel2.addChild(text)
 
 # TODO: What's the best way to do this?

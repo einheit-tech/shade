@@ -56,21 +56,26 @@ method postRender*(this: UITextComponent, ctx: Target, renderBounds: AABB) =
     this.imageOfText = copyImageFromSurface(surface)
     freeSurface(surface)
 
+  let
+    scaleX = renderBounds.width / float(this.imageOfText.w) 
+    scaleY = renderBounds.height / float(this.imageOfText.h)
+    minScalar = min(1.0, min(scaleX, scaleY))
+
   let x = case this.textAlignHorizontal:
     of Start:
-      renderBounds.left + float(this.imageOfText.w) / 2
+      renderBounds.left + float(this.imageOfText.w) * minScalar / 2
     of Center:
       renderBounds.center.x
     of End:
-      renderBounds.right - float(this.imageOfText.w) / 2
+      renderBounds.right - float(this.imageOfText.w) * minScalar / 2
 
   let y = case this.textAlignVertical:
     of Start:
-      renderBounds.top + float(this.imageOfText.h) / 2
+      renderBounds.top + float(this.imageOfText.h) * minScalar / 2
     of Center:
       renderBounds.center.y
     of End:
-      renderBounds.bottom - float(this.imageOfText.h) / 2
+      renderBounds.bottom - float(this.imageOfText.h) * minScalar / 2
 
-  blit(this.imageOfText, nil, ctx, x, y)
+  blitScale(this.imageOfText, nil, ctx, x, y, minScalar, minScalar)
 

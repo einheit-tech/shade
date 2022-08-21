@@ -17,7 +17,7 @@ type
     Ratio
 
   Size* = object
-    case kind: SizeKind
+    case kind*: SizeKind
       of Pixel:
         pixelValue: float
       of Ratio:
@@ -144,15 +144,21 @@ proc setHeight(this: UIComponent, height: float|Size) =
     else:
       this.height = Size(kind: Pixel, pixelValue: height)
 
+proc width*(this: UIComponent): Size =
+  this.width
+
 proc `width=`*(this: UIComponent, width: float|Size) =
   this.setWidth(width)
   this.setLayoutValidationStatus(Invalid)
+
+proc height*(this: UIComponent): Size =
+  this.height
 
 proc `height=`*(this: UIComponent, height: float|Size) =
   this.setHeight(height)
   this.setLayoutValidationStatus(Invalid)
 
-proc `size=`*(this: UIComponent, width, height: float|Size) =
+proc setSize*(this: UIComponent, width: float|Size, height: float|Size) =
   this.setWidth(width)
   this.setHeight(height)
   this.setLayoutValidationStatus(Invalid)
