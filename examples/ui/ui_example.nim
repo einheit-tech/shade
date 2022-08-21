@@ -51,7 +51,7 @@ for i in 0 ..< 3:
 
 # Load our font
 let (_, kennyPixel) = Fonts.load("./examples/textbox/kennypixel.ttf", 72)
-let text = newText(kennyPixel, "Foobar")
+let text = newText(kennyPixel, "Foobar", RED)
 text.textAlignHorizontal = Center
 text.height = 400.0
 panel2.addChild(text)

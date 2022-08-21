@@ -19,9 +19,10 @@ proc `=destroy`(this: var UITextComponentObj) =
   if this.imageOfText != nil:
     freeImage(this.imageOfText)
 
-proc newText*(font: Font, text: string, color: Color = BLACK): UITextComponent =
-  result = UITextComponent(font: font, text: text, color: color)
+proc newText*(font: Font, text: string, textColor: Color = BLACK): UITextComponent =
+  result = UITextComponent(font: font, text: text)
   initUIComponent(UIComponent result, borderWidth = 0.0)
+  result.color = textColor
 
 proc text*(this: UITextComponent): string =
   return this.text
