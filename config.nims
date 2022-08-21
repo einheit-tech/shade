@@ -1,5 +1,6 @@
 import os
 
+switch("gc", "orc")
 switch("multimethods", "on")
 switch("define", "ssl")
 

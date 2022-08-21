@@ -105,12 +105,18 @@ method postRender*(this: UIComponent, ctx: Target, renderBounds: AABB) {.base.}
 
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
 
+proc initUIComponent*(
+  this: UIComponent,
+  borderWidth = 1.0,
+  borderColor = BLACK
+) =
+  this.layoutStatus = Valid
+  this.borderWidth = borderWidth
+  this.borderColor = borderColor
+
 proc newUIComponent*(): UIComponent =
-  result = UIComponent(
-    layoutStatus: Valid,
-    borderWidth: 1.0,
-    borderColor: BLACK
-  )
+  result = UIComponent()
+  initUIComponent(result)
 
 proc layoutValidationStatus*(this: UIComponent): lent ValidationStatus =
   return this.layoutStatus
@@ -334,6 +340,10 @@ method preRender*(
   parentRenderBounds: AABB = AABB_INF
 ) {.base.} =
 
+  # TODO: We should be able to cache the renderBounds
+  # and provide an offset for the actual rendering.
+  # This means we wouldn't be reallocating the same shit every frame,
+  # and only need to do it after a layout invalidation.
   let renderArea = aabb(
     offsetX + this.bounds.left + this.margin.left,
     offsetY + this.bounds.top + this.margin.top,
