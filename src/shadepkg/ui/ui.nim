@@ -93,16 +93,8 @@ template pixelHeight*(this: UIComponent, availableParentHeight: float): float =
   else:
     this.height.ratioValue * availableParentHeight
 
-method preRender*(
-  this: UIComponent,
-  ctx: Target,
-  offsetX,
-  offsetY: float,
-  parentRenderBounds: AABB = AABB_INF
-) {.base.}
-
+method preRender*( this: UIComponent, ctx: Target, parentRenderBounds: AABB = AABB_INF) {.base.}
 method postRender*(this: UIComponent, ctx: Target, renderBounds: AABB) {.base.}
-
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
 
 proc initUIComponent*(
@@ -338,23 +330,16 @@ proc updateBounds*(this: UIComponent, x, y, width, height: float) =
   this.setLayoutValidationStatus(Valid)
   this.updateChildrenBounds()
 
-method preRender*(
-  this: UIComponent,
-  ctx: Target,
-  offsetX,
-  offsetY: float,
-  parentRenderBounds: AABB = AABB_INF
-) {.base.} =
-
+method preRender*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AABB_INF) {.base.} =
   # TODO: We should be able to cache the renderBounds
   # and provide an offset for the actual rendering.
   # This means we wouldn't be reallocating the same shit every frame,
   # and only need to do it after a layout invalidation.
   let renderArea = aabb(
-    offsetX + this.bounds.left + this.margin.left,
-    offsetY + this.bounds.top + this.margin.top,
-    offsetX + this.bounds.right - this.margin.right,
-    offsetY + this.bounds.bottom - this.margin.bottom
+    this.bounds.left + this.margin.left,
+    this.bounds.top + this.margin.top,
+    this.bounds.right - this.margin.right,
+    this.bounds.bottom - this.margin.bottom
   )
 
   if renderArea.left >= parentRenderBounds.right or
@@ -389,17 +374,17 @@ method preRender*(
   if this.borderWidth > 0.0:
     discard setLineThickness(this.borderWidth)
     ctx.rectangle(
-      offsetX + this.bounds.left + this.margin.left,
-      offsetY + this.bounds.top + this.margin.top,
-      offsetX + this.bounds.right - this.margin.right,
-      offsetY + this.bounds.bottom - this.margin.bottom,
+      this.bounds.left + this.margin.left,
+      this.bounds.top + this.margin.top,
+      this.bounds.right - this.margin.right,
+      this.bounds.bottom - this.margin.bottom,
       this.borderColor
     )
 
   this.postRender(ctx, clippedRenderBounds)
 
   for child in this.children:
-    child.preRender(ctx, offsetX, offsetY, clippedRenderBounds)
+    child.preRender(ctx, clippedRenderBounds)
 
   ctx.unsetClip()
 

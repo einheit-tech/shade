@@ -66,7 +66,7 @@ gamestate.onResolutionChanged:
 type Foo = ref object of Node
 
 Foo.renderAsNodeChild:
-  root.preRender(ctx, 0, 0)
+  root.preRender(ctx)
 
 method update*(this: Foo, deltaTime: float) =
   root.update(deltaTime)

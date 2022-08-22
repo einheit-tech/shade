@@ -56,6 +56,7 @@ method postRender*(this: UITextComponent, ctx: Target, renderBounds: AABB) =
     this.imageOfText = copyImageFromSurface(surface)
     freeSurface(surface)
 
+  # TODO: We should be able to cache all this stuff I believe?
   let
     scaleX = renderBounds.width / float(this.imageOfText.w) 
     scaleY = renderBounds.height / float(this.imageOfText.h)
