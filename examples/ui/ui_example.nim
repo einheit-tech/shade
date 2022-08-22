@@ -13,10 +13,7 @@ root.backgroundColor = WHITE
 root.stackDirection = Horizontal
 root.alignHorizontal = Center
 
-root.padding.left = 10
-root.padding.top = 10
-root.padding.right = 10
-root.padding.bottom = 10
+root.padding = 10.0
 
 let
   panel1 = newUIComponent()
@@ -54,22 +51,21 @@ for i in 0 ..< 3:
 let (_, kennyPixel) = Fonts.load("./examples/textbox/kennypixel.ttf", 72)
 let text = newText(kennyPixel, "Foobar", RED)
 text.textAlignHorizontal = Center
-text.setSize(200.0, 400.0)
+text.width = 200.0
+text.height = 400.0
 text.borderWidth = 2.0
 panel2.addChild(text)
 
+let ui = newUI(root)
 # TODO: What's the best way to do this?
-root.updateBounds(0, 0, gamestate.resolution.x, gamestate.resolution.y)
+ui.layout(gamestate.resolution.x, gamestate.resolution.y)
 gamestate.onResolutionChanged:
-  root.updateBounds(0, 0, gamestate.resolution.x, gamestate.resolution.y)
+  ui.layout(gamestate.resolution.x, gamestate.resolution.y)
 
 type Foo = ref object of Node
 
 Foo.renderAsNodeChild:
   root.preRender(ctx)
-
-method update*(this: Foo, deltaTime: float) =
-  root.update(deltaTime)
 
 let foo = Foo()
 initNode(Node foo)

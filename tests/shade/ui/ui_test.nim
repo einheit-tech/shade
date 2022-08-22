@@ -1,4 +1,4 @@
-import shade, nimtest
+import ../../../src/shade, nimtest
 
 describe "UIComponent":
 
@@ -15,11 +15,4 @@ describe "UIComponent":
       doAssert(root.children.len == 1)
 
       doAssert(root.children[0] == child)
-
-    it "invalidates the layout when a child is added":
-      let root = newUIComponent()
-      doAssert(root.layoutValidationStatus == ValidationStatus.Valid)
-
-      root.addChild(newUIComponent())
-      doAssert(root.layoutValidationStatus == ValidationStatus.Invalid)
 
