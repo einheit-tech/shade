@@ -9,7 +9,8 @@ import
   gamestate,
   ../input/inputhandler,
   ../audio/audioplayer,
-  ../render/color
+  ../render/color,
+  ../ui/ui
 
 const ONE_BILLION = 1000000000
 
@@ -17,7 +18,7 @@ type
   Engine* = ref object of RootObj
     screen*: Target
     scene: Scene
-    hud*: Layer
+    ui: UI
     # The color to fill the screen with to clear it every frame.
     clearColor*: Color
     shouldExit: bool
@@ -90,6 +91,9 @@ proc initEngineSingleton*(
     # Returns false if there's no renderer or window size is 0. Don't care about the result.
     discard setWindowResolution(uint16 gamestate.resolution.x, uint16 gamestate.resolution.y)
 
+    if Game.ui != nil:
+      Game.ui.layout(gamestate.resolution.x, gamestate.resolution.y)
+
   # Input event handlers
 
   proc handleWindowEvents(e: Event): bool =
@@ -103,9 +107,22 @@ proc initEngineSingleton*(
       Game.shouldExit = true
   )
 
-template screen*(this: Engine): Target = this.screen
-template scene*(this: Engine): Scene = this.scene
-template `scene=`*(this: Engine, scene: Scene) = this.scene = scene
+template screen*(this: Engine): Target =
+  this.screen
+
+template scene*(this: Engine): Scene =
+  this.scene
+
+template `scene=`*(this: Engine, scene: Scene) =
+  this.scene = scene
+
+proc ui*(this: Engine): lent UI =
+  this.ui
+
+proc `ui=`*(this: Engine, ui: UI) =
+  this.ui = ui
+  if ui != nil:
+    this.ui.layout(gamestate.resolution.x, gamestate.resolution.y)
 
 proc detectWindowScaling(this: Engine): Vector =
   result = VECTOR_ONE
@@ -194,8 +211,9 @@ proc render*(this: Engine, screen: Target) =
   pushMatrix()
 
   this.scene.render(screen)
-  if this.hud != nil:
-    this.hud.render(screen)
+
+  if this.ui != nil:
+    this.ui.render(screen)
 
   # Restore normal matrix
   popMatrix()

@@ -21,7 +21,11 @@ proc `=destroy`(this: var UITextComponentObj) =
 
 proc newText*(font: Font, text: string, textColor: Color = BLACK): UITextComponent =
   result = UITextComponent(font: font, text: text)
-  initUIComponent(UIComponent result, borderWidth = 0.0)
+  initUIComponent(
+    UIComponent result,
+    backgroundColor = TRANSPARENT,
+    borderWidth = 0.0
+  )
   result.color = textColor
 
 proc text*(this: UITextComponent): string =

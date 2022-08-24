@@ -1,21 +1,65 @@
 import ../../../src/shade, nimtest
+import std/random
 
 template uitest(title: string, body: untyped) =
-  when defined(visualtest):
-    discard
-  else:
+  try:
     it(title, body)
+  except Exception as e:
+    echo e.msg
+
+  resetState()
+
+  when defined(uitest):
+    try:
+      body
+    except:
+      discard
+
+    initEngineSingleton(title, int root.width.pixelValue, int root.height.pixelValue)
+    let layer = newLayer()
+    Game.scene.addLayer layer
+    Game.ui = ui
+
+    Input.onEvent(KEYUP):
+      case e.key.keysym.sym:
+        of K_ESCAPE:
+          Game.stop()
+        else:
+          discard
+
+proc randomColor(): Color =
+  return sample([
+    RED,
+    BLUE,
+    GREEN,
+    PURPLE,
+    ORANGE,
+    WHITE
+  ])
+
+proc randomColorUIComponent(): UIComponent =
+  return newUIComponent(randomColor())
 
 describe "UI functional tests":
 
+  var
+    ui: UI
+    root: UIComponent
+
+  proc resetState() =
+    root = newUIComponent(newColor(50, 50, 50))
+    ui = newUI(root)
+
+  beforeEach:
+    resetState()
+
   describe "Vertical Stack Direction":
 
-    uitest "3 stacked panels":
+    it "3 stacked panels":
       let
-        root = newUIComponent()
-        panel1 = newUIComponent()
-        panel2 = newUIComponent()
-        panel3 = newUIComponent()
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
 
       panel1.height = 50.0
 
@@ -23,7 +67,6 @@ describe "UI functional tests":
       root.addChild(panel2)
       root.addChild(panel3)
 
-      let ui = newUI(root)
       ui.layout(100.0, 200.0)
 
       assertEquals(root.bounds, aabb(0, 0, 100, 200))
@@ -31,13 +74,12 @@ describe "UI functional tests":
       assertEquals(panel2.bounds, aabb(0, 50, 100, 125))
       assertEquals(panel3.bounds, aabb(0, 125, 100, 200))
 
-    uitest "variable, fixed, variable, fixed":
+    it "variable, fixed, variable, fixed":
       let
-        root = newUIComponent()
-        panel1 = newUIComponent()
-        panel2 = newUIComponent()
-        panel3 = newUIComponent()
-        panel4 = newUIComponent()
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
+        panel4 = randomColorUIComponent()
 
       panel2.height = 25.0
       panel4.height = 50.0
@@ -47,7 +89,6 @@ describe "UI functional tests":
       root.addChild(panel3)
       root.addChild(panel4)
 
-      let ui = newUI(root)
       ui.layout(200, 500)
 
       assertEquals(panel1.bounds, aabb(0, 0, 200, 212.5))
@@ -55,12 +96,11 @@ describe "UI functional tests":
       assertEquals(panel3.bounds, aabb(0, 237.5, 200, 450))
       assertEquals(panel4.bounds, aabb(0, 450, 200, 500))
 
-    uitest "with margins and padding":
+    it "with margins and padding":
       let 
-        root = newUIComponent()
-        panel1 = newUIComponent()
-        panel2 = newUIComponent()
-        panel3 = newUIComponent()
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
 
       root.addChild(panel1)
       root.addChild(panel2)
@@ -75,7 +115,6 @@ describe "UI functional tests":
       panel2.margin = 8.0
       panel3.margin = 5.0
 
-      let ui = newUI(root)
       ui.layout(800, 600)
 
       assertEquals(panel2.bounds.height, 404.0)
@@ -84,12 +123,11 @@ describe "UI functional tests":
 
   describe "Horizontal Stack Direction":
 
-    uitest "3 stacked panels":
+    it "3 stacked panels":
       let
-        root = newUIComponent()
-        panel1 = newUIComponent()
-        panel2 = newUIComponent()
-        panel3 = newUIComponent()
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
 
       root.stackDirection = Horizontal
       panel2.width = 75.0
@@ -98,7 +136,6 @@ describe "UI functional tests":
       root.addChild(panel2)
       root.addChild(panel3)
 
-      let ui = newUI(root)
       ui.layout(400.0, 300.0)
 
       assertEquals(root.bounds, aabb(0, 0, 400, 300))
@@ -106,13 +143,12 @@ describe "UI functional tests":
       assertEquals(panel2.bounds, aabb(162.5, 0, 237.5, 300))
       assertEquals(panel3.bounds, aabb(237.5, 0, 400, 300))
 
-    uitest "variable, fixed, variable, fixed":
+    it "variable, fixed, variable, fixed":
       let
-        root = newUIComponent()
-        panel1 = newUIComponent()
-        panel2 = newUIComponent()
-        panel3 = newUIComponent()
-        panel4 = newUIComponent()
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
+        panel4 = randomColorUIComponent()
 
       root.stackDirection = Horizontal
 
@@ -124,7 +160,6 @@ describe "UI functional tests":
       root.addChild(panel3)
       root.addChild(panel4)
 
-      let ui = newUI(root)
       ui.layout(800, 600)
 
       assertEquals(panel1.bounds, aabb(0, 0, 362.5, 600))
@@ -134,12 +169,11 @@ describe "UI functional tests":
 
   describe "Alignment":
 
-    uitest "3 centered blocks (Horizontal)":
+    it "3 centered blocks (Horizontal)":
       let
-        root = newUIComponent()
-        panel1 = newUIComponent()
-        panel2 = newUIComponent()
-        panel3 = newUIComponent()
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
 
       root.stackDirection = Horizontal
 
@@ -162,7 +196,6 @@ describe "UI functional tests":
       panel3.width = 10.0
       panel3.height = 10.0
 
-      let ui = newUI(root)
       ui.layout(100, 200)
 
       assertEquals(panel1.bounds, aabb(33.0, 95.0, 43.0, 105.0))
@@ -171,10 +204,9 @@ describe "UI functional tests":
 
     uitest "H":
       let
-        root = newUIComponent()
-        panel1 = newUIComponent()
-        panel2 = newUIComponent()
-        panel3 = newUIComponent()
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
 
       root.stackDirection = Horizontal
 
@@ -190,10 +222,12 @@ describe "UI functional tests":
       panel2.height = ratio(0.2)
       panel3.width = ratio(0.25)
 
-      let ui = newUI(root)
       ui.layout(800, 600)
 
       assertEquals(panel1.bounds, aabb(10, 10, 205, 590))
-      assertEquals(panel3.bounds, aabb(205, 242, 595, 358))
+      assertEquals(panel2.bounds, aabb(205, 242, 595, 358))
       assertEquals(panel3.bounds, aabb(595, 10, 790, 590))
+
+when defined(uitest):
+  Game.start()
 
