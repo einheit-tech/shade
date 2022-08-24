@@ -1,5 +1,4 @@
 import ../../src/shade
-import std/random
 
 const
   width = 800
@@ -53,8 +52,8 @@ for i in 0 ..< 3:
 var blue: uint8 = 250
 for i in 0 ..< 3:
   let panel = newUIComponent()
-  # TODO: Top marign seems broken here.
-  panel.margin = 20.0
+  panel.margin = 4.0
+  panel.width = ratio(0.65)
   panel.height = 100.0
   panel.borderWidth = 0.0
 

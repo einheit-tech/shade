@@ -309,8 +309,8 @@ proc calcChildRenderStartPosition(
   axis: static StackDirection,
   maxChildLen: float
 ): float =
-  ## Calculates the starting position to render a child along the given axis (relative to the parent).
-  ## maxChildLen: Available space on the axis to render children.
+  ## Calculates the starting position to render a child along the given axisAlignment,
+  ## relative to the parent's bounds.topLeft.
   ## maxChildLen: Maximum length of a child along the axis that does not have a fixed width/height.
 
   if this.stackDirection != axis:
@@ -395,15 +395,14 @@ proc calcChildRenderStartPosition(
       return middle - (totalChildrenLen / 2.0)
 
     of End:
-      let endPadding =
+      result =
         when axis == Horizontal:
-          this.padding.right
+          this.bounds.width - this.padding.right
         else:
-          this.padding.bottom
+          this.bounds.height - this.padding.bottom
 
-      result = availableLen - endPadding
+      var prevChild: UIComponent
 
-      var lastEndingMargin = 0.0
       for child in this.children:
         let size = childPixelSize()
         if size > 0:
@@ -412,11 +411,17 @@ proc calcChildRenderStartPosition(
           result -= maxChildLen
 
         when axis == Horizontal:
-          lastEndingMargin = child.margin.right
+          result -= child.margin.right
         else:
-          lastEndingMargin = child.margin.bottom
+          result -= child.margin.bottom
 
-      result -= lastEndingMargin
+        if prevChild != nil:
+          when axis == Horizontal:
+            result -= (child.margin.left - prevChild.margin.right)
+          else:
+            result -= (child.margin.top - prevChild.margin.bottom)
+
+        prevChild = child
 
 proc updateChildrenBounds(
   this: UIComponent,
@@ -447,18 +452,23 @@ proc updateChildrenBounds(
           # Reduce size by margins in direction opposite of the stackDirection.
           width -= (child.margin.left + child.margin.right)
 
-        if prevChild != nil and prevChild.margin.bottom > child.margin.top:
-          y += prevChild.margin.bottom - child.margin.top
-
         case this.alignHorizontal:
           of Start:
             x = startX + child.margin.left
             y += child.margin.top
+            if prevChild != nil and prevChild.margin.bottom > child.margin.top:
+              y += prevChild.margin.bottom - child.margin.top
+
           of Center:
             x = startX + (this.bounds.width - width) / 2.0
             y += child.margin.top
+            if prevChild != nil and prevChild.margin.bottom > child.margin.top:
+              y += prevChild.margin.bottom - child.margin.top
+
           of End:
             x = startX + this.bounds.width - width - child.margin.right
+            if prevChild != nil:
+              y += max(child.margin.top, prevChild.margin.bottom)
 
       of Horizontal:
 
@@ -467,18 +477,24 @@ proc updateChildrenBounds(
           # Reduce size by margins in direct asyncCheck ion opposite of the stackDirection.
           height -= (child.margin.top + child.margin.bottom)
 
-        if prevChild != nil and prevChild.margin.right > child.margin.left:
-          x += prevChild.margin.right - child.margin.left
-
         case this.alignVertical:
           of Start:
             x += child.margin.left
             y = startY + child.margin.top
+            if prevChild != nil and prevChild.margin.right > child.margin.left:
+              x += prevChild.margin.right - child.margin.left
+
           of Center:
             x += child.margin.left
             y = (this.bounds.height - height) / 2.0
+            if prevChild != nil and prevChild.margin.right > child.margin.left:
+              x += prevChild.margin.right - child.margin.left
+
           of End:
-            y = startY + this.bounds.height - height
+            y = startY + this.bounds.height - height - child.margin.bottom
+
+            if prevChild != nil:
+              x += max(child.margin.left, prevChild.margin.right)
 
     child.updateBounds(x, y, width, height)
 
