@@ -18,7 +18,7 @@ template uitest(title: string, body: untyped) =
     initEngineSingleton(title, int root.width.pixelValue, int root.height.pixelValue)
     let layer = newLayer()
     Game.scene.addLayer layer
-    Game.ui = ui
+    Game.ui = gui
 
     Input.onEvent(KEYUP):
       case e.key.keysym.sym:
@@ -43,12 +43,12 @@ proc randomColorUIComponent(): UIComponent =
 describe "UI functional tests":
 
   var
-    ui: UI
+    gui: UI
     root: UIComponent
 
   proc resetState() =
     root = newUIComponent(newColor(50, 50, 50))
-    ui = newUI(root)
+    gui = newUI(root)
 
   beforeEach:
     resetState()
@@ -67,7 +67,7 @@ describe "UI functional tests":
       root.addChild(panel2)
       root.addChild(panel3)
 
-      ui.layout(100.0, 200.0)
+      gui.layout(100.0, 200.0)
 
       assertEquals(root.bounds, aabb(0, 0, 100, 200))
       assertEquals(panel1.bounds, aabb(0, 0, 100, 50))
@@ -89,7 +89,7 @@ describe "UI functional tests":
       root.addChild(panel3)
       root.addChild(panel4)
 
-      ui.layout(200, 500)
+      gui.layout(200, 500)
 
       assertEquals(panel1.bounds, aabb(0, 0, 200, 212.5))
       assertEquals(panel2.bounds, aabb(0, 212.5, 200, 237.5))
@@ -115,7 +115,7 @@ describe "UI functional tests":
       panel2.margin = 8.0
       panel3.margin = 5.0
 
-      ui.layout(800, 600)
+      gui.layout(800, 600)
 
       assertEquals(panel2.bounds.height, 404.0)
       assertEquals(panel2.bounds.left, 13.0)
@@ -136,7 +136,7 @@ describe "UI functional tests":
       root.addChild(panel2)
       root.addChild(panel3)
 
-      ui.layout(400.0, 300.0)
+      gui.layout(400.0, 300.0)
 
       assertEquals(root.bounds, aabb(0, 0, 400, 300))
       assertEquals(panel1.bounds, aabb(0, 0, 162.5, 300))
@@ -160,7 +160,7 @@ describe "UI functional tests":
       root.addChild(panel3)
       root.addChild(panel4)
 
-      ui.layout(800, 600)
+      gui.layout(800, 600)
 
       assertEquals(panel1.bounds, aabb(0, 0, 362.5, 600))
       assertEquals(panel2.bounds, aabb(362.5, 0, 387.5, 600))
@@ -196,13 +196,13 @@ describe "UI functional tests":
       panel3.width = 10.0
       panel3.height = 10.0
 
-      ui.layout(100, 200)
+      gui.layout(100, 200)
 
       assertEquals(panel1.bounds, aabb(33.0, 95.0, 43.0, 105.0))
       assertEquals(panel2.bounds, aabb(45, 2, 55, 198))
       assertEquals(panel3.bounds, aabb(57, 95, 67, 105))
 
-    uitest "H":
+    it "H":
       let
         panel1 = randomColorUIComponent()
         panel2 = randomColorUIComponent()
@@ -222,11 +222,72 @@ describe "UI functional tests":
       panel2.height = ratio(0.2)
       panel3.width = ratio(0.25)
 
-      ui.layout(800, 600)
+      gui.layout(800, 600)
 
       assertEquals(panel1.bounds, aabb(10, 10, 205, 590))
       assertEquals(panel2.bounds, aabb(205, 242, 595, 358))
       assertEquals(panel3.bounds, aabb(595, 10, 790, 590))
+
+    uitest "Vertical end alignment":
+      let
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
+
+      root.stackDirection = Vertical
+
+      root.alignVertical = End
+      root.alignHorizontal = End
+      root.padding = 4.0
+
+      root.addChild(panel1)
+      root.addChild(panel2)
+      root.addChild(panel3)
+
+      panel1.width = 100.0
+      panel1.height = 100.0
+
+      panel2.width = 100.0
+      panel2.height = 100.0
+
+      panel3.width = 100.0
+      panel3.height = 100.0
+
+      gui.layout(800, 600)
+
+      assertEquals(panel3.bounds.bottom, 596.0)
+      assertEquals(panel3.bounds.right, 796.0)
+
+    it "Horizontal end alignment":
+      let
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
+
+      root.stackDirection = Horizontal
+
+      root.alignVertical = End
+      root.alignHorizontal = End
+      root.padding = 4.0
+
+      root.addChild(panel1)
+      root.addChild(panel2)
+      root.addChild(panel3)
+
+      panel1.width = 100.0
+      panel1.height = 100.0
+
+      panel2.width = 100.0
+      panel2.height = 100.0
+
+      panel3.width = 100.0
+      panel3.height = 100.0
+
+      gui.layout(800, 600)
+
+      assertEquals(panel3.bounds.bottom, 596.0)
+      assertEquals(panel3.bounds.right, 796.0)
+
 
 when defined(uitest):
   Game.start()

@@ -23,8 +23,7 @@ proc newText*(font: Font, text: string, textColor: Color = BLACK): UITextCompone
   result = UITextComponent(font: font, text: text)
   initUIComponent(
     UIComponent result,
-    backgroundColor = TRANSPARENT,
-    borderWidth = 0.0
+    backgroundColor = TRANSPARENT
   )
   result.color = textColor
 
