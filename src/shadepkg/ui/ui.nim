@@ -277,8 +277,7 @@ proc determineChildrenSize(this: UIComponent): Vector =
 
         prevChild = child
 
-      if prevChild != nil:
-        unreservedHeight -= prevChild.margin.bottom
+      unreservedHeight -= prevChild.margin.bottom
 
       if unreservedHeight > 0 and numChildrenWithoutFixedHeight > 0:
         result.y = unreservedHeight / float(numChildrenWithoutFixedHeight)
@@ -381,7 +380,7 @@ proc calcChildRenderStartPosition(this: UIComponent, maxChildSize: Vector): Vect
           prevChild: UIComponent
 
         for child in this.children:
-          let size = child.width.pixelSize(contentArea.height)
+          let size = child.height.pixelSize(contentArea.height)
           if size > 0:
             totalChildrenHeight += size
           else:

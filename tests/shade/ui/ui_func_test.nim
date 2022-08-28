@@ -228,7 +228,7 @@ describe "UI functional tests":
       assertEquals(panel2.bounds, aabb(205, 242, 595, 358))
       assertEquals(panel3.bounds, aabb(595, 10, 790, 590))
 
-    uitest "Vertical end alignment":
+    it "Vertical end alignment":
       let
         panel1 = randomColorUIComponent()
         panel2 = randomColorUIComponent()
@@ -255,8 +255,9 @@ describe "UI functional tests":
 
       gui.layout(800, 600)
 
-      assertEquals(panel3.bounds.bottom, 596.0)
-      assertEquals(panel3.bounds.right, 796.0)
+      assertEquals(panel3.bounds, aabb(696, 496, 796, 596))
+      assertEquals(panel2.bounds, aabb(696, 396, 796, 496))
+      assertEquals(panel1.bounds, aabb(696, 296, 796, 396))
 
     it "Horizontal end alignment":
       let
@@ -285,9 +286,137 @@ describe "UI functional tests":
 
       gui.layout(800, 600)
 
-      assertEquals(panel3.bounds.bottom, 596.0)
-      assertEquals(panel3.bounds.right, 796.0)
+      assertEquals(panel3.bounds, aabb(696, 496, 796, 596))
+      assertEquals(panel2.bounds, aabb(596, 496, 696, 596))
+      assertEquals(panel1.bounds, aabb(496, 496, 596, 596))
 
+  describe "Margins":
+
+    it "collapses margins between children (vertically stacked)":
+      root.stackDirection = Vertical
+
+      let
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+
+      # Margins should collapse, so there should be 8 pixels between these panels.
+      panel1.margin = margin(0, 0, 0, 5)
+      panel2.margin = margin(0, 8, 0, 0)
+
+      root.addChild(panel1)
+      root.addChild(panel2)
+      gui.layout(200, 200)
+
+      assertEquals(panel1.bounds, aabb(0, 0, 200, 96))
+      assertEquals(panel2.bounds, aabb(0, 104, 200, 200))
+
+    it "collapses margins between children (horizontally stacked)":
+      root.stackDirection = Horizontal
+
+      let
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+
+      # Margins should collapse, so there should be 8 pixels between these panels.
+      panel1.margin = margin(0, 0, 12, 0)
+      panel2.margin = margin(13, 0, 0, 0)
+
+      root.addChild(panel1)
+      root.addChild(panel2)
+      gui.layout(200, 200)
+
+      assertEquals(panel1.bounds, aabb(0, 0, 93.5, 200))
+      assertEquals(panel2.bounds, aabb(106.5, 0, 200, 200))
+
+    it "resizable children fill space when centered (vertically stacked)":
+      let panel1 = randomColorUIComponent()
+      panel1.margin = margin(0, 80, 0, 120)
+
+      root.stackDirection = Vertical
+      root.alignHorizontal = Center
+      root.alignVertical = Center
+      root.addChild(panel1)
+
+      gui.layout(400, 400)
+
+      assertEquals(panel1.bounds, aabb(0, 80, 400, 280))
+
+    it "resizable children fill space when centered (horizontally stacked)":
+      let panel1 = randomColorUIComponent()
+      panel1.margin = margin(60, 0, 85, 0)
+
+      root.stackDirection = Horizontal
+      root.alignHorizontal = Center
+      root.alignVertical = Center
+      root.addChild(panel1)
+
+      gui.layout(400, 400)
+
+      assertEquals(panel1.bounds, aabb(60, 0, 315, 400))
+
+    it "aligns child when margins won't fit parent size (vertically stacked, fixed height)":
+      let panel1 = randomColorUIComponent()
+      panel1.margin = margin(0, 80, 0, 120)
+      panel1.height = 300.0
+
+      root.stackDirection = Vertical
+      root.alignHorizontal = Center
+      root.alignVertical = Center
+      root.addChild(panel1)
+
+      gui.layout(400, 400)
+
+      # panel1 height + margin = 300 + 120 + 80 = 500
+      # Centered on (200, 200) puts the top at -50 and bottom at 450
+      # 80 down from the top margin: 30
+      # 120 up from the bottom margin: 330
+      assertEquals(panel1.bounds, aabb(0, 30, 400, 330))
+
+    it "aligns child when margins won't fit parent size (horizontally stacked, fixed width)":
+      let panel1 = randomColorUIComponent()
+      panel1.margin = margin(35, 0, 180, 0)
+      panel1.width = 300.0
+
+      root.stackDirection = Horizontal
+      root.alignHorizontal = Center
+      root.alignVertical = Center
+      root.addChild(panel1)
+
+      gui.layout(400, 400)
+
+      # panel1 width + margin = 300 + 35 + 180 = 515
+      # Centered on (200, 200) puts the left at -57.5 and bottom at 457.5
+      # 35 right from the left margin: -22.5
+      # 180 left from the right margin: 277.5
+      assertEquals(panel1.bounds, aabb(-22.5, 0, 277.5, 400))
+
+    it "child with size and margins fitting the parent aligns with margins (vertically stacked)":
+      let panel1 = randomColorUIComponent()
+      panel1.margin = margin(0, 80, 0, 120)
+      panel1.height = 160.0
+
+      root.stackDirection = Vertical
+      root.alignHorizontal = Center
+      root.alignVertical = Center
+      root.addChild(panel1)
+
+      gui.layout(400, 360)
+
+      assertEquals(panel1.bounds, aabb(0, 80, 400, 240))
+
+    it "child with size and margins fitting the parent aligns with margins (horizontally stacked)":
+      let panel1 = randomColorUIComponent()
+      panel1.margin = margin(60, 0, 135, 0)
+      panel1.width = 205.0
+
+      root.stackDirection = Horizontal
+      root.alignHorizontal = Center
+      root.alignVertical = Center
+      root.addChild(panel1)
+
+      gui.layout(400, 400)
+
+      assertEquals(panel1.bounds, aabb(60, 0, 265, 400))
 
 when defined(uitest):
   Game.start()
