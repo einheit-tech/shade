@@ -565,3 +565,19 @@ method preRender*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AAB
 method postRender*(this: UIComponent, ctx: Target, renderBounds: AABB) {.base.} =
   discard
 
+proc findLowestComponentContainingPoint*(this: UIComponent, x, y: float): UIComponent =
+  for child in this.children:
+    if child != nil and child.bounds.contains(x, y):
+      let nextLowest = child.findLowestComponentContainingPoint(x, y)
+      if nextLowest == nil:
+        return child
+      result = nextLowest
+
+proc findLowestComponentContainingPoint*(this: UI, x, y: float): UIComponent =
+  if this.root == nil:
+    return nil
+
+  result = this.root.findLowestComponentContainingPoint(x, y)
+  if result == nil:
+    return this.root
+

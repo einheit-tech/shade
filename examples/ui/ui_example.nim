@@ -73,16 +73,21 @@ panel2.addChild(text)
 
 Game.ui = newUI(root)
 
-var i = 1
 Input.onEvent(KEYUP):
   case e.key.keysym.sym:
     of K_ESCAPE:
       Game.stop()
-    of K_RETURN:
-      panel2.width = float(50 * i)
-      i += 1
     else:
       discard
+
+Input.addMousePressedListener(
+  proc (button: int, state: ButtonState, x, y, clicks: int) =
+    let clickedComponent = Game.ui.findLowestComponentContainingPoint(float x, float y)
+    if clickedComponent != nil:
+      echo clickedComponent.bounds
+    else:
+      echo "nil"
+)
 
 Game.start()
 

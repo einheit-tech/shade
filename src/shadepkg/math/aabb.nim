@@ -71,9 +71,12 @@ proc getScaledInstance*(this: AABB, scale: float): AABB =
     raise newException(Exception, "Scaled size cannot be 0!")
   return aabb(this.left * scale, this.top * scale, this.right * scale, this.bottom * scale)
 
+template contains*(this: AABB, x, y: float): bool =
+  x >= this.left and x <= this.right and
+  y >= this.top and y <= this.bottom
+
 template contains*(this: AABB, v: Vector): bool =
-  v.x >= this.left and v.x <= this.right and
-  v.y >= this.top and v.y <= this.bottom
+  this.contains(v.x, v.y)
 
 template contains*(this, aabb: AABB): bool =
   this.contains(aabb.topLeft) and this.contains(aabb.bottomRight)
