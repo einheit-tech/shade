@@ -134,7 +134,7 @@ proc layoutValidationStatus*(this: UIComponent): lent ValidationStatus =
 
 proc setLayoutValidationStatus(this: UIComponent, status: ValidationStatus) =
   this.layoutStatus = status
-  if status == Invalid and this.parent != nil and this.parent.layoutValidationStatus == Valid:
+  if status != Valid and this.parent != nil and this.parent.layoutValidationStatus == Valid:
     this.parent.setLayoutValidationStatus(InvalidChild)
 
 proc setWidth(this: UIComponent, width: float|Size): bool =
