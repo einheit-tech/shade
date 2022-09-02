@@ -14,3 +14,8 @@
 	path = submodules/sdl_mixer
 	url = https://github.com/libsdl-org/SDL_mixer.git
   shallow = true
+[submodule "submodules/emscripten"]
+  path = submodules/emscripten
+  url = https://github.com/emscripten-core/emscripten.git
+  shallow = true
+
