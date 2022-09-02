@@ -53,6 +53,66 @@ describe "UI functional tests":
   beforeEach:
     resetState()
 
+  describe "Layout Validation":
+
+    template tryInvalidate(body: untyped) =
+      let panel1 = randomColorUIComponent()
+      let panel {.inject.} = randomColorUIComponent()
+      panel1.addChild(panel)
+      root.addChild(panel1)
+
+      # Ensure both are still invalid after adding panel to root
+      assertEquals(root.layoutValidationStatus, Invalid)
+      assertEquals(panel1.layoutValidationStatus, Invalid)
+      assertEquals(panel.layoutValidationStatus, Invalid)
+
+      # Layout and validation the component tree for the first time
+      gui.layout(800, 600)
+
+      # Ensure all are valid after performing layout
+      assertEquals(root.layoutValidationStatus, Valid)
+      assertEquals(panel1.layoutValidationStatus, Valid)
+      assertEquals(panel.layoutValidationStatus, Valid)
+
+      # Invalidate 'panel' with custom code (unique per test)
+      body
+
+      # Check validation status of all panels according to spec
+      assertEquals(root.layoutValidationStatus, InvalidChild)
+      assertEquals(panel1.layoutValidationStatus, InvalidChild)
+      assertEquals(panel.layoutValidationStatus, Invalid)
+
+      # Attempt to layout and re-validate the component tree
+      gui.layout(800, 600)
+
+      # Ensure all are valid again
+      assertEquals(root.layoutValidationStatus, Valid)
+      assertEquals(panel1.layoutValidationStatus, Valid)
+      assertEquals(panel.layoutValidationStatus, Valid)
+
+    it "is invalid to start":
+      assertEquals(root.layoutValidationStatus, Invalid)
+
+    it "invalidates using margin":
+      tryInvalidate:
+        panel.margin = 10.0
+
+    it "invalidates using padding":
+      tryInvalidate:
+        panel.padding = 10.0
+
+    it "invalidates using width":
+      tryInvalidate:
+        panel.width = 100.0
+
+    it "invalidates using height":
+      tryInvalidate:
+        panel.height = 100.0
+
+    it "invalidates using new child":
+      tryInvalidate:
+        panel.addChild(randomColorUIComponent())
+
   describe "Vertical Stack Direction":
 
     it "3 stacked panels":
@@ -354,7 +414,7 @@ describe "UI functional tests":
 
       assertEquals(panel1.bounds, aabb(60, 0, 315, 400))
 
-    it "aligns child when margins won't fit parent size (vertically stacked, fixed height)":
+    it "center aligns child when margins won't fit parent size (vertically stacked, fixed height)":
       let panel1 = randomColorUIComponent()
       panel1.margin = margin(0, 80, 0, 120)
       panel1.height = 300.0
@@ -372,7 +432,7 @@ describe "UI functional tests":
       # 120 up from the bottom margin: 330
       assertEquals(panel1.bounds, aabb(0, 30, 400, 330))
 
-    it "aligns child when margins won't fit parent size (horizontally stacked, fixed width)":
+    it "center aligns child when margins won't fit parent size (horizontally stacked, fixed width)":
       let panel1 = randomColorUIComponent()
       panel1.margin = margin(35, 0, 180, 0)
       panel1.width = 300.0
@@ -390,33 +450,47 @@ describe "UI functional tests":
       # 180 left from the right margin: 277.5
       assertEquals(panel1.bounds, aabb(-22.5, 0, 277.5, 400))
 
-    it "child with size and margins fitting the parent aligns with margins (vertically stacked)":
+    it "center aligns multiple children when margins won't fit parent (vertically stacked, fixed height)":
+      # TODO
+      discard
+
+    it "center aligns multiple children when margins won't fit parent (horizontally stacked, fixed width)":
+      # TODO
+      discard
+
+    it "child with exact size and margins perfectly fits the parent with all alignments (vertically stacked)":
       let panel1 = randomColorUIComponent()
       panel1.margin = margin(0, 80, 0, 120)
       panel1.height = 160.0
 
       root.stackDirection = Vertical
-      root.alignHorizontal = Center
-      root.alignVertical = Center
       root.addChild(panel1)
 
-      gui.layout(400, 360)
+      for alignment in [Start, Center, End]:
+        root.alignHorizontal = alignment
+        root.alignVertical = alignment
+        assertEquals(root.layoutValidationStatus, Invalid)
 
-      assertEquals(panel1.bounds, aabb(0, 80, 400, 240))
+        gui.layout(400, 360)
 
-    it "child with size and margins fitting the parent aligns with margins (horizontally stacked)":
+        assertEquals(panel1.bounds, aabb(0, 80, 400, 240))
+
+    it "child with exact size and margins perfectly fits the parent with all alignments (horizontally stacked)":
       let panel1 = randomColorUIComponent()
       panel1.margin = margin(60, 0, 135, 0)
       panel1.width = 205.0
 
       root.stackDirection = Horizontal
-      root.alignHorizontal = Center
-      root.alignVertical = Center
       root.addChild(panel1)
 
-      gui.layout(400, 400)
+      for alignment in [Start, Center, End]:
+        root.alignHorizontal = Center
+        root.alignVertical = Center
+        assertEquals(root.layoutValidationStatus, Invalid)
 
-      assertEquals(panel1.bounds, aabb(60, 0, 265, 400))
+        gui.layout(400, 400)
+
+        assertEquals(panel1.bounds, aabb(60, 0, 265, 400))
 
 when defined(uitest):
   Game.start()
