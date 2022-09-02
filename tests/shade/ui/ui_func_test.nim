@@ -113,6 +113,44 @@ describe "UI functional tests":
       tryInvalidate:
         panel.addChild(randomColorUIComponent())
 
+    it "revalidates component tree correctly with different layout dimensions":
+      let panel = randomColorUIComponent()
+      panel.margin = margin(15, 20, 15, 20)
+      root.addChild(panel)
+      root.padding = 10.0
+
+      gui.layout(800, 600)
+      assertEquals(panel.bounds, aabb(25, 30, 775, 570))
+
+      gui.layout(100, 100)
+      assertEquals(panel.bounds, aabb(25, 30, 75, 70))
+
+    it "revalidates component tree correctly with changed vertical alignment":
+      let panel = randomColorUIComponent()
+      panel.height = 30.0
+      root.addChild(panel)
+
+      root.alignVertical = Start
+      gui.layout(800, 600)
+      assertEquals(panel.bounds, aabb(0, 0, 800, 30))
+
+      root.alignVertical = End
+      gui.layout(800, 600)
+      assertEquals(panel.bounds, aabb(0, 570, 800, 600))
+
+    it "revalidates component tree correctly with changed horizontal alignment":
+      let panel = randomColorUIComponent()
+      panel.width = 666.0
+      root.addChild(panel)
+
+      root.alignHorizontal = Start
+      gui.layout(800, 600)
+      assertEquals(panel.bounds, aabb(0, 0, 666, 600))
+
+      root.alignHorizontal = End
+      gui.layout(800, 600)
+      assertEquals(panel.bounds, aabb(134, 0, 800, 600))
+
   describe "Vertical Stack Direction":
 
     it "3 stacked panels":
