@@ -9,7 +9,6 @@ let layer = newLayer()
 Game.scene.addLayer layer
 
 let root = newUIComponent()
-root.borderWidth = 0.0
 root.backgroundColor = WHITE
 root.stackDirection = Horizontal
 
@@ -17,10 +16,6 @@ let
   panel1 = newUIComponent()
   panel2 = newUIComponent()
   panel3 = newUIComponent()
-
-panel1.borderWidth = 0.0
-panel2.borderWidth = 0.0
-panel3.borderWidth = 0.0
 
 panel1.backgroundColor = GREEN
 panel2.backgroundColor = BLUE
@@ -45,7 +40,6 @@ for i in 0 ..< 3:
   panel.width = ratio(0.75)
   panel.height = 100.0
   panel.margin = 2.0
-  panel.borderWidth = 0.0
 
   panel1.addChild(panel)
 
@@ -55,7 +49,6 @@ for i in 0 ..< 3:
   panel.margin = 4.0
   panel.width = ratio(0.65)
   panel.height = 100.0
-  panel.borderWidth = 0.0
 
   panel.backgroundColor = newColor(200, 200, blue)
   blue -= 50
@@ -68,7 +61,6 @@ let text = newText(kennyPixel, "Foobar", RED)
 text.textAlignHorizontal = Center
 text.width = 200.0
 text.height = 200.0
-text.borderWidth = 2.0
 panel2.addChild(text)
 
 Game.ui = newUI(root)

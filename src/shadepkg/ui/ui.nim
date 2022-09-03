@@ -116,7 +116,7 @@ proc newUI*(root: UIComponent): UI =
 
 proc initUIComponent*(
   this: UIComponent,
-  backgroundColor = BLACK,
+  backgroundColor = TRANSPARENT,
   borderWidth = 0.0,
   borderColor = BLACK
 ) =
@@ -125,7 +125,7 @@ proc initUIComponent*(
   this.borderWidth = borderWidth
   this.borderColor = borderColor
 
-proc newUIComponent*(backgroundColor: Color = BLACK): UIComponent =
+proc newUIComponent*(backgroundColor: Color = TRANSPARENT): UIComponent =
   result = UIComponent()
   initUIComponent(result, backgroundColor)
 
@@ -533,17 +533,18 @@ method preRender*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AAB
   discard ctx.setClip(
     int16(clippedRenderBounds.left),
     int16(clippedRenderBounds.top),
-    uint16(clippedRenderBounds.width),
-    uint16(clippedRenderBounds.height)
+    uint16 ceil(clippedRenderBounds.width),
+    uint16 ceil(clippedRenderBounds.height)
   )
 
-  ctx.rectangleFilled(
-    clippedRenderBounds.left,
-    clippedRenderBounds.top,
-    clippedRenderBounds.right,
-    clippedRenderBounds.bottom,
-    this.backgroundColor
-  )
+  if this.backgroundColor.a != 0:
+    ctx.rectangleFilled(
+      clippedRenderBounds.left,
+      clippedRenderBounds.top,
+      clippedRenderBounds.right,
+      clippedRenderBounds.bottom,
+      this.backgroundColor
+    )
 
   if this.borderWidth > 0.0:
     discard setLineThickness(this.borderWidth)
