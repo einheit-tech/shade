@@ -90,9 +90,7 @@ proc initEngineSingleton*(
   gamestate.onResolutionChanged:
     # Returns false if there's no renderer or window size is 0. Don't care about the result.
     discard setWindowResolution(uint16 gamestate.resolution.x, uint16 gamestate.resolution.y)
-
-    if Game.ui != nil:
-      Game.ui.layout(gamestate.resolution.x, gamestate.resolution.y)
+    Game.ui.layout(gamestate.resolution.x, gamestate.resolution.y)
 
   # Input event handlers
 
@@ -107,6 +105,12 @@ proc initEngineSingleton*(
       Game.shouldExit = true
   )
 
+  # Configure inputs for UI
+  Input.onEvent(MOUSEBUTTONDOWN):
+    Game.ui.handlePress(float e.button.x, float e.button.y)
+  Input.onEvent(FINGERDOWN):
+    Game.ui.handlePress(float e.tfinger.x, float e.tfinger.y)
+
 template screen*(this: Engine): Target =
   this.screen
 
@@ -115,14 +119,6 @@ template scene*(this: Engine): Scene =
 
 template `scene=`*(this: Engine, scene: Scene) =
   this.scene = scene
-
-proc ui*(this: Engine): lent UI =
-  this.ui
-
-proc `ui=`*(this: Engine, ui: UI) =
-  this.ui = ui
-  if ui != nil:
-    this.ui.layout(gamestate.resolution.x, gamestate.resolution.y)
 
 proc detectWindowScaling(this: Engine): Vector =
   result = VECTOR_ONE
@@ -197,6 +193,12 @@ proc teardown(this: Engine) =
   sdl_gpu.quit()
   logInfo(LogCategoryApplication, "SDL shutdown completed")
 
+proc getUIRoot*(this: Engine): UIComponent =
+  return this.ui.root
+
+proc setUIRoot*(this: Engine, root: UIComponent) =
+  this.ui.root = root
+
 proc update*(this: Engine, deltaTime: float) =
   gamestate.runTime += deltaTime
   if this.scene != nil:
@@ -211,9 +213,7 @@ proc render*(this: Engine, screen: Target) =
   pushMatrix()
 
   this.scene.render(screen)
-
-  if this.ui != nil:
-    this.ui.render(screen)
+  this.ui.render(screen)
 
   # Restore normal matrix
   popMatrix()

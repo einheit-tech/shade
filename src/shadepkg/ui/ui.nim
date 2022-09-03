@@ -39,6 +39,8 @@ type
     Invalid
     InvalidChild
 
+  OnPressedCallback* = proc(this: UIComponent, x, y: float)
+
   UIComponent* = ref object of RootObj
     ## Top-down design: child components cannot cause their parent components to resize.
     parent: UIComponent
@@ -57,8 +59,9 @@ type
     backgroundColor*: Color
     borderWidth*: float
     borderColor*: Color
+    pressedCallbacks: seq[OnPressedCallback]
 
-  UI* = ref object
+  UI* = object
     root: UIComponent
 
 template ratio*(r: CompletionRatio): Size =
@@ -110,6 +113,14 @@ proc `==`*(s1, s2: Size): bool =
         result = s1.pixelValue == s2.pixelValue
       of Ratio:
         result = s1.ratioValue == s2.ratioValue
+
+template `root=`*(this: UI, root: UIComponent) =
+  # Ensure the layout is performed when our root is reassigned.
+  this.root = root
+  this.layout(gamestate.resolution.x, gamestate.resolution.y)
+
+proc root*(this: UI): UIComponent =
+  this.root
 
 proc newUI*(root: UIComponent): UI =
   result = UI(root: root)
@@ -235,6 +246,9 @@ method update*(this: UIComponent, deltaTime: float) {.base.} =
   discard
 
 method layout*(this: UI, width, height: float) {.base.} =
+  if this.root == nil:
+    return
+
   let 
     w = width - (this.root.margin.left + this.root.margin.right)
     h = height - (this.root.margin.top + this.root.margin.bottom)
@@ -566,6 +580,8 @@ method preRender*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AAB
 method postRender*(this: UIComponent, ctx: Target, renderBounds: AABB) {.base.} =
   discard
 
+# Touch/click event handling
+
 proc findLowestComponentContainingPoint*(this: UIComponent, x, y: float): UIComponent =
   for child in this.children:
     if child != nil and child.bounds.contains(x, y):
@@ -581,4 +597,30 @@ proc findLowestComponentContainingPoint*(this: UI, x, y: float): UIComponent =
   result = this.root.findLowestComponentContainingPoint(x, y)
   if result == nil:
     return this.root
+
+proc handlePress*(this: UI, x, y: float) =
+  let component = this.findLowestComponentContainingPoint(x, y)
+  if component != nil:
+    for callback in component.pressedCallbacks:
+      component.callback(x, y)
+
+proc onPressedCallbacks*(this: UIComponent): lent seq[OnPressedCallback] =
+  return this.pressedCallbacks
+
+proc addOnPressedCallback*(this: UIComponent, callback: OnPressedCallback) =
+  this.pressedCallbacks.add(callback)
+
+proc removeOnPressedCallback*(this: UIComponent, callback: OnPressedCallback) =
+  var callbackIndex = -1
+  for i, cb in this.pressedCallbacks:
+    if cb == callback:
+      callbackIndex = i
+      break
+
+  if callbackIndex != -1:
+    this.pressedCallbacks.del(callbackIndex)
+
+template onPressed*(component: UIComponent, body: untyped) =
+  ## Invokes `body` whenever the component is pressed.
+  component.addOnPressedCallback(proc(this {.inject.}: UIComponent, x, y {.inject.}: float) = body)
 

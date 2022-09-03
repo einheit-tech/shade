@@ -1,8 +1,11 @@
 import ../../src/shade
+import std/random
 
 const
   width = 800
   height = 600
+
+randomize()
 
 initEngineSingleton("UI Example", width, height)
 let layer = newLayer()
@@ -34,12 +37,29 @@ panel3.stackDirection = Vertical
 panel3.alignHorizontal = End
 panel3.alignVertical = End
 
+proc randomColor(): Color =
+  return sample([
+    RED,
+    BLUE,
+    GREEN,
+    PURPLE,
+    ORANGE,
+    WHITE
+  ])
+
 for i in 0 ..< 3:
   let panel = newUIComponent()
   panel.backgroundColor = PURPLE
   panel.width = ratio(0.75)
   panel.height = 100.0
   panel.margin = 2.0
+  panel.borderWidth = 1.0
+
+  panel.onPressed:
+    var newBgColor: Color = randomColor()
+    while newBgColor == this.backgroundColor:
+      newBgColor = randomColor()
+    this.backgroundColor = newBgColor
 
   panel1.addChild(panel)
 
@@ -63,7 +83,7 @@ text.width = 200.0
 text.height = 200.0
 panel2.addChild(text)
 
-Game.ui = newUI(root)
+Game.setUIRoot(root)
 
 Input.onEvent(KEYUP):
   case e.key.keysym.sym:
@@ -71,15 +91,6 @@ Input.onEvent(KEYUP):
       Game.stop()
     else:
       discard
-
-Input.addMousePressedListener(
-  proc (button: int, state: ButtonState, x, y, clicks: int) =
-    let clickedComponent = Game.ui.findLowestComponentContainingPoint(float x, float y)
-    if clickedComponent != nil:
-      echo clickedComponent.bounds
-    else:
-      echo "nil"
-)
 
 Game.start()
 
