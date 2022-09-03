@@ -109,6 +109,10 @@ describe "UI functional tests":
       tryInvalidate:
         panel.height = 100.0
 
+    it "invalidates using borderWidth":
+      tryInvalidate:
+        panel.borderWidth = 1.0
+
     it "invalidates using new child":
       tryInvalidate:
         panel.addChild(randomColorUIComponent())
@@ -522,13 +526,26 @@ describe "UI functional tests":
       root.addChild(panel1)
 
       for alignment in [Start, Center, End]:
-        root.alignHorizontal = Center
-        root.alignVertical = Center
+        root.alignHorizontal = alignment
+        root.alignVertical = alignment
         assertEquals(root.layoutValidationStatus, Invalid)
 
         gui.layout(400, 400)
 
         assertEquals(panel1.bounds, aabb(60, 0, 265, 400))
+
+  describe "Borders":
+
+    it "takes borders into account when calculating available area":
+      let panel1 = randomColorUIComponent()
+      root.addChild(panel1)
+
+      root.padding = 1.0
+      root.borderWidth = 2.0
+
+      gui.layout(800, 600)
+
+      assertEquals(panel1.bounds, aabb(3, 3, 797, 597))
 
 when defined(uitest):
   Game.start()

@@ -57,7 +57,7 @@ type
     ## Bounds including padding, excluding margin.
     bounds: AABB
     backgroundColor*: Color
-    borderWidth*: float
+    borderWidth: float
     borderColor*: Color
     pressedCallbacks: seq[OnPressedCallback]
 
@@ -76,11 +76,11 @@ template margin*(left, top, right, bottom: float): Insets =
 template padding*(left, top, right, bottom: float): Insets =
   insets(left, top, right, bottom)
 
-template totalPadding(this: UIComponent, axis: StackDirection): float =
+template totalPaddingAndBorders(this: UIComponent, axis: StackDirection): float =
   when axis == Horizontal:
-    this.padding.left + this.padding.right
+    this.padding.left + this.padding.right + this.borderWidth * 2
   else:
-    this.padding.top + this.padding.bottom
+    this.padding.top + this.padding.bottom + this.borderWidth * 2
 
 template pixelSize*(size: Size, availableParentSize: float): float =
   if size.kind == Pixel:
@@ -90,10 +90,10 @@ template pixelSize*(size: Size, availableParentSize: float): float =
 
 template contentArea*(this: UIComponent): AABB =
   aabb(
-    this.bounds.left + this.padding.left,
-    this.bounds.top + this.padding.top,
-    this.bounds.right - this.padding.right,
-    this.bounds.bottom - this.padding.bottom
+    this.bounds.left + this.padding.left + this.borderWidth,
+    this.bounds.top + this.padding.top + this.borderWidth,
+    this.bounds.right - this.padding.right - this.borderWidth,
+    this.bounds.bottom - this.padding.bottom - this.borderWidth
   )
 
 proc `margin=`*(this: UIComponent, margin: float|Insets)
@@ -194,6 +194,13 @@ proc `height=`*(this: UIComponent, height: float|Size) =
   if this.setHeight(height):
     this.setLayoutValidationStatus(Invalid)
 
+proc borderWidth*(this: UIComponent): float =
+  this.borderWidth
+
+proc `borderWidth=`*(this: UIComponent, width: float) =
+  this.borderWidth = width
+  this.setLayoutValidationStatus(Invalid)
+
 proc `margin=`*(this: UIComponent, margin: float|Insets) =
   when typeof(margin) is Insets:
     this.margin = margin
@@ -271,10 +278,10 @@ proc determineChildrenSize(this: UIComponent): Vector =
 
   case this.stackDirection:
     of Vertical:
-      result.x = this.bounds.width - this.totalPadding(Horizontal)
+      result.x = this.bounds.width - this.totalPaddingAndBorders(Horizontal)
 
       var
-        unreservedHeight = this.bounds.height - this.totalPadding(Vertical)
+        unreservedHeight = this.bounds.height - this.totalPaddingAndBorders(Vertical)
         numChildrenWithoutFixedHeight = this.children.len
         prevChild: UIComponent
 
@@ -297,9 +304,9 @@ proc determineChildrenSize(this: UIComponent): Vector =
         result.y = unreservedHeight / float(numChildrenWithoutFixedHeight)
 
     of Horizontal:
-      result.y = this.bounds.height - this.totalPadding(Vertical)
+      result.y = this.bounds.height - this.totalPaddingAndBorders(Vertical)
 
-      let totalAvailableWidth = this.bounds.width - this.totalPadding(Horizontal)
+      let totalAvailableWidth = this.bounds.width - this.totalPaddingAndBorders(Horizontal)
 
       var
         unreservedWidth = totalAvailableWidth
@@ -329,16 +336,16 @@ proc calcChildRenderStartPosition(this: UIComponent, maxChildSize: Vector): Vect
   ## Calculates the starting position to render a child along the given axisAlignment,
   ## relative to the parent's bounds.topLeft.
   ## maxChildSize: Maximum length of a child along the axis that does not have a fixed width/height.
-  
+
   let contentArea = this.contentArea()
 
-  result.x = this.padding.left
-  result.y = this.padding.top
+  result.x = this.padding.left + this.borderWidth
+  result.y = this.padding.top + this.borderWidth
 
   if this.stackDirection == Horizontal:
     case this.alignHorizontal:
       of Start:
-        result.x = this.padding.left
+        result.x = this.padding.left + this.borderWidth
 
       of Center:
         var
@@ -364,7 +371,7 @@ proc calcChildRenderStartPosition(this: UIComponent, maxChildSize: Vector): Vect
         result.x += (contentArea.width - totalChildrenWidth) / 2.0
 
       of End:
-        result.x = this.bounds.width - this.padding.right
+        result.x = this.bounds.width - this.padding.right - this.borderWidth
 
         var prevChild: UIComponent
 
@@ -386,7 +393,7 @@ proc calcChildRenderStartPosition(this: UIComponent, maxChildSize: Vector): Vect
 
     case this.alignVertical:
       of Start:
-        result.y = this.padding.top
+        result.y = this.padding.top + this.borderWidth
 
       of Center:
         var
@@ -412,7 +419,7 @@ proc calcChildRenderStartPosition(this: UIComponent, maxChildSize: Vector): Vect
         result.y = (contentArea.height - totalChildrenHeight) / 2.0
 
       of End:
-        result.y = this.bounds.height - this.padding.bottom
+        result.y = this.bounds.height - this.padding.bottom - this.borderWidth
 
         var prevChild: UIComponent
 
@@ -440,8 +447,8 @@ proc updateChildrenBounds(this: UIComponent, startPosition: Vector, maxChildSize
 
   for child in this.children:
     let
-      childPixelWidth = child.width.pixelSize(this.bounds.width - this.totalPadding(Horizontal))
-      childPixelHeight = child.height.pixelSize(this.bounds.height - this.totalPadding(Vertical))
+      childPixelWidth = child.width.pixelSize(this.bounds.width - this.totalPaddingAndBorders(Horizontal))
+      childPixelHeight = child.height.pixelSize(this.bounds.height - this.totalPaddingAndBorders(Vertical))
 
     var
       width = if childPixelWidth > 0: childPixelWidth else: maxChildSize.x
