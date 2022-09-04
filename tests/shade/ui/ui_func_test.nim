@@ -540,12 +540,34 @@ describe "UI functional tests":
       let panel1 = randomColorUIComponent()
       root.addChild(panel1)
 
+      root.borderWidth = 2.0
+
+      gui.layout(800, 600)
+
+      assertEquals(panel1.bounds, aabb(2, 2, 798, 598))
+
+    it "takes borders and padding into account when calculating available area":
+      let panel1 = randomColorUIComponent()
+      root.addChild(panel1)
+
       root.padding = 1.0
       root.borderWidth = 2.0
 
       gui.layout(800, 600)
 
       assertEquals(panel1.bounds, aabb(3, 3, 797, 597))
+
+    it "takes borders and non-proportionate padding into account when calculating available area":
+      let panel1 = randomColorUIComponent()
+      root.addChild(panel1)
+
+      root.padding = padding(0, 1, 8, 11)
+      root.borderWidth = 2.0
+
+      gui.layout(800, 600)
+
+      assertEquals(panel1.bounds, aabb(2, 3, 790, 587))
+
 
 when defined(uitest):
   Game.start()
