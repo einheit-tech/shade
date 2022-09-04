@@ -551,12 +551,17 @@ method preRender*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AAB
     min(parentRenderBounds.bottom, this.bounds.bottom)
   )
 
-  discard ctx.setClip(
-    int16(clippedRenderBounds.left),
-    int16(clippedRenderBounds.top),
-    uint16 ceil(clippedRenderBounds.width),
-    uint16 ceil(clippedRenderBounds.height)
-  )
+  block:
+    let
+      flooredLeft = floor clippedRenderBounds.left
+      flooredTop = floor clippedRenderBounds.top
+
+    discard ctx.setClip(
+      int16 flooredLeft,
+      int16 flooredTop,
+      uint16(ceil(clippedRenderBounds.left + clippedRenderBounds.width) - flooredLeft),
+      uint16(ceil(clippedRenderBounds.top + clippedRenderBounds.height) - flooredTop)
+    )
 
   if this.backgroundColor.a != 0:
     ctx.rectangleFilled(
