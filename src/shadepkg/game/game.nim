@@ -194,10 +194,10 @@ proc teardown(this: Engine) =
   logInfo(LogCategoryApplication, "SDL shutdown completed")
 
 proc getUIRoot*(this: Engine): UIComponent =
-  return this.ui.root
+  return this.ui.getUIRoot()
 
 proc setUIRoot*(this: Engine, root: UIComponent) =
-  this.ui.root = root
+  this.ui.setUIRoot(root)
 
 proc update*(this: Engine, deltaTime: float) =
   gamestate.runTime += deltaTime

@@ -1,9 +1,11 @@
 import sdl2_nim/sdl_gpu
 from ../math/mathutils import CompletionRatio, ceil, floor
+
 import
   ../math/vector2,
   ../math/aabb,
-  ../render/color
+  ../render/color,
+  ../game/gamestate
 
 export
   CompletionRatio,
@@ -101,6 +103,7 @@ proc `padding=`*(this: UIComponent, padding: float|Insets)
 proc `alignVertical=`*(this: UIComponent, alignment: Alignment)
 proc `alignHorizontal=`*(this: UIComponent, alignment: Alignment)
 proc `stackDirection=`*(this: UIComponent, direction: StackDirection)
+method layout*(this: UI, width, height: float) {.base.}
 method preRender*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AABB_INF) {.base.}
 method postRender*(this: UIComponent, ctx: Target, renderBounds: AABB) {.base.}
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
@@ -114,12 +117,12 @@ proc `==`*(s1, s2: Size): bool =
       of Ratio:
         result = s1.ratioValue == s2.ratioValue
 
-template `root=`*(this: UI, root: UIComponent) =
+proc setUIRoot*(this: var UI, root: UIComponent) =
   # Ensure the layout is performed when our root is reassigned.
   this.root = root
   this.layout(gamestate.resolution.x, gamestate.resolution.y)
 
-proc root*(this: UI): UIComponent =
+proc getUIRoot*(this: UI): UIComponent =
   this.root
 
 proc newUI*(root: UIComponent): UI =

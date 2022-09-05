@@ -18,7 +18,7 @@ template uitest(title: string, body: untyped) =
     initEngineSingleton(title, int root.width.pixelValue, int root.height.pixelValue)
     let layer = newLayer()
     Game.scene.addLayer layer
-    Game.ui = gui
+    Game.setUIRoot(gui.getUIRoot())
 
     Input.onEvent(KEYUP):
       case e.key.keysym.sym:
@@ -493,12 +493,56 @@ describe "UI functional tests":
       assertEquals(panel1.bounds, aabb(-22.5, 0, 277.5, 400))
 
     it "center aligns multiple children when margins won't fit parent (vertically stacked, fixed height)":
-      # TODO
-      discard
+      let
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
+
+      panel1.backgroundColor = GREEN
+      panel2.backgroundColor = BLUE
+      panel3.backgroundColor = RED
+
+      panel1.height = 120.0
+      panel2.height = 120.0
+      panel3.height = 120.0
+
+      root.addChild(panel1)
+      root.addChild(panel2)
+      root.addChild(panel3)
+
+      root.stackDirection = Vertical
+      root.alignHorizontal = Center
+      root.alignVertical = Center
+
+      root.margin = margin(0, 10, 0, 20)
+
+      gui.layout(360, 360)
+
+      assertEquals(panel2.bounds.center.y, 10 + (360 - 10 - 20) / 2)
 
     it "center aligns multiple children when margins won't fit parent (horizontally stacked, fixed width)":
-      # TODO
-      discard
+      let
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
+
+      panel1.width = 120.0
+      panel2.width = 120.0
+      panel3.width = 120.0
+
+      root.addChild(panel1)
+      root.addChild(panel2)
+      root.addChild(panel3)
+
+      root.stackDirection = Horizontal
+      root.alignHorizontal = Center
+      root.alignVertical = Center
+
+      root.margin = margin(10, 0, 20, 0)
+
+      gui.layout(360, 360)
+
+      assertEquals(panel2.bounds.center.x, 10 + (360 - 10 - 20) / 2)
 
     it "child with exact size and margins perfectly fits the parent with all alignments (vertically stacked)":
       let panel1 = randomColorUIComponent()
