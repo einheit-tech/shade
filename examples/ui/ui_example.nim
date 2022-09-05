@@ -75,13 +75,19 @@ for i in 0 ..< 3:
 
   panel3.addChild(panel)
 
+let (_, image) = Images.loadImage("./examples/assets/images/item_board.png")
+let imageComponent = newUIImage(image)
+imageComponent.imageAlignHorizontal = Center
+imageComponent.width = float(image.w)
+imageComponent.height = float(image.h)
+panel2.addChild(imageComponent)
+
 # Load our font
 let (_, kennyPixel) = Fonts.load("./examples/textbox/kennypixel.ttf", 72)
-let text = newText(kennyPixel, "Foobar", RED)
+let text = newText(kennyPixel, "Foobar", WHITE)
+text.textAlignVertical = Center
 text.textAlignHorizontal = Center
-text.width = 200.0
-text.height = 200.0
-panel2.addChild(text)
+imageComponent.addChild(text)
 
 Game.setUIRoot(root)
 

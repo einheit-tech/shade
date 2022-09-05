@@ -35,6 +35,7 @@ else:
     math/collision/spatialgrid,
     ui/ui,
     ui/ui_text,
+    ui/ui_image,
     util/timer
   ]
 
@@ -74,6 +75,7 @@ else:
     spatialgrid,
     ui,
     ui_text,
+    ui_image,
     timer,
     sdl,
     sdl_ttf
