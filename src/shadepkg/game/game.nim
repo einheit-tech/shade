@@ -90,7 +90,6 @@ proc initEngineSingleton*(
   gamestate.onResolutionChanged:
     # Returns false if there's no renderer or window size is 0. Don't care about the result.
     discard setWindowResolution(uint16 gamestate.resolution.x, uint16 gamestate.resolution.y)
-    Game.ui.layout(gamestate.resolution.x, gamestate.resolution.y)
 
   # Input event handlers
 
@@ -207,12 +206,15 @@ proc update*(this: Engine, deltaTime: float) =
 proc render*(this: Engine, screen: Target) =
   if this.scene == nil:
     return
+
   clearColor(this.screen, this.clearColor)
 
   # Save the normal matrix
   pushMatrix()
 
   this.scene.render(screen)
+
+  this.ui.layout(gamestate.resolution.x, gamestate.resolution.y)
   this.ui.render(screen)
 
   # Restore normal matrix

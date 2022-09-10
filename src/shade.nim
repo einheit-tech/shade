@@ -36,6 +36,7 @@ else:
     ui/ui,
     ui/ui_text,
     ui/ui_image,
+    ui/ui_sprite,
     util/timer
   ]
 
@@ -76,6 +77,7 @@ else:
     ui,
     ui_text,
     ui_image,
+    ui_sprite,
     timer,
     sdl,
     sdl_ttf

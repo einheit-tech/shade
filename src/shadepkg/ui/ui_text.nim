@@ -5,13 +5,18 @@ import
   ../math/aabb
 
 type
+  TextAlignment* = enum
+    Start
+    Center
+    End
+
   UITextComponentObj = object of UIComponent
     font: Font
     text: string
     color: Color
     imageOfText: Image
-    textAlignHorizontal*: Alignment
-    textAlignVertical*: Alignment
+    textAlignHorizontal*: TextAlignment
+    textAlignVertical*: TextAlignment
 
   UITextComponent* = ref UITextComponentObj
 
@@ -43,6 +48,9 @@ proc `color=`*(this: UITextComponent, color: Color) =
     this.imageOfText = nil
 
 method postRender*(this: UITextComponent, ctx: Target, renderBounds: AABB) =
+  if not this.visible:
+    return
+
   procCall postRender(UIComponent this, ctx, renderBounds)
 
   if this.imageOfText == nil:
@@ -56,27 +64,31 @@ method postRender*(this: UITextComponent, ctx: Target, renderBounds: AABB) =
     this.imageOfText = copyImageFromSurface(surface)
     freeSurface(surface)
 
+    this.width = float(this.imageOfText.w)
+    this.height = float(this.imageOfText.h)
+
   # TODO: We should be able to cache all this stuff I believe?
   let
-    scaleX = renderBounds.width / float(this.imageOfText.w) 
-    scaleY = renderBounds.height / float(this.imageOfText.h)
-    minScalar = min(1.0, min(scaleX, scaleY))
+    contentArea = this.contentArea()
+    scaleX = contentArea.width / float(this.imageOfText.w) 
+    scaleY = contentArea.height / float(this.imageOfText.h)
+    minScalar = min(scaleX, scaleY)
 
   let x = case this.textAlignHorizontal:
     of Start:
-      renderBounds.left + float(this.imageOfText.w) * minScalar / 2
+      contentArea.left + float(this.imageOfText.w) * minScalar / 2
     of Center:
-      renderBounds.center.x
+      contentArea.center.x
     of End:
-      renderBounds.right - float(this.imageOfText.w) * minScalar / 2
+      contentArea.right - float(this.imageOfText.w) * minScalar / 2
 
   let y = case this.textAlignVertical:
     of Start:
-      renderBounds.top + float(this.imageOfText.h) * minScalar / 2
+      contentArea.top + float(this.imageOfText.h) * minScalar / 2
     of Center:
-      renderBounds.center.y
+      contentArea.center.y
     of End:
-      renderBounds.bottom - float(this.imageOfText.h) * minScalar / 2
+      contentArea.bottom - float(this.imageOfText.h) * minScalar / 2
 
   blitScale(this.imageOfText, nil, ctx, x, y, minScalar, minScalar)
 

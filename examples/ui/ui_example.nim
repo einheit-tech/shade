@@ -1,5 +1,5 @@
 import ../../src/shade
-import std/random
+import std/[sugar, random]
 
 const
   width = 800
@@ -13,20 +13,30 @@ Game.scene.addLayer layer
 
 let root = newUIComponent()
 root.backgroundColor = WHITE
-root.stackDirection = Horizontal
+root.stackDirection = Overlap
 
 let
+  normalContainer = newUIComponent()
   panel1 = newUIComponent()
   panel2 = newUIComponent()
   panel3 = newUIComponent()
+  overlay = newUIComponent()
+
+normalContainer.stackDirection = Horizontal
+
+overlay.stackDirection = Overlap
+overlay.processInputEvents = false
 
 panel1.backgroundColor = GREEN
 panel2.backgroundColor = BLUE
 panel3.backgroundColor = ORANGE
+overlay.backgroundColor = newColor(0, 0, 0, 100)
 
-root.addChild(panel1)
-root.addChild(panel2)
-root.addChild(panel3)
+root.addChild(normalContainer)
+normalContainer.addChild(panel1)
+normalContainer.addChild(panel2)
+normalContainer.addChild(panel3)
+root.addChild(overlay)
 
 panel1.alignHorizontal = Center
 panel1.alignVertical = Start
@@ -55,11 +65,12 @@ for i in 0 ..< 3:
   panel.margin = 2.0
   panel.borderWidth = 1.0
 
-  panel.onPressed:
-    var newBgColor: Color = randomColor()
-    while newBgColor == this.backgroundColor:
-      newBgColor = randomColor()
-    this.backgroundColor = newBgColor
+  capture panel:
+    panel.onPressed:
+      var newBgColor: Color = randomColor()
+      while newBgColor == panel.backgroundColor:
+        newBgColor = randomColor()
+      panel.backgroundColor = newBgColor
 
   panel1.addChild(panel)
 

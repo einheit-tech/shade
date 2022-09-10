@@ -1,6 +1,10 @@
 import sdl2_nim/sdl_gpu
 from ../math/mathutils import CompletionRatio, ceil, floor
 
+import std/hashes
+
+import safeset
+
 import
   ../math/vector2,
   ../math/aabb,
@@ -31,22 +35,25 @@ type
     Start
     Center
     End
+    SpaceEvenly
   
   StackDirection* = enum
     Vertical
     Horizontal
+    Overlap
 
   ValidationStatus* = enum
     Valid
     Invalid
     InvalidChild
 
-  OnPressedCallback* = proc(this: UIComponent, x, y: float)
+  OnPressedCallback* = proc(x, y: float)
 
   UIComponent* = ref object of RootObj
     ## Top-down design: child components cannot cause their parent components to resize.
     parent: UIComponent
-    children: seq[UIComponent]
+    children: Safeset[UIComponent]
+    visible*: bool
     # If width or height are == 0, fill out all space available in layout.
     width: Size
     height: Size
@@ -62,9 +69,12 @@ type
     borderWidth: float
     borderColor*: Color
     pressedCallbacks: seq[OnPressedCallback]
+    processInputEvents*: bool
 
   UI* = object
     root: UIComponent
+
+import alignment/alignment_start
 
 template ratio*(r: CompletionRatio): Size =
   Size(kind: Ratio, ratioValue: r)
@@ -100,7 +110,9 @@ template contentArea*(this: UIComponent): AABB =
 
 proc `margin=`*(this: UIComponent, margin: float|Insets)
 proc `padding=`*(this: UIComponent, padding: float|Insets)
+proc alignVertical*(this: UIComponent): Alignment
 proc `alignVertical=`*(this: UIComponent, alignment: Alignment)
+proc alignHorizontal*(this: UIComponent): Alignment
 proc `alignHorizontal=`*(this: UIComponent, alignment: Alignment)
 proc `stackDirection=`*(this: UIComponent, direction: StackDirection)
 method layout*(this: UI, width, height: float) {.base.}
@@ -116,6 +128,9 @@ proc `==`*(s1, s2: Size): bool =
         result = s1.pixelValue == s2.pixelValue
       of Ratio:
         result = s1.ratioValue == s2.ratioValue
+
+proc hash*(this: UIComponent): Hash =
+  return hash(this.unsafeAddr)
 
 proc setUIRoot*(this: var UI, root: UIComponent) =
   # Ensure the layout is performed when our root is reassigned.
@@ -134,10 +149,13 @@ proc initUIComponent*(
   borderWidth = 0.0,
   borderColor = BLACK
 ) =
+  this.children = newSafeSet[UIComponent]()
   this.layoutStatus = Invalid
   this.backgroundColor = backgroundColor
   this.borderWidth = borderWidth
   this.borderColor = borderColor
+  this.visible = true
+  this.processInputEvents = true
 
 proc newUIComponent*(backgroundColor: Color = TRANSPARENT): UIComponent =
   result = UIComponent()
@@ -226,9 +244,15 @@ proc `padding=`*(this: UIComponent, padding: float|Insets) =
 
   this.setLayoutValidationStatus(Invalid)
 
+proc alignVertical*(this: UIComponent): Alignment =
+  return this.alignVertical
+
 proc `alignVertical=`*(this: UIComponent, alignment: Alignment) =
   this.alignVertical = alignment
   this.setLayoutValidationStatus(Invalid)
+
+proc alignHorizontal*(this: UIComponent): Alignment =
+  return this.alignHorizontal
 
 proc `alignHorizontal=`*(this: UIComponent, alignment: Alignment) =
   this.alignHorizontal = alignment
@@ -241,12 +265,16 @@ proc `stackDirection=`*(this: UIComponent, direction: StackDirection) =
 proc parent*(this: UIComponent): UIComponent =
   return this.parent
 
-proc children*(this: UIComponent): lent seq[UIComponent] =
+proc children*(this: UIComponent): lent Safeset[UIComponent] =
   return this.children
 
 proc addChild*(this, child: UIComponent) =
   this.children.add(child)
   child.parent = this
+  this.setLayoutValidationStatus(Invalid)
+
+proc removeChild*(this, child: UIComponent) =
+  this.children.remove(child)
   this.setLayoutValidationStatus(Invalid)
 
 proc bounds*(this: UIComponent): lent AABB =
@@ -273,255 +301,366 @@ method layout*(this: UI, width, height: float) {.base.} =
     of Invalid, InvalidChild:
       this.root.updateBounds(this.root.margin.left, this.root.margin.top, w, h)
 
-proc determineChildrenSize(this: UIComponent): Vector =
-  ## Calculates the size of children which do not have a fixed width or height.
-  ## These children have a width or height <= 0.
-  ## NOTE: This does not account for margins in the axis opposite of this.stackDirection,
-  ## as that is UNIQUE per child!
+# proc determineChildrenSize(this: UIComponent): Vector =
+#   ## Calculates the size of children which do not have a fixed width or height.
+#   ## These children have a width or height <= 0.
+#   ## NOTE: This does not account for margins in the axis opposite of this.stackDirection,
+#   ## as that is UNIQUE per child!
 
-  case this.stackDirection:
-    of Vertical:
-      result.x = this.bounds.width - this.totalPaddingAndBorders(Horizontal)
+#   case this.stackDirection:
+#     of Vertical:
+#       result.x = this.bounds.width - this.totalPaddingAndBorders(Horizontal)
 
-      var
-        unreservedHeight = this.bounds.height - this.totalPaddingAndBorders(Vertical)
-        numChildrenWithoutFixedHeight = this.children.len
-        prevChild: UIComponent
+#       var
+#         unreservedHeight = this.bounds.height - this.totalPaddingAndBorders(Vertical)
+#         numChildrenWithoutFixedHeight = this.children.len
+#         prevChild: UIComponent
 
-      for child in this.children:
-        let childPixelHeight = child.height.pixelSize(unreservedHeight)
-        if childPixelHeight > 0.0:
-          unreservedHeight -= childPixelHeight
-          numChildrenWithoutFixedHeight -= 1
+#       for child in this.children:
+#         let childPixelHeight = child.height.pixelSize(unreservedHeight)
+#         if childPixelHeight > 0.0:
+#           unreservedHeight -= childPixelHeight
+#           numChildrenWithoutFixedHeight -= 1
 
-        if prevChild != nil:
-          unreservedHeight -= max(child.margin.top, prevChild.margin.bottom)
-        else:
-          unreservedHeight -= child.margin.top
+#         if prevChild != nil:
+#           unreservedHeight -= max(child.margin.top, prevChild.margin.bottom)
+#         else:
+#           unreservedHeight -= child.margin.top
 
-        prevChild = child
+#         prevChild = child
 
-      unreservedHeight -= prevChild.margin.bottom
+#       unreservedHeight -= prevChild.margin.bottom
 
-      if unreservedHeight > 0 and numChildrenWithoutFixedHeight > 0:
-        result.y = unreservedHeight / float(numChildrenWithoutFixedHeight)
+#       if unreservedHeight > 0 and numChildrenWithoutFixedHeight > 0:
+#         result.y = unreservedHeight / float(numChildrenWithoutFixedHeight)
 
-    of Horizontal:
-      result.y = this.bounds.height - this.totalPaddingAndBorders(Vertical)
+#     of Horizontal:
+#       result.y = this.bounds.height - this.totalPaddingAndBorders(Vertical)
 
-      let totalAvailableWidth = this.bounds.width - this.totalPaddingAndBorders(Horizontal)
+#       let totalAvailableWidth = this.bounds.width - this.totalPaddingAndBorders(Horizontal)
 
-      var
-        unreservedWidth = totalAvailableWidth
-        numChildrenWithoutFixedWidth = this.children.len
-        prevChild: UIComponent
+#       var
+#         unreservedWidth = totalAvailableWidth
+#         numChildrenWithoutFixedWidth = this.children.len
+#         prevChild: UIComponent
 
-      for child in this.children:
-        let childPixelWidth = child.width.pixelSize(totalAvailableWidth)
-        if childPixelWidth > 0:
-          unreservedWidth -= childPixelWidth
-          numChildrenWithoutFixedWidth -= 1
+#       for child in this.children:
+#         let childPixelWidth = child.width.pixelSize(totalAvailableWidth)
+#         if childPixelWidth > 0:
+#           unreservedWidth -= childPixelWidth
+#           numChildrenWithoutFixedWidth -= 1
 
-        if prevChild != nil:
-          unreservedWidth -= max(child.margin.left, prevChild.margin.right)
-        else:
-          unreservedWidth -= child.margin.left
+#         if prevChild != nil:
+#           unreservedWidth -= max(child.margin.left, prevChild.margin.right)
+#         else:
+#           unreservedWidth -= child.margin.left
 
-        prevChild = child
+#         prevChild = child
 
-      if prevChild != nil:
-        unreservedWidth -= prevChild.margin.right
+#       if prevChild != nil:
+#         unreservedWidth -= prevChild.margin.right
 
-      if unreservedWidth > 0 and numChildrenWithoutFixedWidth > 0:
-        result.x = unreservedWidth / float(numChildrenWithoutFixedWidth)
+#       if unreservedWidth > 0 and numChildrenWithoutFixedWidth > 0:
+#         result.x = unreservedWidth / float(numChildrenWithoutFixedWidth)
 
-proc calcChildRenderStartPosition(this: UIComponent, maxChildSize: Vector): Vector =
-  ## Calculates the starting position to render a child along the given axisAlignment,
-  ## relative to the parent's bounds.topLeft.
-  ## maxChildSize: Maximum length of a child along the axis that does not have a fixed width/height.
+#     of Overlap:
+#       result = this.contentArea.getSize()
 
-  let contentArea = this.contentArea()
+# proc calcChildRenderStartPosition(this: UIComponent, maxChildSize: Vector): Vector =
+#   ## Calculates the starting position to render a child along the given axisAlignment,
+#   ## relative to the parent's bounds.topLeft.
+#   ## maxChildSize: Maximum length of a child along the axis that does not have a fixed width/height.
 
-  result.x = this.padding.left + this.borderWidth
-  result.y = this.padding.top + this.borderWidth
+#   result.x = this.padding.left + this.borderWidth
+#   result.y = this.padding.top + this.borderWidth
 
-  if this.stackDirection == Horizontal:
-    case this.alignHorizontal:
-      of Start:
-        result.x = this.padding.left + this.borderWidth
+#   if this.stackDirection == Horizontal:
+#     case this.alignHorizontal:
+#       of Start:
+#         result.x = this.padding.left + this.borderWidth
 
-      of Center:
-        var
-          totalChildrenWidth: float
-          prevChild: UIComponent
+#       of Center:
+#         let contentArea = this.contentArea()
 
-        for child in this.children:
-          let size = child.width.pixelSize(contentArea.width)
-          if size > 0:
-            totalChildrenWidth += size
-          else:
-            totalChildrenWidth += maxChildSize.x
+#         var
+#           totalChildrenWidth: float
+#           prevChild: UIComponent
 
-          totalChildrenWidth += child.margin.left
+#         for child in this.children:
+#           let size = child.width.pixelSize(contentArea.width)
+#           if size > 0:
+#             totalChildrenWidth += size
+#           else:
+#             totalChildrenWidth += maxChildSize.x
 
-          if prevChild != nil:
-            totalChildrenWidth += prevChild.margin.right - child.margin.left
+#           totalChildrenWidth += child.margin.left
 
-          prevChild = child
+#           if prevChild != nil:
+#             totalChildrenWidth += prevChild.margin.right - child.margin.left
 
-        totalChildrenWidth += prevChild.margin.right
+#           prevChild = child
 
-        result.x += (contentArea.width - totalChildrenWidth) / 2.0
+#         totalChildrenWidth += prevChild.margin.right
 
-      of End:
-        result.x = this.bounds.width - this.padding.right - this.borderWidth
+#         result.x += (contentArea.width - totalChildrenWidth) / 2.0
 
-        var prevChild: UIComponent
+#       of End:
+#         result.x = this.bounds.width - this.padding.right - this.borderWidth
 
-        for child in this.children:
-          let size = child.width.pixelSize(contentArea.width)
-          if size > 0:
-            result.x -= size
-          else:
-            result.x -= maxChildSize.x
+#         let contentArea = this.contentArea()
+#         var prevChild: UIComponent
 
-          result.x -= child.margin.right
+#         for child in this.children:
+#           let size = child.width.pixelSize(contentArea.width)
+#           if size > 0:
+#             result.x -= size
+#           else:
+#             result.x -= maxChildSize.x
 
-          if prevChild != nil:
-            result.x -= (child.margin.left - prevChild.margin.right)
+#           result.x -= child.margin.right
 
-          prevChild = child
+#           if prevChild != nil:
+#             result.x -= (child.margin.left - prevChild.margin.right)
 
-  else:
+#           prevChild = child
 
-    case this.alignVertical:
-      of Start:
-        result.y = this.padding.top + this.borderWidth
+#       of SpaceEvenly:
+#         let totalAvailableWidth = this.bounds.width - this.totalPaddingAndBorders(Horizontal)
 
-      of Center:
-        var
-          totalChildrenHeight: float
-          prevChild: UIComponent
+#         var
+#           unreservedWidth = totalAvailableWidth
+#           prevChild: UIComponent
 
-        for child in this.children:
-          let size = child.height.pixelSize(contentArea.height)
-          if size > 0:
-            totalChildrenHeight += size
-          else:
-            totalChildrenHeight += maxChildSize.y
+#         for child in this.children:
+#           let childPixelWidth = child.width.pixelSize(totalAvailableWidth)
+#           if childPixelWidth > 0:
+#             unreservedWidth -= childPixelWidth
 
-          totalChildrenHeight += child.margin.top
+#           if prevChild != nil:
+#             unreservedWidth -= max(child.margin.left, prevChild.margin.right)
+#           else:
+#             unreservedWidth -= child.margin.left
 
-          if prevChild != nil:
-            totalChildrenHeight += prevChild.margin.bottom - child.margin.top
+#           prevChild = child
 
-          prevChild = child
+#         if prevChild != nil:
+#           unreservedWidth -= prevChild.margin.right
 
-        totalChildrenHeight += prevChild.margin.bottom
+#         let evenSpace = unreservedWidth / float(this.children.len + 1)
+#         result.x += evenSpace
 
-        result.y = (contentArea.height - totalChildrenHeight) / 2.0
+#   else:
 
-      of End:
-        result.y = this.bounds.height - this.padding.bottom - this.borderWidth
+#     case this.alignVertical:
+#       of Start:
+#         result.y = this.padding.top + this.borderWidth
 
-        var prevChild: UIComponent
+#       of Center:
+#         let contentArea = this.contentArea()
 
-        for child in this.children:
-          let size = child.height.pixelSize(contentArea.height)
-          if size > 0:
-            result.y -= size
-          else:
-            result.y -= maxChildSize.y
+#         var
+#           totalChildrenHeight: float
+#           prevChild: UIComponent
 
-          result.y -= child.margin.bottom
+#         for child in this.children:
+#           let size = child.height.pixelSize(contentArea.height)
+#           if size > 0:
+#             totalChildrenHeight += size
+#           else:
+#             totalChildrenHeight += maxChildSize.y
 
-          if prevChild != nil:
-            result.y -= (child.margin.top - prevChild.margin.bottom)
+#           totalChildrenHeight += child.margin.top
 
-          prevChild = child
+#           if prevChild != nil:
+#             totalChildrenHeight += prevChild.margin.bottom - child.margin.top
 
-proc updateChildrenBounds(this: UIComponent, startPosition: Vector, maxChildSize: Vector) =
-  ## startX: Absolute starting x position
-  ## startY: Absolute starting y position
-  var
-    x = startPosition.x
-    y = startPosition.y
-    prevChild: UIComponent
+#           prevChild = child
 
-  for child in this.children:
-    let
-      childPixelWidth = child.width.pixelSize(this.bounds.width - this.totalPaddingAndBorders(Horizontal))
-      childPixelHeight = child.height.pixelSize(this.bounds.height - this.totalPaddingAndBorders(Vertical))
+#         totalChildrenHeight += prevChild.margin.bottom
 
-    var
-      width = if childPixelWidth > 0: childPixelWidth else: maxChildSize.x
-      height = if childPixelHeight > 0: childPixelHeight else: maxChildSize.y
+#         result.y = (contentArea.height - totalChildrenHeight) / 2.0
 
-    case this.stackDirection:
-      of Vertical:
-        # Child designated to fill as much space as possible.
-        if childPixelWidth <= 0:
-          # Reduce size by margins in direction opposite of the stackDirection.
-          width -= (child.margin.left + child.margin.right)
+#       of End:
+#         result.y = this.bounds.height - this.padding.bottom - this.borderWidth
 
-        case this.alignHorizontal:
-          of Start:
-            x = startPosition.x + child.margin.left
-            y += child.margin.top
-            if prevChild != nil and prevChild.margin.bottom > child.margin.top:
-              y += prevChild.margin.bottom - child.margin.top
+#         let contentArea = this.contentArea()
+#         var prevChild: UIComponent
 
-          of Center:
-            x = startPosition.x + (this.bounds.width - width) / 2.0
-            y += child.margin.top
-            if prevChild != nil and prevChild.margin.bottom > child.margin.top:
-              y += prevChild.margin.bottom - child.margin.top
+#         for child in this.children:
+#           let size = child.height.pixelSize(contentArea.height)
+#           if size > 0:
+#             result.y -= size
+#           else:
+#             result.y -= maxChildSize.y
 
-          of End:
-            x = this.bounds.right - this.padding.right - width - child.margin.right
-            if prevChild != nil:
-              y += max(child.margin.top, prevChild.margin.bottom)
+#           result.y -= child.margin.bottom
 
-      of Horizontal:
+#           if prevChild != nil:
+#             result.y -= (child.margin.top - prevChild.margin.bottom)
 
-        # Child designated to fill as much space as possible.
-        if childPixelHeight <= 0:
-          # Reduce size by margins in direct asyncCheck ion opposite of the stackDirection.
-          height -= (child.margin.top + child.margin.bottom)
+#           prevChild = child
 
-        case this.alignVertical:
-          of Start:
-            x += child.margin.left
-            y = startPosition.y + child.margin.top
-            if prevChild != nil and prevChild.margin.right > child.margin.left:
-              x += prevChild.margin.right - child.margin.left
+#       of SpaceEvenly:
+#         let totalAvailableHeight = this.bounds.height - this.totalPaddingAndBorders(Vertical)
 
-          of Center:
-            x += child.margin.left
-            y = (this.bounds.height - height) / 2.0
-            if prevChild != nil and prevChild.margin.right > child.margin.left:
-              x += prevChild.margin.right - child.margin.left
+#         var
+#           unreservedHeight = totalAvailableHeight
+#           prevChild: UIComponent
 
-          of End:
-            y = this.bounds.bottom - this.padding.bottom - height - child.margin.bottom
+#         for child in this.children:
+#           let childPixelHeight = child.height.pixelSize(totalAvailableHeight)
+#           if childPixelHeight > 0:
+#             unreservedHeight -= childPixelHeight
 
-            if prevChild != nil:
-              x += max(child.margin.left, prevChild.margin.right)
+#           if prevChild != nil:
+#             unreservedHeight -= max(child.margin.top, prevChild.margin.bottom)
+#           else:
+#             unreservedHeight -= child.margin.top
 
-    child.updateBounds(x, y, width, height)
+#           prevChild = child
 
-    case this.stackDirection:
-      of Vertical:
-        y += height
-      of Horizontal:
-        x += width
+#         if prevChild != nil:
+#           unreservedHeight -= prevChild.margin.bottom
 
-    prevChild = child
+#         let evenSpace = unreservedHeight / float(this.children.len + 1)
+#         result.y += evenSpace
+
+# proc updateChildrenBounds(this: UIComponent, startPosition: Vector, maxChildSize: Vector) =
+#   ## startX: Absolute starting x position
+#   ## startY: Absolute starting y position
+#   var
+#     x = startPosition.x
+#     y = startPosition.y
+#     prevChild: UIComponent
+
+#   for child in this.children:
+#     let
+#       childPixelWidth = child.width.pixelSize(this.bounds.width - this.totalPaddingAndBorders(Horizontal))
+#       childPixelHeight = child.height.pixelSize(this.bounds.height - this.totalPaddingAndBorders(Vertical))
+
+#     var
+#       width = if childPixelWidth > 0: childPixelWidth else: maxChildSize.x
+#       height = if childPixelHeight > 0: childPixelHeight else: maxChildSize.y
+
+#     case this.stackDirection:
+#       of Vertical:
+#         # Child designated to fill as much space as possible.
+#         if childPixelWidth <= 0:
+#           # Reduce size by margins in direction opposite of the stackDirection.
+#           width -= (child.margin.left + child.margin.right)
+
+#         case this.alignHorizontal:
+#           of Start:
+#             x = startPosition.x + child.margin.left
+#             y += child.margin.top
+#             if prevChild != nil and prevChild.margin.bottom > child.margin.top:
+#               y += prevChild.margin.bottom - child.margin.top
+
+#           of Center:
+#             x = startPosition.x + (this.bounds.width - width) / 2.0
+#             y += child.margin.top
+#             if prevChild != nil and prevChild.margin.bottom > child.margin.top:
+#               y += prevChild.margin.bottom - child.margin.top
+
+#           of End:
+#             x = this.bounds.right - this.padding.right - width - child.margin.right
+#             if prevChild != nil:
+#               y += max(child.margin.top, prevChild.margin.bottom)
+
+#           of SpaceEvenly:
+#             discard
+
+#       of Horizontal:
+
+#         # Child designated to fill as much space as possible.
+#         if childPixelHeight <= 0:
+#           # Reduce size by margins in direct asyncCheck ion opposite of the stackDirection.
+#           height -= (child.margin.top + child.margin.bottom)
+
+#         case this.alignVertical:
+#           of Start:
+#             x += child.margin.left
+#             y = startPosition.y + child.margin.top
+#             if prevChild != nil and prevChild.margin.right > child.margin.left:
+#               x += prevChild.margin.right - child.margin.left
+
+#           of Center:
+#             x += child.margin.left
+#             y = (this.bounds.height - height) / 2.0
+#             if prevChild != nil and prevChild.margin.right > child.margin.left:
+#               x += prevChild.margin.right - child.margin.left
+
+#           of End:
+#             y = this.bounds.bottom - this.padding.bottom - height - child.margin.bottom
+
+#             if prevChild != nil:
+#               x += max(child.margin.left, prevChild.margin.right)
+
+#           of SpaceEvenly:
+#             discard
+
+#       of Overlap:
+#         case this.alignVertical:
+#           of Start:
+#             discard
+#           of Center:
+#             y = (this.bounds.height - height) / 2.0
+#           of End:
+#             y = this.bounds.bottom - this.padding.bottom - height - child.margin.bottom
+
+#         case this.alignHorizontal:
+#           of Start:
+#             discard
+#           of Center:
+#             x = (this.bounds.width - width) / 2.0
+#           of End:
+#             x = this.bounds.right - this.padding.right - width - child.margin.right
+
+#     child.updateBounds(x, y, width, height)
+
+#     case this.stackDirection:
+#       of Vertical:
+#         y += height
+#       of Horizontal:
+#         x += width
+#       of Overlap:
+#         discard
+
+#     prevChild = child
+
+proc updateChildren(this: UIComponent, axis: static StackDirection) =
+  let alignment =
+    when axis == Horizontal:
+      this.alignHorizontal
+    else:
+      this.alignVertical
+
+  case alignment:
+    of Start:
+      this.alignStart(axis)
+    of Center:
+      discard
+    of End:
+      discard
+    of SpaceEvenly:
+      discard
 
 proc updateChildrenBounds*(this: UIComponent) =
-  let maxChildSize = this.determineChildrenSize()
-  let startPosition = this.calcChildRenderStartPosition(maxChildSize)
-  this.updateChildrenBounds(startPosition + this.bounds.topLeft, maxChildSize)
+  # let maxChildSize = this.determineChildrenSize()
+  # let startPosition = this.calcChildRenderStartPosition(maxChildSize)
+  # this.updateChildrenBounds(startPosition + this.bounds.topLeft, maxChildSize)
+
+  # TODO: One function per Alignment state,
+  # "space" alignments should have 0 space if any component is dynamically sized.
+  # Do everything along one dimension
+  this.updateChildren(Horizontal)
+  # this.updateChildrenVertically()
+
+  # TODO:
+  # updateBounds for each child,
+  # i.e. set child.bounds and call child.setLayoutValidationStatus(Valid),
+  # then recurse this process downward.
+
 
 proc updateBounds(this: UIComponent, x, y, width, height: float) =
   ## Updates this bounds, and all children (deep).
@@ -539,6 +678,9 @@ method render*(this: UI, ctx: Target) {.base.} =
     this.root.preRender(ctx)
 
 method preRender*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AABB_INF) {.base.} =
+  if not this.visible:
+    return
+
   if this.bounds.left >= parentRenderBounds.right or
      this.bounds.top >= parentRenderBounds.bottom or
      this.bounds.width <= 0 or this.bounds.height <= 0:
@@ -546,7 +688,6 @@ method preRender*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AAB
        # Maybe can be optimized.
        return
 
-  # TODO: Clip at content area (padding)
   let clippedRenderBounds = aabb(
     max(parentRenderBounds.left, this.bounds.left),
     max(parentRenderBounds.top, this.bounds.top),
@@ -599,7 +740,7 @@ method postRender*(this: UIComponent, ctx: Target, renderBounds: AABB) {.base.} 
 
 proc findLowestComponentContainingPoint*(this: UIComponent, x, y: float): UIComponent =
   for child in this.children:
-    if child != nil and child.bounds.contains(x, y):
+    if child != nil and child.processInputEvents and child.visible and child.bounds.contains(x, y):
       let nextLowest = child.findLowestComponentContainingPoint(x, y)
       if nextLowest == nil:
         return child
@@ -617,7 +758,7 @@ proc handlePress*(this: UI, x, y: float) =
   let component = this.findLowestComponentContainingPoint(x, y)
   if component != nil:
     for callback in component.pressedCallbacks:
-      component.callback(x, y)
+      callback(x, y)
 
 proc onPressedCallbacks*(this: UIComponent): lent seq[OnPressedCallback] =
   return this.pressedCallbacks
@@ -637,5 +778,5 @@ proc removeOnPressedCallback*(this: UIComponent, callback: OnPressedCallback) =
 
 template onPressed*(component: UIComponent, body: untyped) =
   ## Invokes `body` whenever the component is pressed.
-  component.addOnPressedCallback(proc(this {.inject.}: UIComponent, x, y {.inject.}: float) = body)
+  component.addOnPressedCallback(proc(x, y {.inject.}: float) = body)
 

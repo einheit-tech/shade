@@ -2,7 +2,10 @@ import sdl2_nim/sdl_gpu
 import
   ui,
   ../math/mathutils,
-  ../math/aabb
+  ../math/aabb,
+  ../images/imageatlas
+
+export ui
 
 type
   ImageFit* = enum
@@ -10,71 +13,140 @@ type
     Contain
     Cover
     Fill
+
+  ImageAlignment* = enum
+    Start
+    Center
+    End
+
   UIImageObj = object of UIComponent
     image*: Image
-    imageAlignHorizontal*: Alignment
-    imageAlignVertical*: Alignment
+    imageAlignHorizontal*: ImageAlignment
+    imageAlignVertical*: ImageAlignment
     imageFit*: ImageFit
+    scale: Vector
 
   UIImage* = ref UIImageObj
+
+proc `scale=`*(this: UIImage, scale: Vector)
+method getImageViewport*(this: UIImage): Rect {.base.}
 
 proc `=destroy`(this: var UIImageObj) =
   if this.image != nil:
     freeImage(this.image)
 
-proc newUIImage*(image: Image): UIImage =
-  result = UIImage(image: image)
-  initUIComponent(UIComponent result)
+proc initUIImage*(uiImage: UIImage, image: Image, scale: Vector = VECTOR_ONE) =
+  initUIComponent(UIComponent uiImage)
+  uiImage.image = image
+  uiImage.scale = scale
+  `scale=`(uiImage, scale)
 
-template renderImageFitContain(this: UIImage, ctx: Target, renderBounds: AABB): tuple[scaleX, scaleY: float] =
+proc newUIImage*(image: Image): UIImage =
+  result = UIImage()
+  initUIImage(result, image)
+
+proc newUIImage*(imagePath: string, imageFilter: Filter = FILTER_LINEAR): UIImage =
+  let (_, image) = Images.loadImage(imagePath)
+  image.setImageFilter(imageFilter)
+  return newUIImage(image)
+
+proc scale*(this: UIImage): Vector =
+  return this.scale
+
+proc `scale=`*(this: UIImage, scale: Vector) =
+  this.scale = scale
+  if this.image != nil:
+    let imageViewport = this.getImageViewport()
+    this.width = float(imageViewport.w) * this.scale.x
+    this.height = float(imageViewport.h) * this.scale.y
+
+method getImageWidth*(this: UIImage): float {.base.} =
+  ## Gets the unscaled width of the image.
+  return float this.image.w
+
+method getImageHeight*(this: UIImage): float {.base.} =
+  ## Gets the unscaled height of the image.
+  return float this.image.h
+
+method getImageViewport*(this: UIImage): Rect {.base.} =
+  return (cfloat 0, cfloat 0, cfloat this.image.w, cfloat this.image.h)
+
+template getImageFitContainScalar(
+  this: UIImage,
+  ctx: Target,
+  contentWidth: float,
+  contentHeight: float
+): tuple[scaleX, scaleY: float] =
   let
-    scaleX = renderBounds.width / float(this.image.w) 
-    scaleY = renderBounds.height / float(this.image.h)
+    scaleX = contentWidth / this.getImageWidth()
+    scaleY = contentHeight / this.getImageHeight()
     minScalar = min(1.0, min(scaleX, scaleY))
 
-  (minScalar, minScalar)
+  (this.scale.x * minScalar, this.scale.y * minScalar)
 
-template renderImageFitCover(this: UIImage, ctx: Target, renderBounds: AABB): tuple[scaleX, scaleY: float] =
+template getImageFitCoverScalar(
+  this: UIImage,
+  ctx: Target,
+  contentWidth: float,
+  contentHeight: float
+): tuple[scaleX, scaleY: float] =
   let
-    scaleX = renderBounds.width / float(this.image.w) 
-    scaleY = renderBounds.height / float(this.image.h)
+    scaleX = contentWidth / this.getImageWidth() 
+    scaleY = contentHeight / this.getImageHeight()
     maxScalar = max(1.0, max(scaleX, scaleY))
 
-  (maxScalar, maxScalar)
+  (this.scale.x * maxScalar, this.scale.y * maxScalar)
 
-template renderImageFitFill(this: UIImage, ctx: Target, renderBounds: AABB): tuple[scaleX, scaleY: float] =
+template getImageFitFillScalar(
+  this: UIImage,
+  ctx: Target,
+  contentWidth: float,
+  contentHeight: float
+): tuple[scaleX, scaleY: float] =
   (
-    renderBounds.width / float(this.image.w),
-    renderBounds.height / float(this.image.h)
+    this.scale.x * contentWidth / this.getImageWidth(),
+    this.scale.y * contentHeight / this.getImageHeight()
   )
 
 method postRender*(this: UIImage, ctx: Target, renderBounds: AABB) =
+  if not this.visible:
+    return
+
   procCall postRender(UIComponent this, ctx, renderBounds)
+
+  let
+    renderContentArea = aabb(
+      this.bounds.left + this.borderWidth,
+      this.bounds.top + this.borderWidth,
+      this.bounds.right - this.borderWidth,
+      this.bounds.bottom - this.borderWidth
+    )
 
   let (scaleX, scaleY) =
     case this.imageFit:
       of Contain:
-        this.renderImageFitContain(ctx, renderBounds)
+        this.getImageFitContainScalar(ctx, renderContentArea.width, renderContentArea.height)
       of Cover:
-        this.renderImageFitCover(ctx, renderBounds)
+        this.getImageFitCoverScalar(ctx, renderContentArea.width, renderContentArea.height)
       of Fill:
-        this.renderImageFitFill(ctx, renderBounds)
+        this.getImageFitFillScalar(ctx, renderContentArea.width, renderContentArea.height)
 
   let x = case this.imageAlignHorizontal:
     of Start:
-      renderBounds.left + float(this.image.w) * scaleX / 2
+      renderContentArea.left + this.getImageWidth() * scaleX / 2
     of Center:
-      renderBounds.center.x
+      renderContentArea.center.x
     of End:
-      renderBounds.right - float(this.image.w) * scaleX / 2
+      renderContentArea.right - this.getImageWidth() * scaleX / 2
 
   let y = case this.imageAlignVertical:
     of Start:
-      renderBounds.top + float(this.image.h) * scaleY / 2
+      renderContentArea.top + this.getImageHeight() * scaleY / 2
     of Center:
-      renderBounds.center.y
+      renderContentArea.center.y
     of End:
-      renderBounds.bottom - float(this.image.h) * scaleY / 2
+      renderContentArea.bottom - this.getImageHeight() * scaleY / 2
 
-  blitScale(this.image, nil, ctx, x, y, scaleX, scaleY)
+  let viewport = this.getImageViewport()
+  blitScale(this.image, viewport.unsafeAddr, ctx, x, y, scaleX, scaleY)
 
