@@ -1,11 +1,11 @@
 import sdl2_nim/sdl_gpu
 import
-  ui,
+  ui_component,
   ../math/mathutils,
   ../math/aabb,
   ../images/imageatlas
 
-export ui
+export ui_component
 
 type
   ImageFit* = enum

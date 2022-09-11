@@ -10,7 +10,7 @@ import
   ../input/inputhandler,
   ../audio/audioplayer,
   ../render/color,
-  ../ui/ui
+  ../ui/[ui, ui_component]
 
 const ONE_BILLION = 1000000000
 

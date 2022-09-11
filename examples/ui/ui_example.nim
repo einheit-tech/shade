@@ -38,14 +38,14 @@ normalContainer.addChild(panel2)
 normalContainer.addChild(panel3)
 root.addChild(overlay)
 
-panel1.alignHorizontal = Center
-panel1.alignVertical = Start
-panel2.alignVertical = Center
-panel2.alignHorizontal = Center
+# panel1.alignHorizontal = Center
+# panel1.alignVertical = Start
+# panel2.alignVertical = Center
+# panel2.alignHorizontal = Center
 
 panel3.stackDirection = Vertical
-panel3.alignHorizontal = End
-panel3.alignVertical = End
+# panel3.alignHorizontal = End
+# panel3.alignVertical = End
 
 proc randomColor(): Color =
   return sample([
@@ -88,7 +88,7 @@ for i in 0 ..< 3:
 
 let (_, image) = Images.loadImage("./examples/assets/images/item_board.png")
 let imageComponent = newUIImage(image)
-imageComponent.imageAlignHorizontal = Center
+# imageComponent.imageAlignHorizontal = Center
 imageComponent.width = float(image.w)
 imageComponent.height = float(image.h)
 panel2.addChild(imageComponent)
@@ -96,8 +96,8 @@ panel2.addChild(imageComponent)
 # Load our font
 let (_, kennyPixel) = Fonts.load("./examples/textbox/kennypixel.ttf", 72)
 let text = newText(kennyPixel, "Foobar", WHITE)
-text.textAlignVertical = Center
-text.textAlignHorizontal = Center
+# text.textAlignVertical = Center
+# text.textAlignHorizontal = Center
 imageComponent.addChild(text)
 
 Game.setUIRoot(root)

@@ -606,6 +606,9 @@ proc updateChildrenBounds*(this: UIComponent) =
   this.updateChildren(Horizontal)
   this.updateChildren(Vertical)
 
+  for child in this.children:
+    child.updateChildrenBounds()
+
   # TODO:
   # updateBounds for each child,
   # i.e. set child.bounds and call child.setLayoutValidationStatus(Valid),
@@ -711,49 +714,59 @@ template onPressed*(component: UIComponent, body: untyped) =
   ## Invokes `body` whenever the component is pressed.
   component.addOnPressedCallback(proc(x, y {.inject.}: float) = body)
 
+proc handlePress*(this: UIComponent, x, y: float) =
+  for callback in this.pressedCallbacks:
+    callback(x, y)
+
 #### Alignment
 
-template start(child: UIComponent): float =
+template start*(this: UIComponent): float =
   when axis == Horizontal:
-    child.bounds.left
+    this.bounds.left
   else:
-    child.bounds.top
+    this.bounds.top
 
-template setStart(child: UIComponent, value: float) =
+template setStart*(this: UIComponent, value: float) =
   when axis == Horizontal:
-    child.bounds.left = value
+    this.bounds.left = value
   else:
-    child.bounds.top = value
+    this.bounds.top = value
 
-template len(child: UIComponent): float =
+template len*(this: UIComponent): float =
   when axis == Horizontal:
-    child.bounds.width
+    this.bounds.width
   else:
-    child.bounds.height
+    this.bounds.height
 
-template startMargin(child: UIComponent): float =
+template startMargin*(this: UIComponent): float =
   when axis == Horizontal:
-    child.margin.left
+    this.margin.left
   else:
-    child.margin.top
+    this.margin.top
 
-template endMargin(child: UIComponent): float =
+template endMargin*(this: UIComponent): float =
   when axis == Horizontal:
-    child.margin.right
+    this.margin.right
   else:
-    child.margin.bottom
+    this.margin.bottom
 
-template setLen(child: UIComponent, value: float) =
+template setLen*(this: UIComponent, value: float) =
   when axis == Horizontal:
-    `width=`(child, value)
+    this.bounds.right = this.bounds.left + value
   else:
-    `height=`(child, value)
+    this.bounds.bottom = this.bounds.top + value
 
 template pixelLen*(parent, child: UIComponent, axis: static StackDirection): float =
   when axis == Horizontal:
     pixelSize(child.width, parent.len - parent.totalPaddingAndBorders(axis))
   else:
     pixelSize(child.height, parent.len - parent.totalPaddingAndBorders(axis))
+
+template pixelLen*(this: UIComponent, axisLen: float, axis: static StackDirection): float =
+  when axis == Horizontal:
+    pixelSize(this.width, axisLen)
+  else:
+    pixelSize(this.height, axisLen)
 
 import alignment/alignment_start
 

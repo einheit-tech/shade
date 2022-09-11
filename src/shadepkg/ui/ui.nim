@@ -63,6 +63,5 @@ proc findLowestComponentContainingPoint*(this: UI, x, y: float): UIComponent =
 proc handlePress*(this: UI, x, y: float) =
   let component = this.findLowestComponentContainingPoint(x, y)
   if component != nil:
-    for callback in component.pressedCallbacks:
-      callback(x, y)
+    component.handlePress(x, y)
 
