@@ -21,6 +21,9 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
     prevChild = child
 
+  if prevChild != nil:
+    totalChildrenLen += prevChild.endMargin
+
   # Set child positions and sizes
   prevChild = nil
   var childStart: float =
@@ -31,9 +34,11 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
       childPixelLen = pixelLen(this, child, axis)
       childLen = if childPixelLen > 0: childPixelLen else: maxChildLen
 
+    childStart += child.startMargin
+
     child.set(childStart, childLen)
 
-    childStart += childLen + child.startMargin
+    childStart += childLen
 
     if prevChild != nil and prevChild.endMargin > child.startMargin:
       childStart += prevChild.endMargin - child.startMargin
@@ -49,8 +54,26 @@ template alignCrossAxis(this: UIComponent, axis: static StackDirection) =
   for child in this.children:
     let
       childPixelLen = pixelLen(child, totalAvailableLen, axis)
-      childLen = if childPixelLen > 0: childPixelLen else: maxChildLen
-      childStart = center - childLen / 2
+      childLen = if childPixelLen > 0: childPixelLen else: (maxChildLen - child.startMargin - child.endMargin)
+    
+    var childStart: float = center - childLen / 2
+
+    if childLen >= totalAvailableLen:
+      # Center the child with margins added to its lengnth
+      childStart = center - (childLen + child.startMargin + child.endMargin) / 2
+    else:
+      # Check if child needs to be pushed away from parent start (top or left)
+      let parentStart = this.boundsStart + this.borderWidth + this.startPadding 
+      if parentStart > childStart:
+        childStart = parentStart + child.startMargin
+      else:
+        # Check if child needs to be pushed away from parent end (bottom or right)
+        let
+          parentEnd = this.boundsEnd - this.borderWidth - this.endPadding 
+          childEnd = childStart + childLen + child.endMargin
+
+        if parentEnd < childEnd:
+          childStart = parentEnd - childLen
 
     child.set(childStart, childLen)
 

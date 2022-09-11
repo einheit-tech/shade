@@ -20,6 +20,9 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
     prevChild = child
 
+  if prevChild != nil:
+    totalChildrenLen += prevChild.endMargin
+
   # Set child positions and sizes
   prevChild = nil
   var childStart: float =
@@ -30,9 +33,11 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
       childPixelLen = pixelLen(this, child, axis)
       childLen = if childPixelLen > 0: childPixelLen else: maxChildLen
 
+    childStart += child.startMargin
+
     child.set(childStart, childLen)
 
-    childStart += childLen + child.startMargin
+    childStart += childLen
 
     if prevChild != nil and prevChild.endMargin > child.startMargin:
       childStart += prevChild.endMargin - child.startMargin

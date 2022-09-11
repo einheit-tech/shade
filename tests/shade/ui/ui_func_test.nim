@@ -720,7 +720,6 @@ describe "UI functional tests":
 
       assertEquals(panel1.bounds, aabb(2, 3, 790, 587))
 
-
 when defined(uitest):
   Game.start()
 

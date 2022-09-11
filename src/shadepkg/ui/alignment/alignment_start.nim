@@ -29,17 +29,16 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 template alignCrossAxis(this: UIComponent, axis: static StackDirection) =
   let childStart =
     when axis == Horizontal:
-      this.bounds.top + this.borderWidth + this.padding.top
-    else:
       this.bounds.left + this.borderWidth + this.padding.left
+    else:
+      this.bounds.top + this.borderWidth + this.padding.top
 
   let maxChildLen: float = determineDynamicChildLen(this, axis)
 
   for child in this.children:
-
     let
       childPixelLen = pixelLen(this, child, axis)
-      childLen = if childPixelLen > 0: childPixelLen else: maxChildLen
+      childLen = if childPixelLen > 0: childPixelLen else: (maxChildLen - child.startMargin - child.endMargin)
 
     child.set(childStart + child.startMargin, childLen)
 
