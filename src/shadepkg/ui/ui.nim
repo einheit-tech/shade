@@ -22,7 +22,6 @@ method layout*(this: UI, width, height: float) {.base.}
 proc setUIRoot*(this: var UI, root: UIComponent) =
   # Ensure the layout is performed when our root is reassigned.
   this.root = root
-  this.layout(gamestate.resolution.x, gamestate.resolution.y)
 
 proc getUIRoot*(this: UI): UIComponent =
   this.root
