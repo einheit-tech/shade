@@ -269,6 +269,38 @@ describe "UI functional tests":
       assertEquals(panel3.bounds, aabb(387.5, 0, 750, 600))
       assertEquals(panel4.bounds, aabb(750, 0, 800, 600))
 
+  describe "Overlap Stack Direction":
+
+    it "rgb stacked panels":
+      let
+        rPanel = newUIComponent(newColor(255, 0, 0))
+        gPanel = newUIComponent(newColor(0, 255, 0))
+        bPanel = newUIComponent(newColor(0, 0, 255))
+
+      rPanel.width = 100.0
+      rPanel.height = 100.0
+      gPanel.width = 100.0
+      gPanel.height = 100.0
+      bPanel.width = 100.0
+      bPanel.height = 100.0
+
+      rPanel.margin = margin(10, 25, 0, 0)
+      gPanel.margin = margin(20, 50, 0, 0)
+      bPanel.margin = margin(30, 75, 0, 0)
+
+      root.padding = 8.0
+      root.stackDirection = Overlap
+      root.addChild(rPanel)
+      root.addChild(gPanel)
+      root.addChild(bPanel)
+
+      gui.layout(800, 600)
+
+      assertEquals(rPanel.bounds, aabb(18, 33, 118, 133))
+      assertEquals(gPanel.bounds, aabb(28, 58, 128, 158))
+      assertEquals(bPanel.bounds, aabb(38, 83, 138, 183))
+
+
   describe "Alignment":
 
     it "3 centered blocks (Horizontal)":
