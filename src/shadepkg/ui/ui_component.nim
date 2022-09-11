@@ -603,23 +603,12 @@ method update*(this: UIComponent, deltaTime: float) {.base.} =
 #     prevChild = child
 
 proc updateChildrenBounds*(this: UIComponent) =
-  # let maxChildSize = this.determineChildrenSize()
-  # let startPosition = this.calcChildRenderStartPosition(maxChildSize)
-  # this.updateChildrenBounds(startPosition + this.bounds.topLeft, maxChildSize)
-
-  # TODO: One function per Alignment state,
-  # "space" alignments should have 0 space if any component is dynamically sized.
-  # Do everything along one dimension
-  this.updateChildren(Horizontal)
   this.updateChildren(Vertical)
+  this.updateChildren(Horizontal)
 
   for child in this.children:
-    child.updateChildrenBounds()
-
-  # TODO:
-  # updateBounds for each child,
-  # i.e. set child.bounds and call child.setLayoutValidationStatus(Valid),
-  # then recurse this process downward.
+    if child.children.len > 0:
+      child.updateChildrenBounds()
 
 proc updateBounds(this: UIComponent, x, y, width, height: float) =
   ## Updates this bounds, and all children (deep).
@@ -727,23 +716,37 @@ proc handlePress*(this: UIComponent, x, y: float) =
 
 #### Alignment
 
+template set*(this: UIComponent, start, length: float) =
+  when axis == Horizontal:
+    this.bounds.left = start
+    this.bounds.right = start + length
+  else:
+    this.bounds.top = start
+    this.bounds.bottom = start + length
+
 template start*(this: UIComponent): float =
   when axis == Horizontal:
     this.bounds.left
   else:
     this.bounds.top
 
-template setStart*(this: UIComponent, value: float) =
-  when axis == Horizontal:
-    this.bounds.left = value
-  else:
-    this.bounds.top = value
-
 template len*(this: UIComponent): float =
   when axis == Horizontal:
     this.bounds.width
   else:
     this.bounds.height
+
+template startPadding*(this: UIComponent): float =
+  when axis == Horizontal:
+    this.padding.left
+  else:
+    this.padding.top
+
+template endPadding*(this: UIComponent): float =
+  when axis == Horizontal:
+    this.padding.right
+  else:
+    this.padding.bottom
 
 template startMargin*(this: UIComponent): float =
   when axis == Horizontal:
@@ -757,17 +760,12 @@ template endMargin*(this: UIComponent): float =
   else:
     this.margin.bottom
 
-template setLen*(this: UIComponent, value: float) =
-  when axis == Horizontal:
-    this.bounds.right = this.bounds.left + value
-  else:
-    this.bounds.bottom = this.bounds.top + value
-
 template pixelLen*(parent, child: UIComponent, axis: static StackDirection): float =
+  let parentLen = parent.len - parent.totalPaddingAndBorders(axis)
   when axis == Horizontal:
-    pixelSize(child.width, parent.len - parent.totalPaddingAndBorders(axis))
+    pixelSize(child.width, parentLen)
   else:
-    pixelSize(child.height, parent.len - parent.totalPaddingAndBorders(axis))
+    pixelSize(child.height, parentLen)
 
 template pixelLen*(this: UIComponent, axisLen: float, axis: static StackDirection): float =
   when axis == Horizontal:
@@ -776,6 +774,7 @@ template pixelLen*(this: UIComponent, axisLen: float, axis: static StackDirectio
     pixelSize(this.height, axisLen)
 
 import alignment/alignment_start
+import alignment/alignment_center
 
 proc updateChildren(this: UIComponent, axis: static StackDirection) =
   let alignment =
@@ -788,9 +787,12 @@ proc updateChildren(this: UIComponent, axis: static StackDirection) =
     of Start:
       this.alignStart(axis)
     of Center:
-      discard
+      this.alignCenter(axis)
     of End:
       discard
     of SpaceEvenly:
       discard
+
+  for child in this.children:
+    child.setLayoutValidationStatus(Valid)
 

@@ -1,5 +1,4 @@
 import ../../src/shade
-import std/[sugar, random]
 
 const
   width = 800
@@ -11,9 +10,11 @@ Game.scene.addLayer layer
 
 let root = newUIComponent()
 root.backgroundColor = BLACK
-root.stackDirection = Vertical
-root.alignHorizontal = Alignment.Start
-root.alignVertical = Alignment.Start
+root.stackDirection = Horizontal
+root.alignHorizontal = Alignment.Center
+root.alignVertical = Alignment.Center
+
+root.padding = 12.0
 
 let
   panel1 = newUIComponent()
@@ -23,6 +24,12 @@ let
 panel1.backgroundColor = RED
 panel2.backgroundColor = ORANGE
 panel3.backgroundColor = BLUe
+
+panel2.width = 200.0
+
+panel1.margin = 8.0
+panel2.margin = 8.0
+panel3.margin = 8.0
 
 root.addChild(panel1)
 root.addChild(panel2)
@@ -34,9 +41,12 @@ Input.onEvent(KEYUP):
   case e.key.keysym.sym:
     of K_ESCAPE:
       Game.stop()
+    of K_RETURN:
+      echo panel1.bounds
+      echo panel2.bounds
+      echo panel3.bounds
     else:
       discard
-
 
 Game.start()
 
