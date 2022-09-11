@@ -300,7 +300,6 @@ describe "UI functional tests":
       assertEquals(gPanel.bounds, aabb(28, 58, 128, 158))
       assertEquals(bPanel.bounds, aabb(38, 83, 138, 183))
 
-
   describe "Alignment":
 
     it "3 centered blocks (Horizontal)":
@@ -423,6 +422,83 @@ describe "UI functional tests":
       assertEquals(panel3.bounds, aabb(696, 496, 796, 596))
       assertEquals(panel2.bounds, aabb(596, 496, 696, 596))
       assertEquals(panel1.bounds, aabb(496, 496, 596, 596))
+
+    it "SpaceEvenly":
+      let
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
+      
+      root.stackDirection = Horizontal
+      root.alignHorizontal = SpaceEvenly
+      root.alignVertical = SpaceEvenly
+      root.padding = 15.0
+
+      root.addChild(panel1)
+      root.addChild(panel2)
+      root.addChild(panel3)
+
+      panel1.width = 100.0
+      panel1.height = 300.0
+      panel2.width = 200.0
+      panel2.height = 200.0
+      panel3.width = 300.0
+      panel3.height = 100.0
+
+      gui.layout(800, 600)
+
+      assertEquals(panel1.bounds, aabb(57.5, 135, 157.5, 465))
+      assertEquals(panel2.bounds, aabb(200, 185, 400, 415))
+      assertEquals(panel3.bounds, aabb(442.5, 235, 742.5, 365))
+
+    it "SpaceEvenly with margins":
+      let
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
+
+      root.stackDirection = Horizontal
+      root.alignHorizontal = SpaceEvenly
+      root.padding = 20.0
+
+      root.addChild(panel1)
+      root.addChild(panel2)
+      root.addChild(panel3)
+
+      panel1.width = 100.0
+      panel1.margin = margin(25, 0, 30, 0)
+      panel2.width = 200.0
+      panel2.margin = margin(52, 0, 0, 0)
+      panel3.width = 300.0
+
+      gui.layout(800, 600)
+
+      assertEquals(panel1.bounds, aabb(56, 20, 156, 580))
+      assertEquals(panel2.bounds, aabb(208, 20, 408, 580))
+      assertEquals(panel3.bounds, aabb(444, 20, 744, 580))
+
+    it "SpaceEvenly with dynamic size":
+      let
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+        panel3 = randomColorUIComponent()
+      
+      root.stackDirection = Horizontal
+      root.alignHorizontal = SpaceEvenly
+      root.padding = 30.0
+
+      root.addChild(panel1)
+      root.addChild(panel2)
+      root.addChild(panel3)
+
+      panel1.width = 50.0
+      panel3.width = 150.0
+
+      gui.layout(800, 600)
+
+      assertEquals(panel1.bounds, aabb(30, 30, 80, 570))
+      assertEquals(panel2.bounds, aabb(80, 30, 620, 570))
+      assertEquals(panel3.bounds, aabb(620, 30, 770, 570))
 
   describe "Margins":
 
