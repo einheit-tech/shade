@@ -502,6 +502,12 @@ describe "UI functional tests":
 
   describe "Margins":
 
+    it "root component not affected by margin":
+      # Margins on the root component don't make sense since there is nothing for the margins to "push off of" - it's all infinite space.
+      root.margin = margin(42, 69, 420, 666)
+      gui.layout(100, 100)
+      assertEquals(root.bounds, aabb(0, 0, 100, 100))
+
     it "collapses margins between children (vertically stacked)":
       root.stackDirection = Vertical
 
@@ -564,9 +570,10 @@ describe "UI functional tests":
 
       assertEquals(panel1.bounds, aabb(60, 0, 315, 400))
 
-    it "center aligns child when margins won't fit parent size (vertically stacked, fixed height)":
+    it "center aligns child when margins won't fit parent size (vertically stacked)":
       let panel1 = randomColorUIComponent()
-      panel1.margin = margin(0, 80, 0, 120)
+      panel1.margin = margin(80, 80, 120, 120)
+      panel1.width = 300.0
       panel1.height = 300.0
 
       root.stackDirection = Vertical
@@ -580,12 +587,13 @@ describe "UI functional tests":
       # Centered on (200, 200) puts the top at -50 and bottom at 450
       # 80 down from the top margin: 30
       # 120 up from the bottom margin: 330
-      assertEquals(panel1.bounds, aabb(0, 30, 400, 330))
+      assertEquals(panel1.bounds, aabb(30, 30, 330, 330))
 
-    it "center aligns child when margins won't fit parent size (horizontally stacked, fixed width)":
+    it "center aligns child when margins won't fit parent size (horizontally stacked)":
       let panel1 = randomColorUIComponent()
-      panel1.margin = margin(35, 0, 180, 0)
+      panel1.margin = margin(35, 35, 180, 180)
       panel1.width = 300.0
+      panel1.height = 300.0
 
       root.stackDirection = Horizontal
       root.alignHorizontal = Alignment.Center
@@ -598,7 +606,7 @@ describe "UI functional tests":
       # Centered on (200, 200) puts the left at -57.5 and bottom at 457.5
       # 35 right from the left margin: -22.5
       # 180 left from the right margin: 277.5
-      assertEquals(panel1.bounds, aabb(-22.5, 0, 277.5, 400))
+      assertEquals(panel1.bounds, aabb(-22.5, -22.5, 277.5, 277.5))
 
     it "center aligns multiple children when margins won't fit parent (vertically stacked, fixed height)":
       let
@@ -622,7 +630,7 @@ describe "UI functional tests":
       root.alignHorizontal = Alignment.Center
       root.alignVertical = Alignment.Center
 
-      root.margin = margin(0, 10, 0, 20)
+      root.padding = padding(0, 10, 0, 20)
 
       gui.layout(360, 360)
 
@@ -646,7 +654,7 @@ describe "UI functional tests":
       root.alignHorizontal = Alignment.Center
       root.alignVertical = Alignment.Center
 
-      root.margin = margin(10, 0, 20, 0)
+      root.padding = padding(10, 0, 20, 0)
 
       gui.layout(360, 360)
 
