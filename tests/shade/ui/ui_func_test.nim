@@ -134,11 +134,11 @@ describe "UI functional tests":
       panel.height = 30.0
       root.addChild(panel)
 
-      root.alignVertical = Start
+      root.alignVertical = Alignment.Start
       gui.layout(800, 600)
       assertEquals(panel.bounds, aabb(0, 0, 800, 30))
 
-      root.alignVertical = End
+      root.alignVertical = Alignment.End
       gui.layout(800, 600)
       assertEquals(panel.bounds, aabb(0, 570, 800, 600))
 
@@ -147,11 +147,11 @@ describe "UI functional tests":
       panel.width = 666.0
       root.addChild(panel)
 
-      root.alignHorizontal = Start
+      root.alignHorizontal = Alignment.Start
       gui.layout(800, 600)
       assertEquals(panel.bounds, aabb(0, 0, 666, 600))
 
-      root.alignHorizontal = End
+      root.alignHorizontal = Alignment.End
       gui.layout(800, 600)
       assertEquals(panel.bounds, aabb(134, 0, 800, 600))
 
@@ -279,8 +279,8 @@ describe "UI functional tests":
 
       root.stackDirection = Horizontal
 
-      root.alignVertical = Center
-      root.alignHorizontal = Center
+      root.alignVertical = Alignment.Center
+      root.alignHorizontal = Alignment.Center
 
       root.addChild(panel1)
       root.addChild(panel2)
@@ -312,8 +312,8 @@ describe "UI functional tests":
 
       root.stackDirection = Horizontal
 
-      root.alignVertical = Center
-      root.alignHorizontal = Center
+      root.alignVertical = Alignment.Center
+      root.alignHorizontal = Alignment.Center
       root.padding = 10.0
 
       root.addChild(panel1)
@@ -338,8 +338,8 @@ describe "UI functional tests":
 
       root.stackDirection = Vertical
 
-      root.alignVertical = End
-      root.alignHorizontal = End
+      root.alignVertical = Alignment.End
+      root.alignHorizontal = Alignment.End
       root.padding = 4.0
 
       root.addChild(panel1)
@@ -369,8 +369,8 @@ describe "UI functional tests":
 
       root.stackDirection = Horizontal
 
-      root.alignVertical = End
-      root.alignHorizontal = End
+      root.alignVertical = Alignment.End
+      root.alignHorizontal = Alignment.End
       root.padding = 4.0
 
       root.addChild(panel1)
@@ -435,8 +435,8 @@ describe "UI functional tests":
       panel1.margin = margin(0, 80, 0, 120)
 
       root.stackDirection = Vertical
-      root.alignHorizontal = Center
-      root.alignVertical = Center
+      root.alignHorizontal = Alignment.Center
+      root.alignVertical = Alignment.Center
       root.addChild(panel1)
 
       gui.layout(400, 400)
@@ -448,8 +448,8 @@ describe "UI functional tests":
       panel1.margin = margin(60, 0, 85, 0)
 
       root.stackDirection = Horizontal
-      root.alignHorizontal = Center
-      root.alignVertical = Center
+      root.alignHorizontal = Alignment.Center
+      root.alignVertical = Alignment.Center
       root.addChild(panel1)
 
       gui.layout(400, 400)
@@ -462,8 +462,8 @@ describe "UI functional tests":
       panel1.height = 300.0
 
       root.stackDirection = Vertical
-      root.alignHorizontal = Center
-      root.alignVertical = Center
+      root.alignHorizontal = Alignment.Center
+      root.alignVertical = Alignment.Center
       root.addChild(panel1)
 
       gui.layout(400, 400)
@@ -480,8 +480,8 @@ describe "UI functional tests":
       panel1.width = 300.0
 
       root.stackDirection = Horizontal
-      root.alignHorizontal = Center
-      root.alignVertical = Center
+      root.alignHorizontal = Alignment.Center
+      root.alignVertical = Alignment.Center
       root.addChild(panel1)
 
       gui.layout(400, 400)
@@ -511,8 +511,8 @@ describe "UI functional tests":
       root.addChild(panel3)
 
       root.stackDirection = Vertical
-      root.alignHorizontal = Center
-      root.alignVertical = Center
+      root.alignHorizontal = Alignment.Center
+      root.alignVertical = Alignment.Center
 
       root.margin = margin(0, 10, 0, 20)
 
@@ -535,8 +535,8 @@ describe "UI functional tests":
       root.addChild(panel3)
 
       root.stackDirection = Horizontal
-      root.alignHorizontal = Center
-      root.alignVertical = Center
+      root.alignHorizontal = Alignment.Center
+      root.alignVertical = Alignment.Center
 
       root.margin = margin(10, 0, 20, 0)
 
@@ -552,7 +552,7 @@ describe "UI functional tests":
       root.stackDirection = Vertical
       root.addChild(panel1)
 
-      for alignment in [Start, Center, End]:
+      for alignment in [Alignment.Start, Alignment.Center, Alignment.End]:
         root.alignHorizontal = alignment
         root.alignVertical = alignment
         assertEquals(root.layoutValidationStatus, Invalid)
@@ -569,7 +569,7 @@ describe "UI functional tests":
       root.stackDirection = Horizontal
       root.addChild(panel1)
 
-      for alignment in [Start, Center, End]:
+      for alignment in [Alignment.Start, Alignment.Center, Alignment.End]:
         root.alignHorizontal = alignment
         root.alignVertical = alignment
         assertEquals(root.layoutValidationStatus, Invalid)

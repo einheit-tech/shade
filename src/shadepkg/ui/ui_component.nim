@@ -13,7 +13,8 @@ import
 export
   CompletionRatio,
   Vector,
-  color
+  color,
+  safeset
 
 type
   SizeKind* = enum
@@ -48,6 +49,7 @@ type
   OnPressedCallback* = proc(x, y: float)
 
   UIComponent* = ref object of RootObj
+    id: int
     ## Top-down design: child components cannot cause their parent components to resize.
     parent: UIComponent
     children: Safeset[UIComponent]
@@ -123,7 +125,9 @@ proc `==`*(s1, s2: Size): bool =
         result = s1.ratioValue == s2.ratioValue
 
 proc hash*(this: UIComponent): Hash =
-  return hash(this.unsafeAddr)
+  return hash(this.id)
+
+var i = 0
 
 proc initUIComponent*(
   this: UIComponent,
@@ -131,6 +135,7 @@ proc initUIComponent*(
   borderWidth = 0.0,
   borderColor = BLACK
 ) =
+  this.id = i
   this.children = newSafeSet[UIComponent]()
   this.layoutStatus = Invalid
   this.backgroundColor = backgroundColor
@@ -138,6 +143,8 @@ proc initUIComponent*(
   this.borderColor = borderColor
   this.visible = true
   this.processInputEvents = true
+
+  inc i
 
 proc newUIComponent*(backgroundColor: Color = TRANSPARENT): UIComponent =
   result = UIComponent()

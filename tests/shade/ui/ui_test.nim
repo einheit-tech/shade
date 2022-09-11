@@ -14,5 +14,5 @@ describe "UIComponent":
       doAssert(child.parent == root)
       doAssert(root.children.len == 1)
 
-      doAssert(root.children[0] == child)
+      doAssert(root.children.contains(child))
 
