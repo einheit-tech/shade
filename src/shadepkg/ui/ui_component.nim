@@ -724,11 +724,17 @@ template set*(this: UIComponent, start, length: float) =
     this.bounds.top = start
     this.bounds.bottom = start + length
 
-template start*(this: UIComponent): float =
+template boundsStart*(this: UIComponent): float =
   when axis == Horizontal:
     this.bounds.left
   else:
     this.bounds.top
+
+template boundsEnd*(this: UIComponent): float =
+  when axis == Horizontal:
+    this.bounds.right
+  else:
+    this.bounds.bottom
 
 template len*(this: UIComponent): float =
   when axis == Horizontal:
@@ -773,8 +779,51 @@ template pixelLen*(this: UIComponent, axisLen: float, axis: static StackDirectio
   else:
     pixelSize(this.height, axisLen)
 
+template determineDynamicChildLenMainAxis*(this: UIComponent, axis: static StackDirection): float =
+  let totalAvailableLen = this.len() - this.totalPaddingAndBorders(axis)
+
+  var
+    unreservedLen = totalAvailableLen
+    numChildrenWithoutFixedLen = this.children.len
+    prevChild: UIComponent
+
+  for child in this.children:
+    let childPixelLen = child.pixelLen(totalAvailableLen, axis)
+    if childPixelLen > 0:
+      unreservedLen -= childPixelLen
+      numChildrenWithoutFixedLen -= 1
+
+    if prevChild != nil:
+      unreservedLen -= max(child.startMargin, prevChild.endMargin)
+    else:
+      unreservedLen -= child.startMargin
+
+    prevChild = child
+
+  if prevChild != nil:
+    unreservedLen -= prevChild.endMargin
+
+  if unreservedLen > 0 and numChildrenWithoutFixedLen > 0:
+    unreservedLen / float(numChildrenWithoutFixedLen)
+  else:
+    0.0
+
+template determineDynamicChildLenCrossAxis*(this: UIComponent, axis: static StackDirection): float =
+  this.len() - this.totalPaddingAndBorders(axis)
+
+template determineDynamicChildLen*(this: UIComponent, axis: static StackDirection): float =
+  ## Calculates the length of children along the axis which do not have a fixed width or height.
+  ## These children have a width or height <= 0.
+  ## NOTE: This does not account for margins in the axis opposite of this.stackDirection,
+  ## as that is UNIQUE per child!
+  if this.stackDirection == axis:
+    determineDynamicChildLenMainAxis(this, axis)
+  else:
+    determineDynamicChildLenCrossAxis(this, axis)
+
 import alignment/alignment_start
 import alignment/alignment_center
+import alignment/alignment_end
 
 proc updateChildren(this: UIComponent, axis: static StackDirection) =
   let alignment =
@@ -789,7 +838,7 @@ proc updateChildren(this: UIComponent, axis: static StackDirection) =
     of Center:
       this.alignCenter(axis)
     of End:
-      discard
+      this.alignEnd(axis)
     of SpaceEvenly:
       discard
 

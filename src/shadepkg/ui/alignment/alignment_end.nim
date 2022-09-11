@@ -1,7 +1,6 @@
 import ../ui_component
 
 template alignMainAxis(this: UIComponent, axis: static StackDirection) =
-  let totalAvailableLen = this.len() - this.totalPaddingAndBorders(axis)
   let maxChildLen = determineDynamicChildLen(this, axis)
 
   var
@@ -24,7 +23,7 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
   # Set child positions and sizes
   prevChild = nil
   var childStart: float =
-    this.boundsStart + this.startPadding + this.borderWidth + totalAvailableLen / 2 - totalChildrenLen / 2
+    this.boundsEnd - this.endPadding - this.borderWidth - totalChildrenLen
 
   for child in this.children:
     let
@@ -42,20 +41,20 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
 template alignCrossAxis(this: UIComponent, axis: static StackDirection) =
   let
-    totalAvailableLen = this.len() - this.totalPaddingAndBorders(axis)
     maxChildLen: float = determineDynamicChildLen(this, axis)
-    center = this.boundsStart + this.startPadding + this.borderWidth + totalAvailableLen / 2
+    endPosition = this.boundsEnd - this.endPadding - this.borderWidth
+    totalAvailableLen = this.len() - this.totalPaddingAndBorders(axis)
 
   for child in this.children:
     let
       childPixelLen = pixelLen(child, totalAvailableLen, axis)
       childLen = if childPixelLen > 0: childPixelLen else: maxChildLen
-      childStart = center - childLen / 2
+      childStart = endPosition - childLen
 
     child.set(childStart, childLen)
 
-proc alignCenter*(this: UIComponent, axis: static StackDirection) =
-  ## Aligns children along the given axis with Alignment.Center
+proc alignEnd*(this: UIComponent, axis: static StackDirection) =
+  ## Aligns children along the given axis with Alignment.End
   if axis == this.stackDirection:
     this.alignMainAxis(axis)
   else:

@@ -10,9 +10,9 @@ Game.scene.addLayer layer
 
 let root = newUIComponent()
 root.backgroundColor = BLACK
-root.stackDirection = Horizontal
-root.alignHorizontal = Alignment.Center
-root.alignVertical = Alignment.Center
+root.stackDirection = Vertical
+root.alignHorizontal = Alignment.End
+root.alignVertical = Alignment.End
 
 root.padding = 12.0
 
@@ -26,6 +26,10 @@ panel2.backgroundColor = ORANGE
 panel3.backgroundColor = BLUe
 
 panel2.width = 200.0
+
+panel1.height = 100.0
+panel2.height = 100.0
+panel3.height = 100.0
 
 panel1.margin = 8.0
 panel2.margin = 8.0
