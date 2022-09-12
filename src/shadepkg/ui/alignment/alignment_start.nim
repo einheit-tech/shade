@@ -7,7 +7,7 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
     else:
       this.bounds.top + this.borderWidth + this.padding.top
 
-  let maxChildLen = determineDynamicChildLen(this, axis)
+  let maxChildLen = determineDynamicChildLenMainAxis(this, axis)
 
   var prevChild: UIComponent
 
@@ -33,7 +33,7 @@ template alignCrossAxis(this: UIComponent, axis: static StackDirection) =
     else:
       this.bounds.top + this.borderWidth + this.padding.top
 
-  let maxChildLen: float = determineDynamicChildLen(this, axis)
+  let maxChildLen: float = determineDynamicChildLenCrossAxis(this, axis)
 
   for child in this.children:
     let

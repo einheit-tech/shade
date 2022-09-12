@@ -811,16 +811,6 @@ template determineDynamicChildLenMainAxis*(this: UIComponent, axis: static Stack
 template determineDynamicChildLenCrossAxis*(this: UIComponent, axis: static StackDirection): float =
   this.len() - this.totalPaddingAndBorders(axis)
 
-template determineDynamicChildLen*(this: UIComponent, axis: static StackDirection): float =
-  ## Calculates the length of children along the axis which do not have a fixed width or height.
-  ## These children have a width or height <= 0.
-  ## NOTE: This does not account for margins in the axis opposite of this.stackDirection,
-  ## as that is UNIQUE per child!
-  if this.stackDirection == axis:
-    determineDynamicChildLenMainAxis(this, axis)
-  else:
-    determineDynamicChildLenCrossAxis(this, axis)
-
 import alignment/alignment_start
 import alignment/alignment_center
 import alignment/alignment_end

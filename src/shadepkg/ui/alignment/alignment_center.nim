@@ -2,7 +2,7 @@ import ../ui_component
 
 template alignMainAxis(this: UIComponent, axis: static StackDirection) =
   let totalAvailableLen = this.len() - this.totalPaddingAndBorders(axis)
-  let maxChildLen = determineDynamicChildLen(this, axis)
+  let maxChildLen = determineDynamicChildLenMainAxis(this, axis)
 
   var
     totalChildrenLen: float
@@ -47,35 +47,36 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
 template alignCrossAxis(this: UIComponent, axis: static StackDirection) =
   let
-    totalAvailableLen = this.len() - this.totalPaddingAndBorders(axis)
-    maxChildLen: float = determineDynamicChildLen(this, axis)
-    center = this.boundsStart + this.startPadding + this.borderWidth + totalAvailableLen / 2
+    totalAvailableLen = determineDynamicChildLenCrossAxis(this, axis)
+    parentStart = this.boundsStart + this.startPadding + this.borderWidth
+    center = parentStart + totalAvailableLen / 2
 
   for child in this.children:
     let
       childPixelLen = pixelLen(child, totalAvailableLen, axis)
-      childLen = if childPixelLen > 0: childPixelLen else: (maxChildLen - child.startMargin - child.endMargin)
-    
-    var childStart: float = center - childLen / 2
+      childLen = if childPixelLen > 0: childPixelLen else: (totalAvailableLen - child.startMargin - child.endMargin)
 
-    if childLen >= totalAvailableLen:
-      # Center the child with margins added to its lengnth
-      childStart = center - (childLen + child.startMargin + child.endMargin) / 2
-    else:
-      # Check if child needs to be pushed away from parent start (top or left)
-      let parentStart = this.boundsStart + this.borderWidth + this.startPadding 
-      if parentStart > childStart:
-        childStart = parentStart + child.startMargin
+    let preferredChildStart: float = center - childLen / 2
+    let actualChildStart: float = 
+      if childLen + child.startMargin + child.endMargin > totalAvailableLen:
+        # Center the child with margins added to its length
+        center - (childLen + child.startMargin + child.endMargin) / 2 + child.startMargin
       else:
-        # Check if child needs to be pushed away from parent end (bottom or right)
-        let
-          parentEnd = this.boundsEnd - this.borderWidth - this.endPadding 
-          childEnd = childStart + childLen + child.endMargin
+        # Check if child needs to be pushed away from parent start (top or left)
+        if preferredChildStart - child.startMargin < parentStart:
+          parentStart + child.startMargin
+        else:
+          # Check if child needs to be pushed away from parent end (bottom or right)
+          let
+            parentEnd = this.boundsEnd - this.borderWidth - this.endPadding
+            childEnd = preferredChildStart + childLen + child.endMargin
 
-        if parentEnd < childEnd:
-          childStart = parentEnd - childLen
+          if childEnd > parentEnd:
+            parentEnd - childLen - child.endMargin
+          else:
+            preferredChildStart
 
-    child.set(childStart, childLen)
+    child.set(actualChildStart, childLen)
 
 proc alignCenter*(this: UIComponent, axis: static StackDirection) =
   ## Aligns children along the given axis with Alignment.Center

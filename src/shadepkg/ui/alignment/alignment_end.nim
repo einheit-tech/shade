@@ -1,7 +1,7 @@
 import ../ui_component
 
 template alignMainAxis(this: UIComponent, axis: static StackDirection) =
-  let maxChildLen = determineDynamicChildLen(this, axis)
+  let maxChildLen = determineDynamicChildLenMainAxis(this, axis)
 
   var
     totalChildrenLen: float
@@ -46,7 +46,7 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
 template alignCrossAxis(this: UIComponent, axis: static StackDirection) =
   let
-    maxChildLen: float = determineDynamicChildLen(this, axis)
+    maxChildLen: float = determineDynamicChildLenCrossAxis(this, axis)
     endPosition = this.boundsEnd - this.endPadding - this.borderWidth
     totalAvailableLen = this.len() - this.totalPaddingAndBorders(axis)
 
