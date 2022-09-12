@@ -440,16 +440,18 @@ describe "UI functional tests":
 
       panel1.width = 100.0
       panel1.height = 300.0
+
       panel2.width = 200.0
       panel2.height = 200.0
+
       panel3.width = 300.0
       panel3.height = 100.0
 
       gui.layout(800, 600)
 
-      assertEquals(panel1.bounds, aabb(57.5, 135, 157.5, 465))
-      assertEquals(panel2.bounds, aabb(200, 185, 400, 415))
-      assertEquals(panel3.bounds, aabb(442.5, 235, 742.5, 365))
+      assertEquals(panel1.bounds, aabb(57.5, 150, 157.5, 450))
+      assertEquals(panel2.bounds, aabb(200, 200, 400, 400))
+      assertEquals(panel3.bounds, aabb(442.5, 250, 742.5, 350))
 
     it "SpaceEvenly with margins":
       let

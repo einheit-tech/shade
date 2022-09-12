@@ -45,7 +45,7 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
     prevChild = child
 
-template alignCrossAxis(this: UIComponent, axis: static StackDirection) =
+template alignCrossAxis*(this: UIComponent, axis: static StackDirection) =
   let
     totalAvailableLen = determineDynamicChildLenCrossAxis(this, axis)
     parentStart = this.boundsStart + this.startPadding + this.borderWidth

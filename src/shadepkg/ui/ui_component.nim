@@ -811,9 +811,10 @@ template determineDynamicChildLenMainAxis*(this: UIComponent, axis: static Stack
 template determineDynamicChildLenCrossAxis*(this: UIComponent, axis: static StackDirection): float =
   this.len() - this.totalPaddingAndBorders(axis)
 
-import alignment/alignment_start
-import alignment/alignment_center
-import alignment/alignment_end
+from alignment/alignment_start import alignStart
+from alignment/alignment_center import alignCenter
+from alignment/alignment_end import alignEnd
+from alignment/alignment_space_evenly import alignSpaceEvenly
 
 proc updateChildren(this: UIComponent, axis: static StackDirection) =
   let alignment =
@@ -830,7 +831,7 @@ proc updateChildren(this: UIComponent, axis: static StackDirection) =
     of End:
       this.alignEnd(axis)
     of SpaceEvenly:
-      discard
+      this.alignSpaceEvenly(axis)
 
   for child in this.children:
     child.setLayoutValidationStatus(Valid)
