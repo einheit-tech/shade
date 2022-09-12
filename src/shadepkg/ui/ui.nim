@@ -33,19 +33,15 @@ method layout*(this: UI, width, height: float) {.base.} =
   if this.root == nil:
     return
 
-  let 
-    w = width - (this.root.margin.left + this.root.margin.right)
-    h = height - (this.root.margin.top + this.root.margin.bottom)
-
-  `width=`(this.root, w)
-  `height=`(this.root, h)
+  `width=`(this.root, width)
+  `height=`(this.root, height)
 
   case this.root.layoutValidationStatus:
     of Valid:
       discard
     # TODO: Is there a better way to handle InvalidChild?
     of Invalid, InvalidChild:
-      this.root.updateBounds(this.root.margin.left, this.root.margin.top, w, h)
+      this.root.updateBounds(0, 0, width, height)
 
 method render*(this: UI, ctx: Target) {.base.} =
   if this.root != nil:

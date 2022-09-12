@@ -503,7 +503,8 @@ describe "UI functional tests":
   describe "Margins":
 
     it "root component not affected by margin":
-      # Margins on the root component don't make sense since there is nothing for the margins to "push off of" - it's all infinite space.
+      # Margins on the root component don't make sense,
+      # since there is nothing for the margins to "push off of" - it's all infinite space.
       root.margin = margin(42, 69, 420, 666)
       gui.layout(100, 100)
       assertEquals(root.bounds, aabb(0, 0, 100, 100))
