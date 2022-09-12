@@ -608,35 +608,56 @@ describe "UI functional tests":
       # 180 left from the right margin: 277.5
       assertEquals(panel1.bounds, aabb(-22.5, -22.5, 277.5, 277.5))
 
-    it "center aligns multiple children when margins won't fit parent (vertically stacked, fixed height)":
+    it "center aligns multiple children when they won't fit parent (vertically stacked)":
       let
+        # No margins
         panel1 = randomColorUIComponent()
+        # Both margins conflict
         panel2 = randomColorUIComponent()
+        # Left margin conflicts
         panel3 = randomColorUIComponent()
+        # Right margin conflicts
+        panel4 = randomColorUIComponent()
 
       panel1.backgroundColor = GREEN
       panel2.backgroundColor = BLUE
       panel3.backgroundColor = RED
+      panel4.backgroundColor = PURPLE
 
-      panel1.height = 120.0
-      panel2.height = 120.0
-      panel3.height = 120.0
+      panel1.width = 360.0
+      panel1.height = 100.0
+
+      panel2.width = 200.0
+      panel2.height = 100.0
+      panel2.margin = margin(99, 0, 66, 0)
+
+      panel3.width = 250.0
+      panel3.height = 100.0
+      panel3.margin = margin(55, 0, 0, 0)
+
+      panel4.width = 250.0
+      panel4.height = 100.0
+      panel4.margin = margin(0, 0, 65, 0)
 
       root.addChild(panel1)
       root.addChild(panel2)
       root.addChild(panel3)
+      root.addChild(panel4)
 
       root.stackDirection = Vertical
       root.alignHorizontal = Alignment.Center
       root.alignVertical = Alignment.Center
 
-      root.padding = padding(0, 10, 0, 20)
+      root.padding = padding(10, 10, 20, 20)
 
       gui.layout(360, 360)
 
-      assertEquals(panel2.bounds.center.y, 10 + (360 - 10 - 20) / 2)
+      assertEquals(panel1.bounds, aabb(-5, -25, 355, 75))
+      assertEquals(panel2.bounds, aabb(91.5, 75, 291.5, 175))
+      assertEquals(panel3.bounds, aabb(65, 175, 315, 275))
+      assertEquals(panel4.bounds, aabb(25, 275, 275, 375))
 
-    it "center aligns multiple children when margins won't fit parent (horizontally stacked, fixed width)":
+    it "center aligns multiple children when they won't fit parent (horizontally stacked)":
       let
         panel1 = randomColorUIComponent()
         panel2 = randomColorUIComponent()
