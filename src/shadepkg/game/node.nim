@@ -66,8 +66,8 @@ method setLocation*(this: Node, x, y: float) {.base.} =
 template setLocation*(this: Node, v: Vector) =
   this.setLocation(v.x, v.y)
 
-template move*(this: Node, x, y: float) =
-  this.setLocation(this.x + x, this.y + y)
+template move*(this: Node, dx, dy: float) =
+  this.setLocation(this.x + dx, this.y + dy)
 
 template move*(this: Node, v: Vector) =
   this.setLocation(this.x + v.x, this.y + v.y)

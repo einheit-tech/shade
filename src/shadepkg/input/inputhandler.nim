@@ -631,24 +631,24 @@ template wasKeyJustReleased*(this: InputHandler, keycode: Keycode): bool =
 # Left mouse button
 
 template isLeftMouseButtonPressed*(this: InputHandler): bool =
-  this.isMouseButtonPressed(MouseButton.LEFT)
+  this.isMouseButtonPressed(ord MouseButton.LEFT)
 
 template wasLeftMouseButtonJustPressed*(this: InputHandler): bool =
-  this.wasMouseButtonJustPressed(MouseButton.LEFT)
+  this.wasMouseButtonJustPressed(ord MouseButton.LEFT)
 
 template wasLeftMouseButtonJustReleased*(this: InputHandler): bool =
-  this.wasMouseButtonJustReleased(MouseButton.LEFT)
+  this.wasMouseButtonJustReleased(ord MouseButton.LEFT)
 
 # Right mouse button
 
 template isRightMouseButtonPressed*(this: InputHandler): bool =
-  this.isMouseButtonPressed(MouseButton.RIGHT)
+  this.isMouseButtonPressed(ord MouseButton.RIGHT)
 
 template wasRightMouseButtonJustPressed*(this: InputHandler): bool =
-  this.wasMouseButtonJustPressed(MouseButton.RIGHT)
+  this.wasMouseButtonJustPressed(ord MouseButton.RIGHT)
 
 template wasRightMouseButtonJustReleased*(this: InputHandler): bool =
-  this.wasMouseButtonJustReleased(MouseButton.RIGHT)
+  this.wasMouseButtonJustReleased(ord MouseButton.RIGHT)
 
 # Wheel
 
