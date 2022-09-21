@@ -113,8 +113,8 @@ proc `alignVertical=`*(this: UIComponent, alignment: Alignment)
 proc alignHorizontal*(this: UIComponent): Alignment
 proc `alignHorizontal=`*(this: UIComponent, alignment: Alignment)
 proc `stackDirection=`*(this: UIComponent, direction: StackDirection)
-method preRender*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AABB_INF) {.base.}
-method postRender*(this: UIComponent, ctx: Target, renderBounds: AABB) {.base.}
+method preRender*(this: UIComponent, ctx: Target) {.base.}
+method postRender*(this: UIComponent, ctx: Target) {.base.}
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
 proc updateChildren(this: UIComponent, axis: static StackDirection)
 
@@ -318,7 +318,30 @@ proc updateBounds(this: UIComponent, x, y, width, height: float) =
   if this.children.len > 0:
     this.updateChildrenBounds()
 
-method preRender*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AABB_INF) {.base.} =
+method preRender*(this: UIComponent, ctx: Target) {.base.} =
+  if this.backgroundColor.a != 0:
+    ctx.rectangleFilled(
+      this.bounds.left,
+      this.bounds.top,
+      this.bounds.right,
+      this.bounds.bottom,
+      this.backgroundColor
+    )
+
+  if this.borderWidth > 0.0:
+    discard setLineThickness(this.borderWidth)
+    ctx.rectangle(
+      this.bounds.left,
+      this.bounds.top,
+      this.bounds.right,
+      this.bounds.bottom,
+      this.borderColor
+    )
+
+method postRender*(this: UIComponent, ctx: Target) {.base.} =
+  discard
+
+proc render*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AABB_INF) =
   if not this.visible:
     return
 
@@ -348,34 +371,14 @@ method preRender*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AAB
       uint16(ceil(clippedRenderBounds.top + clippedRenderBounds.height) - flooredTop)
     )
 
-  if this.backgroundColor.a != 0:
-    ctx.rectangleFilled(
-      clippedRenderBounds.left,
-      clippedRenderBounds.top,
-      clippedRenderBounds.right,
-      clippedRenderBounds.bottom,
-      this.backgroundColor
-    )
-
-  if this.borderWidth > 0.0:
-    discard setLineThickness(this.borderWidth)
-    ctx.rectangle(
-      this.bounds.left,
-      this.bounds.top,
-      this.bounds.right,
-      this.bounds.bottom,
-      this.borderColor
-    )
-
-  this.postRender(ctx, clippedRenderBounds)
+  this.preRender(ctx)
 
   for child in this.children:
-    child.preRender(ctx, clippedRenderBounds)
+    child.render(ctx, clippedRenderBounds)
+
+  this.postRender(ctx)
 
   ctx.unsetClip()
-
-method postRender*(this: UIComponent, ctx: Target, renderBounds: AABB) {.base.} =
-  discard
 
 # Touch/click event handling
 

@@ -45,7 +45,7 @@ method layout*(this: UI, width, height: float) {.base.} =
 
 method render*(this: UI, ctx: Target) {.base.} =
   if this.root != nil:
-    this.root.preRender(ctx)
+    this.root.render(ctx)
 
 proc findLowestComponentContainingPoint*(this: UI, x, y: float): UIComponent =
   if this.root == nil:

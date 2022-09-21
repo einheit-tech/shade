@@ -108,11 +108,8 @@ template getImageFitFillScalar(
     this.scale.y * contentHeight / this.getImageHeight()
   )
 
-method postRender*(this: UIImage, ctx: Target, renderBounds: AABB) =
-  if not this.visible:
-    return
-
-  procCall postRender(UIComponent this, ctx, renderBounds)
+method postRender*(this: UIImage, ctx: Target) =
+  procCall postRender(UIComponent this, ctx)
 
   let
     renderContentArea = aabb(
