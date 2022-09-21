@@ -9,7 +9,8 @@ import
   gamestate,
   ../input/inputhandler,
   ../audio/audioplayer,
-  ../render/color
+  ../render/color,
+  ../ui/[ui, ui_component]
 
 const ONE_BILLION = 1000000000
 
@@ -17,7 +18,7 @@ type
   Engine* = ref object of RootObj
     screen*: Target
     scene: Scene
-    hud*: Layer
+    ui: UI
     # The color to fill the screen with to clear it every frame.
     clearColor*: Color
     shouldExit: bool
@@ -103,9 +104,20 @@ proc initEngineSingleton*(
       Game.shouldExit = true
   )
 
-template screen*(this: Engine): Target = this.screen
-template scene*(this: Engine): Scene = this.scene
-template `scene=`*(this: Engine, scene: Scene) = this.scene = scene
+  # Configure inputs for UI
+  Input.onEvent(MOUSEBUTTONDOWN):
+    Game.ui.handlePress(float e.button.x, float e.button.y)
+  Input.onEvent(FINGERDOWN):
+    Game.ui.handlePress(float e.tfinger.x, float e.tfinger.y)
+
+template screen*(this: Engine): Target =
+  this.screen
+
+template scene*(this: Engine): Scene =
+  this.scene
+
+template `scene=`*(this: Engine, scene: Scene) =
+  this.scene = scene
 
 proc detectWindowScaling(this: Engine): Vector =
   result = VECTOR_ONE
@@ -180,6 +192,12 @@ proc teardown(this: Engine) =
   sdl_gpu.quit()
   logInfo(LogCategoryApplication, "SDL shutdown completed")
 
+proc getUIRoot*(this: Engine): UIComponent =
+  return this.ui.getUIRoot()
+
+proc setUIRoot*(this: Engine, root: UIComponent) =
+  this.ui.setUIRoot(root)
+
 proc update*(this: Engine, deltaTime: float) =
   gamestate.runTime += deltaTime
   if this.scene != nil:
@@ -188,14 +206,16 @@ proc update*(this: Engine, deltaTime: float) =
 proc render*(this: Engine, screen: Target) =
   if this.scene == nil:
     return
+
   clearColor(this.screen, this.clearColor)
 
   # Save the normal matrix
   pushMatrix()
 
   this.scene.render(screen)
-  if this.hud != nil:
-    this.hud.render(screen)
+
+  this.ui.layout(gamestate.resolution.x, gamestate.resolution.y)
+  this.ui.render(screen)
 
   # Restore normal matrix
   popMatrix()

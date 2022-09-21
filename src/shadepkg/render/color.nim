@@ -16,6 +16,7 @@ func lerp*(startValue, endValue: Color, completionRatio: CompletionRatio): Color
   )
 
 const
+  TRANSPARENT* = Color()
   WHITE* = newColor(255, 255, 255)
   BLACK* = newColor(0, 0, 0)
   RED* = newColor(255, 0, 0)

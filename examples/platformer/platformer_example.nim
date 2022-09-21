@@ -28,9 +28,8 @@ player.x = 1920 / 2
 player.y = 900
 
 # Track the player with the camera.
-let camera = newCamera(player, 0.25, easeInAndOutQuadratic)
-camera.z = 0.55
-Game.scene.camera = camera
+Game.scene.camera = newCamera(player, 0.25, easeInAndOutQuadratic)
+Game.scene.camera.z = 0.55
 
 let
   (_, groundImage) = Images.loadImage("./examples/assets/images/ground.png", FILTER_NEAREST)
@@ -144,7 +143,7 @@ proc physicsProcess(this: Node, deltaTime: float) =
 
   player.velocity = vector(x, y)
 
-  camera.z += Input.wheelScrolledLastFrame.float * 0.03
+  Game.scene.camera.z += Input.wheelScrolledLastFrame.float * 0.03
 
 player.onUpdate = physicsProcess
 

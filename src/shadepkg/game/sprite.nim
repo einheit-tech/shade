@@ -10,7 +10,7 @@ export node, spritesheet, mathutils
 
 type
   Sprite* = ref object
-    spritesheet: Spritesheet
+    spritesheet*: Spritesheet
     frameCoords*: IVector
     offset*: Vector
     scale*: Vector

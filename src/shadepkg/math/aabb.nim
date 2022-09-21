@@ -10,19 +10,33 @@ type AABB* = object
 template aabb*(left, top, right, bottom: float): AABB =
   AABB(topLeft: vector(left, top), bottomRight: vector(right, bottom))
 
-const AABB_ZERO* = aabb(0, 0, 0, 0)
+const
+  AABB_ZERO* = aabb(0, 0, 0, 0)
+  AABB_INF* = aabb(NegInf, NegInf, Inf, Inf)
 
 template left*(this: AABB): float =
   this.topLeft.x
 
+template `left=`*(this: AABB, left: float) =
+  this.topLeft.x = left
+
 template top*(this: AABB): float =
   this.topLeft.y
+
+template `top=`*(this: AABB, top: float) =
+  this.topLeft.y = top
 
 template right*(this: AABB): float =
   this.bottomRight.x
 
+template `right=`*(this: AABB, right: float) =
+  this.bottomRight.x = right
+
 template bottom*(this: AABB): float =
   this.bottomRight.y
+
+template `bottom=`*(this: AABB, bottom: float) =
+  this.bottomRight.y = bottom
 
 template width*(this: AABB): float =
   this.right - this.left
@@ -57,9 +71,12 @@ proc getScaledInstance*(this: AABB, scale: float): AABB =
     raise newException(Exception, "Scaled size cannot be 0!")
   return aabb(this.left * scale, this.top * scale, this.right * scale, this.bottom * scale)
 
+template contains*(this: AABB, x, y: float): bool =
+  x >= this.left and x <= this.right and
+  y >= this.top and y <= this.bottom
+
 template contains*(this: AABB, v: Vector): bool =
-  v.x >= this.left and v.x <= this.right and
-  v.y >= this.top and v.y <= this.bottom
+  this.contains(v.x, v.y)
 
 template contains*(this, aabb: AABB): bool =
   this.contains(aabb.topLeft) and this.contains(aabb.bottomRight)
@@ -103,9 +120,7 @@ iterator items*(this: AABB): Vector =
     yield v
 
 proc `$`*(this: AABB): string =
-  return
-    "Top Left: (" & $this.left & ", " & $this.top & ")" & "\n" &
-    "Bottom Right: (" & $this.right & ", " & $this.bottom & ")"
+  return "(" & $this.left & ", " & $this.top & ", " & $this.right & ", " & $this.bottom & ")"
 
 proc stroke*(
   this: AABB,

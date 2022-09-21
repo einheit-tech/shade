@@ -11,8 +11,7 @@ import
 export
   sets,
   vector2,
-  rectangle,
-  node
+  rectangle
 
 type
   CellID = tuple[x: int, y: int]
