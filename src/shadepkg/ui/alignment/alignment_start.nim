@@ -21,12 +21,13 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
       childLen = if childPixelLen > 0: childPixelLen else: maxChildLen
 
     childStart += child.startMargin
-    child.set(childStart, childLen)
-
-    childStart += childLen
 
     if prevChild != nil and prevChild.endMargin > child.startMargin:
       childStart += prevChild.endMargin - child.startMargin
+
+    child.set(childStart, childLen)
+
+    childStart += childLen
 
     prevChild = child
 

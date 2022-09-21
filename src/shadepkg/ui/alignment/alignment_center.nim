@@ -6,6 +6,8 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
   var
     totalChildrenLen: float
+    firstMargin: float = -1.0
+    lastMargin: float
     prevChild: UIComponent
 
   # Calculate the total length all children use up
@@ -13,6 +15,9 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
     if not child.visible and not child.enabled:
       child.set(0, 0)
       continue
+
+    if firstMargin < 0.0:
+      firstMargin = child.startMargin
 
     let
       childPixelLen = pixelLen(this, child, axis)
@@ -23,6 +28,7 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
     if prevChild != nil and prevChild.endMargin > child.startMargin:
       totalChildrenLen += prevChild.endMargin - child.startMargin
 
+    lastMargin = child.endMargin
     prevChild = child
 
   if prevChild != nil:
@@ -30,8 +36,24 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
   # Set child positions and sizes
   prevChild = nil
-  var childStart: float =
-    this.boundsStart + this.startPadding + this.borderWidth + totalAvailableLen / 2 - totalChildrenLen / 2
+
+  let
+    totalChildrenLenWithoutOuterMargins = totalChildrenLen - firstMargin - lastMargin
+    thisStart = this.boundsStart + this.startPadding + this.borderWidth
+
+  var childStart = thisStart
+
+  if totalChildrenLen >= totalAvailableLen:
+    childStart += totalAvailableLen / 2 - totalChildrenLen / 2
+  else:
+    childStart += totalAvailableLen / 2 - totalChildrenLenWithoutOuterMargins / 2 - firstMargin
+
+    let thisEnd = this.boundsEnd - this.endPadding - this.borderWidth
+
+    if childStart < thisStart:
+      childStart = thisStart
+    elif (childStart + totalChildrenLen) > thisEnd:
+      childStart = thisEnd - totalChildrenLen
 
   for child in this.children:
     if not child.visible and not child.enabled:
@@ -43,13 +65,12 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
     childStart += child.startMargin
 
-    child.set(childStart, childLen)
-
-    childStart += childLen
-
     if prevChild != nil and prevChild.endMargin > child.startMargin:
       childStart += prevChild.endMargin - child.startMargin
 
+    child.set(childStart, childLen)
+
+    childStart += childLen
     prevChild = child
 
 template alignCrossAxis*(this: UIComponent, axis: static StackDirection) =

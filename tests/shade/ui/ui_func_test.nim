@@ -573,6 +573,28 @@ describe "UI functional tests":
 
       assertEquals(panel1.bounds, aabb(60, 0, 315, 400))
 
+    it "center aligns two children of fixed size in a parent (horizontally stacked)":
+      let
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+
+      root.stackDirection = Horizontal
+      root.alignVertical = Alignment.Center
+      root.alignHorizontal = Alignment.Center
+
+      root.addChild(panel1)
+      root.addChild(panel2)
+
+      panel1.width = 50.0
+      panel1.margin = margin(0, 0, 50, 0)
+
+      panel2.width = 50.0
+
+      gui.layout(200, 200)
+
+      assertEquals(panel1.bounds, aabb(25, 0, 75, 200))
+      assertEquals(panel2.bounds, aabb(125, 0, 175, 200))
+
     it "center aligns child when margins won't fit parent size (vertically stacked)":
       let panel1 = randomColorUIComponent()
       panel1.margin = margin(80, 80, 120, 120)
@@ -591,6 +613,21 @@ describe "UI functional tests":
       # 80 down from the top margin: 30
       # 120 up from the bottom margin: 330
       assertEquals(panel1.bounds, aabb(30, 30, 330, 330))
+
+    it "center aligns child when start margin won't allow for perfect centering (horizontally stacked)":
+      let panel1 = randomColorUIComponent()
+      panel1.margin = margin(80, 80, 0, 0)
+      panel1.width = 300.0
+      panel1.height = 300.0
+
+      root.stackDirection = Horizontal
+      root.alignHorizontal = Alignment.Center
+      root.alignVertical = Alignment.Center
+      root.addChild(panel1)
+
+      gui.layout(400, 400)
+
+      assertEquals(panel1.bounds, aabb(80, 80, 380, 380))
 
     it "center aligns child when margins won't fit parent size (horizontally stacked)":
       let panel1 = randomColorUIComponent()
