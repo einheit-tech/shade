@@ -4,9 +4,7 @@ from ../math/mathutils import CompletionRatio, ceil, floor
 import
   ui_component,
   ../math/vector2,
-  ../math/aabb,
-  ../render/color,
-  ../game/gamestate
+  ../render/color
 
 export
   CompletionRatio,

@@ -2,7 +2,7 @@ import sdl2_nim/sdl_gpu
 
 from ../math/mathutils import CompletionRatio, ceil, floor
 
-import std/[sugar, hashes]
+import std/[hashes]
 import safeset
 
 import
