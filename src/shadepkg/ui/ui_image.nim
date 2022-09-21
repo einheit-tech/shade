@@ -108,8 +108,8 @@ template getImageFitFillScalar(
     this.scale.y * contentHeight / this.getImageHeight()
   )
 
-method postRender*(this: UIImage, ctx: Target) =
-  procCall postRender(UIComponent this, ctx)
+method preRender*(this: UIImage, ctx: Target) =
+  procCall preRender(UIComponent this, ctx)
 
   let
     renderContentArea = aabb(

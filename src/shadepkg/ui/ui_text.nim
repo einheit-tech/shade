@@ -47,11 +47,8 @@ proc `color=`*(this: UITextComponent, color: Color) =
     freeImage(this.imageOfText)
     this.imageOfText = nil
 
-method postRender*(this: UITextComponent, ctx: Target) =
-  if not this.visible:
-    return
-
-  procCall postRender(UIComponent this, ctx)
+method preRender*(this: UITextComponent, ctx: Target) =
+  procCall preRender(UIComponent this, ctx)
 
   if this.imageOfText == nil:
     let surface = renderText_Blended_Wrapped(
