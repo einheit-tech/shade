@@ -1,5 +1,5 @@
 import ../../../src/shade, nimtest
-import std/random
+import std/[random]
 
 template uitest(title: string, body: untyped) =
   try:
@@ -751,6 +751,37 @@ describe "UI functional tests":
       gui.layout(800, 600)
 
       assertEquals(panel1.bounds, aabb(2, 3, 790, 587))
+
+  describe "enabled":
+
+    it "is not part of the layout when not enabled and not visible":
+      let
+        panel1 = randomColorUIComponent()
+        panel2 = randomColorUIComponent()
+
+      root.addChild(panel1)
+      root.addChild(panel2)
+
+      # Test every alignment
+      for horizontalAlignment in Alignment.items:
+        root.alignHorizontal = horizontalAlignment
+        for verticalAlignment in Alignment.items:
+          root.alignVertical = verticalAlignment
+
+          panel2.visible = true
+          panel2.enabled = true
+
+          gui.layout(800, 600)
+
+          assertEquals(panel1.bounds, aabb(0, 0, 800, 300))
+          assertEquals(panel2.bounds, aabb(0, 300, 800, 600))
+
+          panel2.visible = false
+          panel2.enabled = false
+          gui.layout(800, 600)
+
+          assertEquals(panel1.bounds, aabb(0, 0, 800, 600))
+          assertEquals(panel2.bounds, aabb(0, 0, 0, 0))
 
 when defined(uitest):
   Game.start()

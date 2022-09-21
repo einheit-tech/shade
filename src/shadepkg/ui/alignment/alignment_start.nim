@@ -12,6 +12,10 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
   var prevChild: UIComponent
 
   for child in this.children:
+    if not child.visible and not child.enabled:
+      child.set(0, 0)
+      continue
+
     let
       childPixelLen = pixelLen(this, child, axis)
       childLen = if childPixelLen > 0: childPixelLen else: maxChildLen
@@ -36,6 +40,10 @@ template alignCrossAxis(this: UIComponent, axis: static StackDirection) =
   let maxChildLen: float = determineDynamicChildLenCrossAxis(this, axis)
 
   for child in this.children:
+    if not child.visible and not child.enabled:
+      child.set(0, 0)
+      continue
+
     let
       childPixelLen = pixelLen(this, child, axis)
       childLen = if childPixelLen > 0: childPixelLen else: (maxChildLen - child.startMargin - child.endMargin)

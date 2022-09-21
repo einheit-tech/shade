@@ -17,6 +17,10 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
   # Calculate the total length all children use up
   for child in this.children:
+    if not child.visible and not child.enabled:
+      child.set(0, 0)
+      continue
+
     let
       childPixelLen = pixelLen(this, child, axis)
       childLen = if childPixelLen > 0: childPixelLen else: maxChildLen
@@ -60,6 +64,9 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
   var childStart: float = this.boundsStart + this.startPadding + this.borderWidth
   for child in this.children:
+    if not child.visible and not child.enabled:
+      continue
+
     let
       childPixelLen = pixelLen(this, child, axis)
       childLen = if childPixelLen > 0: childPixelLen else: maxChildLen
