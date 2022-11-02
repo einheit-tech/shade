@@ -9,7 +9,7 @@ import
   gamestate,
   ../input/inputhandler,
   ../audio/audioplayer,
-  ../render/color,
+  ../render/[color, shader],
   ../ui/[ui, ui_component]
 
 const ONE_BILLION = 1000000000
@@ -26,9 +26,11 @@ type
     # Use fixed rate delta times
     useFixedDeltaTime*: bool
 
+    postProcessingShader*: Shader
+
 proc detectWindowScaling(this: Engine): Vector
 proc update*(this: Engine, deltaTime: float)
-proc render*(this: Engine, screen: Target)
+proc render*(this: Engine, ctx: Target)
 proc stop*(this: Engine)
 proc teardown(this: Engine)
 
@@ -152,10 +154,14 @@ proc loop(this: Engine) =
     deltaTime: float = 0
     refreshRateCalculator: RefreshRateCalculator
 
+  let
+    image = createImage(this.screen.w, this.screen.h, FORMAT_RGBA)
+    renderTarget = loadTarget(image)
+
   while not this.shouldExit:
     this.handleEvents()
     this.update(deltaTime)
-    this.render(this.screen)
+    this.render(renderTarget)
     Input.resetFrameSpecificState()
     flip(this.screen)
 
@@ -178,6 +184,9 @@ proc loop(this: Engine) =
         else:
           deltaTime = float(elapsedNanos) / float(ONE_BILLION)
 
+  # Clean up
+  freeTarget(renderTarget)
+  freeImage(image)
   this.teardown()
 
 proc start*(this: Engine) =
@@ -203,19 +212,27 @@ proc update*(this: Engine, deltaTime: float) =
   if this.scene != nil:
     this.scene.update(deltaTime)
 
-proc render*(this: Engine, screen: Target) =
+proc render*(this: Engine, ctx: Target) =
   if this.scene == nil:
     return
 
   clearColor(this.screen, this.clearColor)
+  clearColor(ctx, this.clearColor)
 
   # Save the normal matrix
   pushMatrix()
 
-  this.scene.render(screen)
+  this.scene.render(ctx)
 
   this.ui.layout(gamestate.resolution.x, gamestate.resolution.y)
-  this.ui.render(screen)
+  this.ui.render(ctx)
+
+  if this.postProcessingShader != nil:
+    this.postProcessingShader.render(gamestate.runTime, gamestate.resolution)
 
   # Restore normal matrix
   popMatrix()
+
+  # Render the image to the screen
+  ctx.image.blit(nil, this.screen, gamestate.resolution.x * 0.5, gamestate.resolution.y * 0.5)
+
