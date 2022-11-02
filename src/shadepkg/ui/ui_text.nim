@@ -17,6 +17,7 @@ type
     imageOfText: Image
     textAlignHorizontal*: TextAlignment
     textAlignVertical*: TextAlignment
+    imageFilter*: Filter
 
   UITextComponent* = ref UITextComponentObj
 
@@ -24,10 +25,16 @@ proc `=destroy`(this: var UITextComponentObj) =
   if this.imageOfText != nil:
     freeImage(this.imageOfText)
 
-proc newText*(font: Font, text: string, textColor: Color = BLACK): UITextComponent =
+proc newText*(
+  font: Font,
+  text: string,
+  textColor: Color = BLACK,
+  imageFilter: Filter = FILTER_LINEAR
+): UITextComponent =
   result = UITextComponent(font: font, text: text)
   initUIComponent(UIComponent result)
   result.color = textColor
+  result.imageFilter = imageFilter
 
 proc text*(this: UITextComponent): string =
   return this.text
@@ -59,6 +66,7 @@ method preRender*(this: UITextComponent, ctx: Target) =
       0
     )
     this.imageOfText = copyImageFromSurface(surface)
+    this.imageOfText.setImageFilter(this.imageFilter)
     freeSurface(surface)
 
     this.width = float(this.imageOfText.w)

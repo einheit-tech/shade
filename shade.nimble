@@ -35,7 +35,7 @@ task build_deps, "Builds submodule dependencies":
   when defined(linux):
     let localUsrPath = joinPath(thisDir(), ".usr")
     withDir "submodules/sdl":
-      exec fmt"./configure --prefix={localUsrPath}"
+      exec fmt"./configure --prefix={localUsrPath} --enable-hidapi-libusb"
       exec "make -j install"
 
     withDir "submodules/sdl-gpu":

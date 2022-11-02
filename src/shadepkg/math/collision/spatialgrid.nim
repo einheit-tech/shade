@@ -26,7 +26,7 @@ type
     # Scalar from grid coords to game coords.
     gridToPixelScalar: float
 
-proc newSpatialGrid*(width, height: static int, cellSize: Positive): SpatialGrid =
+proc newSpatialGrid*(width, height: int, cellSize: Positive): SpatialGrid =
   ## @param width:
   ##  The width of the grid.
   ##
