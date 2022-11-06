@@ -59,7 +59,10 @@ task build_deps, "Builds submodule dependencies":
       exec "rm -r *.a *.la cmake pkgconfig"
 
 task shaders, "Runs the shader example":
-  exec "nim r examples/shaders/water_shader.nim"
+  exec "nim r -d:release examples/shaders/water_shader.nim"
+
+task post_shader, "Runs the post-processing shader example":
+  exec "nim r -d:release examples/shaders/postprocessing.nim"
 
 task animations, "Runs the animation player example":
   exec "nim r examples/basic/animationplayer_example.nim"

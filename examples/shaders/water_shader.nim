@@ -17,7 +17,6 @@ const
 
 let shaderProgram = newShader(vertShaderPath, fragShaderPath)
 
-
 type Background = ref object of Node
 
 Background.renderAsNodeChild:

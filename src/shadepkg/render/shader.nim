@@ -38,6 +38,8 @@ proc initShader*(shader: Shader, vertShaderPath, fragShaderPath: string) =
     "gpu_ModelViewProjectionMatrix"
   )
 
+  # TODO: Need users to be able to create/connect to their own uniforms,
+  # and update them in code (via setUniformf etc).
   shader.timeUniformID = getUniformLocation(shader.programID, "time")
   shader.resolutionUniformID = getUniformLocation(shader.programID, "resolution")
 
