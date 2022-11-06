@@ -154,11 +154,20 @@ proc loop(this: Engine) =
     deltaTime: float = 0
     refreshRateCalculator: RefreshRateCalculator
 
-  let
+  var
+    imageNeedsResize = false
     image = createImage(this.screen.w, this.screen.h, FORMAT_RGBA)
-    renderTarget = loadTarget(image)
+    renderTarget = getTarget(image)
+
+  gamestate.onResolutionChanged:
+    imageNeedsResize = true
 
   while not this.shouldExit:
+    if imageNeedsResize:
+      freeImage(image)
+      image = createImage(this.screen.w, this.screen.h, FORMAT_RGBA)
+      renderTarget = getTarget(image)
+
     this.handleEvents()
     this.update(deltaTime)
     this.render(renderTarget)
@@ -185,7 +194,6 @@ proc loop(this: Engine) =
           deltaTime = float(elapsedNanos) / float(ONE_BILLION)
 
   # Clean up
-  freeTarget(renderTarget)
   freeImage(image)
   this.teardown()
 
