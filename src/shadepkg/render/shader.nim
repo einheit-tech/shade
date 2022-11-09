@@ -6,7 +6,7 @@ var
   resolution: array[2, cfloat] = [ cfloat 0, 0 ]
   hasResolutionCallbackBeenSet = false
 
-type Shader* = ref object
+type Shader* = ref object of RootObj
   programID*: uint32
   vertShaderID: uint32
   fragShaderID: uint32

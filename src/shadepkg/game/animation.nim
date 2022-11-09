@@ -235,7 +235,7 @@ macro addNewAnimationTrack*[T: TrackType](
 
     let `trackName` = newAnimationTrack(
       `field`,
-      `frames`,
+      @`frames`,
       `procName`,
       `wrapInterpolation`
     )
@@ -340,7 +340,7 @@ macro addProcTrack*(this: Animation, frames: openArray[Keyframe[ClosureProc]]) =
 
     let `trackName` = newAnimationTrack[ClosureProc](
       nil,
-      `frames`,
+      @`frames`,
       `procName`
     )
 
