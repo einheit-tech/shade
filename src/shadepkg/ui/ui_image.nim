@@ -108,41 +108,33 @@ template getImageFitFillScalar(
     this.scale.y * contentHeight / this.getImageHeight()
   )
 
-method preRender*(this: UIImage, ctx: Target) =
-  procCall preRender(UIComponent this, ctx)
-
-  let
-    renderContentArea = aabb(
-      this.bounds.left + this.borderWidth,
-      this.bounds.top + this.borderWidth,
-      this.bounds.right - this.borderWidth,
-      this.bounds.bottom - this.borderWidth
-    )
+method preRender*(this: UIImage, ctx: Target, clippedRenderBounds: AABB) =
+  procCall preRender(UIComponent this, ctx, clippedRenderBounds)
 
   let (scaleX, scaleY) =
     case this.imageFit:
       of Contain:
-        this.getImageFitContainScalar(ctx, renderContentArea.width, renderContentArea.height)
+        this.getImageFitContainScalar(ctx, clippedRenderBounds.width, clippedRenderBounds.height)
       of Cover:
-        this.getImageFitCoverScalar(ctx, renderContentArea.width, renderContentArea.height)
+        this.getImageFitCoverScalar(ctx, clippedRenderBounds.width, clippedRenderBounds.height)
       of Fill:
-        this.getImageFitFillScalar(ctx, renderContentArea.width, renderContentArea.height)
+        this.getImageFitFillScalar(ctx, clippedRenderBounds.width, clippedRenderBounds.height)
 
   let x = case this.imageAlignHorizontal:
     of Start:
-      renderContentArea.left + this.getImageWidth() * scaleX / 2
+      clippedRenderBounds.left + this.getImageWidth() * scaleX / 2
     of Center:
-      renderContentArea.center.x
+      clippedRenderBounds.center.x
     of End:
-      renderContentArea.right - this.getImageWidth() * scaleX / 2
+      clippedRenderBounds.right - this.getImageWidth() * scaleX / 2
 
   let y = case this.imageAlignVertical:
     of Start:
-      renderContentArea.top + this.getImageHeight() * scaleY / 2
+      clippedRenderBounds.top + this.getImageHeight() * scaleY / 2
     of Center:
-      renderContentArea.center.y
+      clippedRenderBounds.center.y
     of End:
-      renderContentArea.bottom - this.getImageHeight() * scaleY / 2
+      clippedRenderBounds.bottom - this.getImageHeight() * scaleY / 2
 
   let viewport = this.getImageViewport()
   blitScale(this.image, viewport.unsafeAddr, ctx, x, y, scaleX, scaleY)

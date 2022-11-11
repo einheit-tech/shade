@@ -113,7 +113,7 @@ proc `alignVertical=`*(this: UIComponent, alignment: Alignment)
 proc alignHorizontal*(this: UIComponent): Alignment
 proc `alignHorizontal=`*(this: UIComponent, alignment: Alignment)
 proc `stackDirection=`*(this: UIComponent, direction: StackDirection)
-method preRender*(this: UIComponent, ctx: Target) {.base.}
+method preRender*(this: UIComponent, ctx: Target, clippedRenderBounds: AABB) {.base.}
 method postRender*(this: UIComponent, ctx: Target) {.base.}
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
 proc updateChildren(this: UIComponent, axis: static StackDirection)
@@ -318,7 +318,7 @@ proc updateBounds(this: UIComponent, x, y, width, height: float) =
   if this.children.len > 0:
     this.updateChildrenBounds()
 
-method preRender*(this: UIComponent, ctx: Target) {.base.} =
+method preRender*(this: UIComponent, ctx: Target, clippedRenderBounds: AABB) {.base.} =
   if this.backgroundColor.a != 0:
     ctx.rectangleFilled(
       this.bounds.left,
@@ -371,7 +371,7 @@ proc render*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AABB_INF
       uint16(ceil(clippedRenderBounds.top + clippedRenderBounds.height) - flooredTop)
     )
 
-  this.preRender(ctx)
+  this.preRender(ctx, clippedRenderBounds)
 
   for child in this.children:
     child.render(ctx, clippedRenderBounds)
