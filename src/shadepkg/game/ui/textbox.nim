@@ -71,8 +71,8 @@ TextBox.renderAsNodeChild:
     this.imageOfText,
     nil,
     ctx,
-    offsetX,
-    offsetY,
+    this.x + offsetX,
+    this.y + offsetY,
     this.scale.x,
     this.scale.y
   )
