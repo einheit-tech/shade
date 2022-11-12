@@ -383,12 +383,17 @@ proc render*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AABB_INF
 # Touch/click event handling
 
 proc findLowestComponentContainingPoint*(this: UIComponent, x, y: float): UIComponent =
+  if this == nil or not (this.enabled and this.processInputEvents and this.visible):
+    return nil
+
   for child in this.children:
-    if child != nil and child.processInputEvents and child.visible and child.bounds.contains(x, y):
-      let nextLowest = child.findLowestComponentContainingPoint(x, y)
-      if nextLowest == nil:
-        return child
-      result = nextLowest
+    if child != nil and
+       child.enabled and child.processInputEvents and child.visible and
+       child.bounds.contains(x, y):
+         let nextLowest = child.findLowestComponentContainingPoint(x, y)
+         if nextLowest == nil:
+           return child
+         result = nextLowest
 
 proc onPressedCallbacks*(this: UIComponent): lent seq[OnPressedCallback] =
   return this.pressedCallbacks
