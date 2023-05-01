@@ -21,6 +21,7 @@ type
 
   UITextComponent* = ref UITextComponentObj
 
+proc determineWidthAndHeight*(this: UITextComponent)
 proc `=destroy`(this: var UITextComponentObj) =
   if this.imageOfText != nil:
     freeImage(this.imageOfText)
@@ -54,23 +55,29 @@ proc `color=`*(this: UITextComponent, color: Color) =
     freeImage(this.imageOfText)
     this.imageOfText = nil
 
+proc determineWidthAndHeight*(this: UITextComponent) =
+  ## Sets the width and height of the text based on text, font, and color.
+  ## This is an expensive operation!
+  ## Only use it when needed.
+  let surface = renderText_Blended_Wrapped(
+    this.font,
+    cstring this.text,
+    this.color,
+    # Passing in 0 means lines only wrap on newline chars.
+    0
+  )
+  this.imageOfText = copyImageFromSurface(surface)
+  this.imageOfText.setImageFilter(this.imageFilter)
+  freeSurface(surface)
+
+  this.width = float(this.imageOfText.w)
+  this.height = float(this.imageOfText.h)
+
 method preRender*(this: UITextComponent, ctx: Target, clippedRenderBounds: AABB) =
   procCall preRender(UIComponent this, ctx, clippedRenderBounds)
 
   if this.imageOfText == nil:
-    let surface = renderText_Blended_Wrapped(
-      this.font,
-      cstring this.text,
-      this.color,
-      # Passing in 0 means lines only wrap on newline chars.
-      0
-    )
-    this.imageOfText = copyImageFromSurface(surface)
-    this.imageOfText.setImageFilter(this.imageFilter)
-    freeSurface(surface)
-
-    this.width = float(this.imageOfText.w)
-    this.height = float(this.imageOfText.h)
+    this.determineWidthAndHeight()
 
   # TODO: We should be able to cache all this stuff I believe?
   let

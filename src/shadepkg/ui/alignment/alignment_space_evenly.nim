@@ -18,7 +18,7 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
   # Calculate the total length all children use up
   for child in this.children:
     if not child.visible and not child.enabled:
-      child.set(0, 0)
+      child.layout(0, 0)
       continue
 
     let
@@ -77,7 +77,7 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
     if prevChild != nil and prevChild.endMargin > maxOfGapAndStartMargin:
       childStart += prevChild.endMargin - maxOfGapAndStartMargin
 
-    child.set(childStart, childLen)
+    child.layout(childStart, childLen)
 
     childStart += childLen
     prevChild = child

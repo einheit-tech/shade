@@ -1,3 +1,6 @@
+# TODO: Document how the system should work
+# Caveats, such as UIComponent not being clickable if not visible, etc.
+
 import sdl2_nim/sdl_gpu
 
 from ../math/mathutils import CompletionRatio, ceil, floor
@@ -117,6 +120,11 @@ method preRender*(this: UIComponent, ctx: Target, clippedRenderBounds: AABB) {.b
 method postRender*(this: UIComponent, ctx: Target) {.base.}
 proc updateBounds*(this: UIComponent, x, y, width, height: float)
 proc updateChildren(this: UIComponent, axis: static StackDirection)
+proc addOnPressedCallback*(this: UIComponent, callback: OnPressedCallback)
+
+template onPressed*(component: UIComponent, body: untyped) =
+  ## Invokes `body` whenever the component is pressed.
+  component.addOnPressedCallback(proc(x, y {.inject.}: float) = body)
 
 proc `==`*(s1, s2: Size): bool =
   result = s1.kind == s2.kind
@@ -260,6 +268,14 @@ proc `enabled=`*(this: UIComponent, enabled: bool) =
   this.enabled = enabled
   this.setLayoutValidationStatus(Invalid)
 
+proc enableAndSetVisible*(this: UIComponent) =
+  `visible=`(this, true)
+  `enabled=`(this, true)
+
+proc disableAndHide*(this: UIComponent) =
+  `visible=`(this, false)
+  `enabled=`(this, false)
+
 proc alignVertical*(this: UIComponent): Alignment =
   return this.alignVertical
 
@@ -383,6 +399,8 @@ proc render*(this: UIComponent, ctx: Target, parentRenderBounds: AABB = AABB_INF
 # Touch/click event handling
 
 proc findLowestComponentContainingPoint*(this: UIComponent, x, y: float): UIComponent =
+  ## Finds the deepest (lowest) component that contains the given point.
+  ## The component must be visible, enabled, and processing input events.
   if this == nil or not (this.enabled and this.processInputEvents and this.visible):
     return nil
 
@@ -411,17 +429,13 @@ proc removeOnPressedCallback*(this: UIComponent, callback: OnPressedCallback) =
   if callbackIndex != -1:
     this.pressedCallbacks.del(callbackIndex)
 
-template onPressed*(component: UIComponent, body: untyped) =
-  ## Invokes `body` whenever the component is pressed.
-  component.addOnPressedCallback(proc(x, y {.inject.}: float) = body)
-
 proc handlePress*(this: UIComponent, x, y: float) =
   for callback in this.pressedCallbacks:
     callback(x, y)
 
 #### Alignment
 
-template set*(this: UIComponent, start, length: float) =
+template layout*(this: UIComponent, start, length: float) =
   when axis == Horizontal:
     this.bounds.left = start
     this.bounds.right = start + length

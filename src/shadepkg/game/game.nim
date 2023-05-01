@@ -224,7 +224,7 @@ proc render*(this: Engine, ctx: Target) =
   if this.scene == nil:
     return
 
-  clearColor(this.screen, this.clearColor)
+  clearColor(this.screen, TRANSPARENT)
   clearColor(ctx, this.clearColor)
 
   # Save the normal matrix

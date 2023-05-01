@@ -13,7 +13,7 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
 
   for child in this.children:
     if not child.visible and not child.enabled:
-      child.set(0, 0)
+      child.layout(0, 0)
       continue
 
     let
@@ -25,7 +25,7 @@ template alignMainAxis(this: UIComponent, axis: static StackDirection) =
     if prevChild != nil and prevChild.endMargin > child.startMargin:
       childStart += prevChild.endMargin - child.startMargin
 
-    child.set(childStart, childLen)
+    child.layout(childStart, childLen)
 
     childStart += childLen
 
@@ -42,14 +42,14 @@ template alignCrossAxis(this: UIComponent, axis: static StackDirection) =
 
   for child in this.children:
     if not child.visible and not child.enabled:
-      child.set(0, 0)
+      child.layout(0, 0)
       continue
 
     let
       childPixelLen = pixelLen(this, child, axis)
       childLen = if childPixelLen > 0: childPixelLen else: (maxChildLen - child.startMargin - child.endMargin)
 
-    child.set(childStart + child.startMargin, childLen)
+    child.layout(childStart + child.startMargin, childLen)
 
 proc alignStart*(this: UIComponent, axis: static StackDirection) =
   ## Aligns children along the given axis with Alignment.Start
