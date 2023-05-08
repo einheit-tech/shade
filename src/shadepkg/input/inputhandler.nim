@@ -96,6 +96,7 @@ type
     keys: Table[Keycode, KeyState]
     keyPressedListeners: Table[Keycode, SafeSet[KeyListener]]
     keyReleasedListeners: Table[Keycode, SafeSet[KeyListener]]
+    eventListeners: seq[KeyListener]
 
   ControllerStickState* = object
     x*: float
@@ -209,6 +210,25 @@ template onEvent*(this: InputHandler, eventKind: EventKind, body: untyped) =
 proc removeListener*(this: InputHandler, eventKind: EventKind, listener: EventListener) =
   if this.eventListeners.hasKey(eventKind):
     this.eventListeners[eventKind].remove(listener)
+
+proc addKeyboardEventListener*(this: InputHandler, listener: KeyListener) =
+  this.keyboard.eventListeners.add(listener)
+
+proc removeKeyboardEventListener*(this: InputHandler, listener: KeyListener) =
+  var index = -1
+  for i, l in this.keyboard.eventListeners:
+    if listener == l:
+      index = i
+      break
+
+  if index >= 0:
+    this.keyboard.eventListeners.delete(index)
+
+template onKeyEvent*(this: InputHandler, body: untyped) =
+  this.addKeyboardEventListener(
+    proc(key {.inject.}: Keycode, state {.inject.}: KeyState) =
+      body
+  )
 
 proc addKeyPressedListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
   if not this.keyboard.keyPressedListeners.hasKey(key):
@@ -461,6 +481,10 @@ template handleKeyboardEvent(this: InputHandler, e: KeyboardEventObj) =
   this.keyboard.keys[keycode].justPressed = pressed and not this.keyboard.keys[keycode].pressed
   this.keyboard.keys[keycode].pressed = pressed
   this.keyboard.keys[keycode].justReleased = not pressed
+
+  let keystate = this.keyboard.keys[keycode]
+  for listener in this.keyboard.eventListeners:
+    listener(keycode, keystate)
 
   if pressed:
     if this.keyboard.keyPressedListeners.hasKey(keycode):
