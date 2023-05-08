@@ -59,6 +59,10 @@ proc determineWidthAndHeight*(this: UITextComponent) =
   ## Sets the width and height of the text based on text, font, and color.
   ## This is an expensive operation!
   ## Only use it when needed.
+  if this.text.len == 0:
+    this.imageOfText = nil
+    return
+
   let surface = renderText_Blended_Wrapped(
     this.font,
     cstring this.text,
@@ -74,6 +78,9 @@ proc determineWidthAndHeight*(this: UITextComponent) =
   this.height = float(this.imageOfText.h)
 
 method preRender*(this: UITextComponent, ctx: Target, clippedRenderBounds: AABB) =
+  if this.text.len == 0:
+    return
+
   procCall preRender(UIComponent this, ctx, clippedRenderBounds)
 
   if this.imageOfText == nil:
