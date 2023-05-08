@@ -76,6 +76,10 @@ proc playMusic*(music: Music, volume: float = 1.0, numLoops: int = -1) =
   if mixer.playMusic(music, cint numLoops) != 0:
     echo "Failed to play music: " & $mixer.getError()
 
+proc isMusicPlaying*(): bool =
+  ##  Tells you if music is actively playing, or not.
+  return playingMusic() == 1
+
 template play*(music: Music, volume: float = 1.0, numLoops: int = -1) =
   music.playMusic(volume, numLoops)
 
