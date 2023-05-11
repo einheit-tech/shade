@@ -9,7 +9,7 @@
 
 import macros
 
-import safeset
+import safeseq
 
 import
   node,
@@ -56,7 +56,7 @@ type
     duration: float
     looping: bool
     tracks: seq[AnimationTrack]
-    onFinishedCallbacks: SafeSet[AnimationCallback]
+    onFinishedCallbacks: SafeSeq[AnimationCallback]
 
 template duration*(this: Animation): float = this.duration
 template looping*(this: Animation): bool = this.looping
@@ -72,7 +72,7 @@ proc newAnimation*(duration: float, looping: bool): Animation =
 
 proc addFinishedCallback*(this: Animation, callback: AnimationCallback) =
   if this.onFinishedCallbacks == nil:
-    this.onFinishedCallbacks = newSafeSet[AnimationCallback]()
+    this.onFinishedCallbacks = newSafeSeq[AnimationCallback]()
   this.onFinishedCallbacks.add(callback)
 
 proc removeFinishedCallback*(this: Animation, callback: AnimationCallback) =

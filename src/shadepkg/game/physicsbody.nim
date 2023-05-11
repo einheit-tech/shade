@@ -1,6 +1,6 @@
 import
   macros,
-  safeset
+  safeseq
 
 import
   node,
@@ -42,7 +42,7 @@ type
       of STATIC:
         discard
 
-    collisionListeners: SafeSet[CollisionListener]
+    collisionListeners: SafeSeq[CollisionListener]
 
 proc addCollisionListener*(this: PhysicsBody, listener: CollisionListener)
 proc removeCollisionListener*(this: PhysicsBody, listener: CollisionListener)
@@ -65,7 +65,7 @@ proc initPhysicsBody*(
 ) =
   initNode(Node(physicsBody), flags)
   `collisionShape=`(physicsBody, shape)
-  physicsBody.collisionListeners = newSafeSet[CollisionListener]()
+  physicsBody.collisionListeners = newSafeSeq[CollisionListener]()
   if physicsBody.kind != PhysicsBodyKind.STATIC:
     physicsBody.addCollisionListener(wallAndGroundSetter)
 

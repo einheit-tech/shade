@@ -6,7 +6,7 @@ import sdl2_nim/sdl_gpu
 from ../math/mathutils import CompletionRatio, ceil, floor
 
 import std/[hashes]
-import safeset
+import safeseq
 
 import
   ../math/vector2,
@@ -17,7 +17,7 @@ export
   CompletionRatio,
   Vector,
   color,
-  safeset
+  safeseq
 
 type
   SizeKind* = enum
@@ -55,7 +55,7 @@ type
     id: int
     ## Top-down design: child components cannot cause their parent components to resize.
     parent: UIComponent
-    children: Safeset[UIComponent]
+    children: SafeSeq[UIComponent]
     visible: bool
     enabled: bool
     # If width or height are == 0, fill out all space available in layout.
@@ -147,7 +147,7 @@ proc initUIComponent*(
   borderColor = BLACK
 ) =
   this.id = i
-  this.children = newSafeSet[UIComponent]()
+  this.children = newSafeSeq[UIComponent]()
   this.layoutStatus = Invalid
   this.backgroundColor = backgroundColor
   this.borderWidth = borderWidth
@@ -297,7 +297,7 @@ proc `stackDirection=`*(this: UIComponent, direction: StackDirection) =
 proc parent*(this: UIComponent): UIComponent =
   return this.parent
 
-proc children*(this: UIComponent): lent Safeset[UIComponent] =
+proc children*(this: UIComponent): lent SafeSeq[UIComponent] =
   return this.children
 
 proc addChild*(this, child: UIComponent) =

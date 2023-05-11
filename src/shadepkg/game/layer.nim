@@ -1,8 +1,6 @@
-import 
-  node,
-  safeset
+import node, safeseq
 
-export node
+export node, safeseq
 
 type
   ZChangeListener = proc(oldZ, newZ: float): void
@@ -14,7 +12,7 @@ type
   ## All nodes on the layer are assumed to share this same coordinate.
   ##
   Layer* = ref object of RootObj
-    children: SafeSet[Node]
+    children: SafeSeq[Node]
     # Location of the layer on the `z` axis.
     z: float
     zChangeListeners: seq[ZChangeListener]
@@ -22,7 +20,7 @@ type
 
 proc initLayer*(layer: Layer, z: float = 1.0) =
   layer.z = z
-  layer.children = newSafeSet[Node]()
+  layer.children = newSafeSeq[Node]()
 
 proc newLayer*(z: float = 1.0): Layer =
   result = Layer()
@@ -84,7 +82,7 @@ method update*(this: Layer, deltaTime: float) {.base.} =
   if this.onUpdate != nil:
     this.onUpdate(this, deltaTime)
 
-  for child in this.children:
+  for child in this.childIterator:
     if LayerObjectFlags.UPDATE in child.flags:
       child.update(deltaTime)
 

@@ -3,7 +3,7 @@ import
 
 import
   sdl2_nim/sdl,
-  safeset
+  safeseq
 
 import ../math/mathutils
 
@@ -94,8 +94,8 @@ type
   KeyListener* = proc(key: Keycode, state: KeyState)
   Keyboard* = ref object
     keys: Table[Keycode, KeyState]
-    keyPressedListeners: Table[Keycode, SafeSet[KeyListener]]
-    keyReleasedListeners: Table[Keycode, SafeSet[KeyListener]]
+    keyPressedListeners: Table[Keycode, SafeSeq[KeyListener]]
+    keyReleasedListeners: Table[Keycode, SafeSeq[KeyListener]]
     eventListeners: seq[KeyListener]
 
   ControllerStickState* = object
@@ -139,19 +139,19 @@ type
     leftTriggerListeners: seq[ControllerTriggerEventListener]
 
     buttons: Table[ControllerButton, ButtonState]
-    buttonPressedListeners: Table[ControllerButton, SafeSet[ControllerButtonEventListener]]
-    buttonReleasedListeners: Table[ControllerButton, SafeSet[ControllerButtonEventListener]]
+    buttonPressedListeners: Table[ControllerButton, SafeSeq[ControllerButtonEventListener]]
+    buttonReleasedListeners: Table[ControllerButton, SafeSeq[ControllerButtonEventListener]]
 
   CustomActionListener* = proc(state: InputState)
 
   EventListener* = proc(e: Event): bool
   ## Return true to remove the listener from the InputHandler.
   InputHandler* = ref object
-    eventListeners: Table[EventKind, SafeSet[EventListener]]
+    eventListeners: Table[EventKind, SafeSeq[EventListener]]
 
     customActions: seq[string]
-    customActionsToFireThisFrame: SafeSet[string]
-    customActionListeners: Table[string, SafeSet[CustomActionListener]]
+    customActionsToFireThisFrame: SafeSeq[string]
+    customActionListeners: Table[string, SafeSeq[CustomActionListener]]
 
     mouse: Mouse
     keyboard: Keyboard
@@ -193,7 +193,7 @@ proc initInputHandlerSingleton*(windowScaling: Vector) =
     keyboard: Keyboard(),
     controller: Controller(deadzoneRadius: DEFAULT_DEADZONE),
     windowScaling: windowScaling,
-    customActionsToFireThisFrame: newSafeSet[string]()
+    customActionsToFireThisFrame: newSafeSeq[string]()
   )
 
   if init(INIT_GAMECONTROLLER) != 0:
@@ -201,7 +201,7 @@ proc initInputHandlerSingleton*(windowScaling: Vector) =
 
 proc addListener*(this: InputHandler, eventKind: EventKind, listener: EventListener) =
   if not this.eventListeners.hasKey(eventKind):
-    this.eventListeners[eventKind] = newSafeSet[EventListener]()
+    this.eventListeners[eventKind] = newSafeSeq[EventListener]()
   this.eventListeners[eventKind].add(listener)
 
 template onEvent*(this: InputHandler, eventKind: EventKind, body: untyped) =
@@ -232,12 +232,12 @@ template onKeyEvent*(this: InputHandler, body: untyped) =
 
 proc addKeyPressedListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
   if not this.keyboard.keyPressedListeners.hasKey(key):
-    this.keyboard.keyPressedListeners[key] = newSafeSet[KeyListener]()
+    this.keyboard.keyPressedListeners[key] = newSafeSeq[KeyListener]()
   this.keyboard.keyPressedListeners[key].add(listener)
 
 proc addKeyReleasedListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
   if not this.keyboard.keyReleasedListeners.hasKey(key):
-    this.keyboard.keyReleasedListeners[key] = newSafeSet[KeyListener]()
+    this.keyboard.keyReleasedListeners[key] = newSafeSeq[KeyListener]()
   this.keyboard.keyReleasedListeners[key].add(listener)
 
 proc removeKeyPressedListener*(this: InputHandler, key: Keycode, listener: KeyListener) =
@@ -260,7 +260,7 @@ proc addControllerButtonPressedListener*(
   listener: ControllerButtonEventListener
 ) =
   if not this.controller.buttonPressedListeners.hasKey(button):
-    this.controller.buttonPressedListeners[button] = newSafeSet[ControllerButtonEventListener]()
+    this.controller.buttonPressedListeners[button] = newSafeSeq[ControllerButtonEventListener]()
   this.controller.buttonPressedListeners[button].add(listener)
 
 proc addControllerButtonReleasedListener*(
@@ -269,7 +269,7 @@ proc addControllerButtonReleasedListener*(
   listener: ControllerButtonEventListener
 ) =
   if not this.controller.buttonReleasedListeners.hasKey(button):
-    this.controller.buttonReleasedListeners[button] = newSafeSet[ControllerButtonEventListener]()
+    this.controller.buttonReleasedListeners[button] = newSafeSeq[ControllerButtonEventListener]()
   this.controller.buttonReleasedListeners[button].add(listener)
 
 proc addControllerStickListener*(
@@ -303,14 +303,14 @@ proc addControllerTriggerListener*(
 
 proc registerCustomAction*(this: InputHandler, eventName: string) =
   this.customActions.add(eventName)
-  this.customActionListeners[eventName] = newSafeSet[CustomActionListener]()
+  this.customActionListeners[eventName] = newSafeSeq[CustomActionListener]()
 
 template isCustomActionRegistered*(this: InputHandler, eventName: string): bool =
   eventName in this.customActions
 
 proc addCustomActionListener*(this: InputHandler, eventName: string, listener: CustomActionListener) =
   if not this.customActionListeners.hasKey(eventName):
-    this.customActionListeners[eventName] = newSafeSet[CustomActionListener]()
+    this.customActionListeners[eventName] = newSafeSeq[CustomActionListener]()
   this.customActionListeners[eventName].add(listener)
 
 proc addCustomActionTrigger*(
