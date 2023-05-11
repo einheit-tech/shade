@@ -16,7 +16,7 @@ namedBin["src/shadepkg/buildtool"] = "src/shade"
 requires "nim >= 1.6.6"
 requires "zippy == 0.9.7"
 requires "https://github.com/avahe-kellenberger/sdl2_nim#head"
-requires "https://github.com/avahe-kellenberger/safeseq#head"
+requires "safeseq >= 0.1.0"
 requires "nimtest >= 0.1.2"
 requires "seq2d >= 0.1.1"
 
