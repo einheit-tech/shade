@@ -16,6 +16,7 @@ const ONE_BILLION = 1000000000
 
 type
   Engine* = ref object of RootObj
+    window*: Window
     screen*: Target
     scene: Scene
     ui: UI
@@ -41,6 +42,7 @@ proc initEngineSingleton*(
   title: string,
   gameWidth, gameHeight: int,
   scene: Scene = newScene(),
+  # TODO: Perhaps have more booleans instead of these default window flags.
   fullscreen: bool = false,
   windowFlags: int = WINDOW_ALLOW_HIGHDPI and int(INIT_ENABLE_VSYNC),
   clearColor: Color = BLACK,
@@ -66,18 +68,19 @@ proc initEngineSingleton*(
 
   var refreshRate = 0
 
+  Game = Engine()
+
   if target.context != nil:
-    let window = getWindowFromId(target.context.windowID)
-    window.setWindowTitle(title)
+    Game.window = getWindowFromId(target.context.windowID)
+    Game.window.setWindowTitle(title)
     var displayMode: DisplayMode
-    discard window.getWindowDisplayMode(displayMode.addr)
+    discard Game.window.getWindowDisplayMode(displayMode.addr)
     refreshRate = displayMode.refreshRate
     if iconFilename.len > 0:
       let iconSurface = loadSurface(iconFilename)
-      window.setWindowIcon(iconSurface)
+      Game.window.setWindowIcon(iconSurface)
       freeSurface(iconSurface)
 
-  Game = Engine()
   Game.screen = target
   Game.scene = scene
   Game.clearColor = clearColor
@@ -132,8 +135,8 @@ proc detectWindowScaling(this: Engine): Vector =
       # Get the window size (in potentially scaled pixels)
       var windowWidth: cint
       var windowHeight: cint
-      let window = getWindowFromId(this.screen.context.windowID)
-      window.getWindowSize(windowWidth.addr, windowHeight.addr)
+      this.window = getWindowFromId(this.screen.context.windowID)
+      this.window.getWindowSize(windowWidth.addr, windowHeight.addr)
       if windowWidth > 0 and windowHeight > 0:
         # Calculate scaling
         result = vector(
