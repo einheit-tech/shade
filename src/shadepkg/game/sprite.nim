@@ -14,6 +14,8 @@ type
     frameCoords*: IVector
     offset*: Vector
     scale*: Vector
+    # Rotation in degrees (clockwise).
+    rotation*: float
 
 proc initSprite*(
   sprite: Sprite,
@@ -49,12 +51,13 @@ proc size*(this: Sprite): Vector =
 
 Sprite.render:
   # `blit` renders the image centered at the given location.
-  blitScale(
+  blitTransform(
     this.spritesheet.image,
     this.spritesheet[this.frameCoords].addr,
     ctx,
     offsetX + (this.scale.x * this.offset.x),
     offsetY + (this.scale.y * this.offset.y),
+    this.rotation,
     this.scale.x,
     this.scale.y
   )

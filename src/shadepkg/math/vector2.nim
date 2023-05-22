@@ -148,9 +148,7 @@ func getAngleRadiansTo*(this, v: SomeVector): float =
 func getAngleTo*(this, v: SomeVector): float =
   ## Gets the angle of this vector to `v`, in radians.
   ## (from -179 to 179)
-  abs(
-    (this.getAngleRadiansTo(v) * 180) / PI
-  )
+  (this.getAngleRadiansTo(v) * 180) / PI
 
 func fromRadians*(radians: float): SomeVector =
   ## Creates a new unit vector from the radian value.
