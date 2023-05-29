@@ -187,6 +187,7 @@ macro addNewAnimationTrack*[T: TrackType](
   ## @param {bool} wrapInterpolation If the track should interpolate
   ##        from the last frame back to the first frame.
   ## @param {EasingFunction[T]} ease The function used to interpolate the given field.
+  ## NOTE: This should probably be lerpDiscrete for int, IVector, etc.
   let
     procName = gensym(nskProc, "sample" & $field.repr)
     trackName = gensym(nskLet, "track")

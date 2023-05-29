@@ -38,6 +38,9 @@ proc newSprite*(
   result = Sprite()
   initSprite(result, image, hframes, vframes, frameCoords)
 
+template numFrames*(this: Sprite): int =
+  this.spritesheet.rows * this.spritesheet.cols
+
 proc `alpha=`*(this: Sprite, alpha: CompletionRatio) =
   this.spritesheet.image.setRGBA(
     uint8.high,
