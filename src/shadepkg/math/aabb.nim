@@ -3,6 +3,8 @@ import
   ../render/render,
   ../render/color
 
+import std/random
+
 type AABB* = object
   topLeft*: Vector
   bottomRight*: Vector
@@ -106,6 +108,9 @@ template createBoundsAround*(r1, r2: AABB): AABB =
     max(r1.bottomRight.x, r2.bottomRight.x),
     max(r1.bottomRight.y, r2.bottomRight.y)
   )
+
+proc getRandomPoint*(this: AABB): Vector =
+  return this.topLeft + vector(rand(this.width), rand(this.height))
 
 proc vertices*(this: AABB): array[4, Vector] =
   [
