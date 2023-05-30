@@ -38,7 +38,8 @@ else:
     ui/ui_text,
     ui/ui_image,
     ui/ui_sprite,
-    util/timer
+    util/timer,
+    util/objectpool
   ]
 
   import sdl2_nim/[sdl, sdl_ttf]
@@ -81,5 +82,6 @@ else:
     ui_image,
     ui_sprite,
     timer,
+    objectpool,
     sdl,
     sdl_ttf
