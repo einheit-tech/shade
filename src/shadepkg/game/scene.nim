@@ -41,27 +41,26 @@ proc update*(this: Scene, deltaTime: float) =
   for layer in this.layers:
     layer.update(deltaTime)
 
-proc renderWithCamera(this: Scene, ctx: Target) =
-  # Subtract half the viewport to center the camera.
-  var
-    relativeZ: float
-    inversedScalar: float
+proc renderLayer*(ctx: Target, camera: Camera, layer: Layer) =
+  let relativeZ = layer.z - camera.z
+  if relativeZ > 0:
+    let inversedScalar = 1.0 / relativeZ
+    let halfViewportSize = camera.viewport.getSize() * 0.5
 
-  for layer in this.layers:
-    relativeZ = layer.z - this.camera.z
-    if relativeZ > 0:
-      inversedScalar = 1.0 / relativeZ
-      let halfViewportSize = this.camera.viewport.getSize() * 0.5
+    # Subtract half the viewport to center the camera.
+    let trans = camera.getLocation() - halfViewportSize * relativeZ
+    scale(inversedScalar, inversedScalar, 1.0)
+    layer.render(ctx, -trans.x, -trans.y)
+    scale(relativeZ, relativeZ, 1.0)
 
-      let trans = this.camera.getLocation() - halfViewportSize * relativeZ
-      scale(inversedScalar, inversedScalar, 1.0)
-      layer.render(ctx, -trans.x, -trans.y)
-      scale(relativeZ, relativeZ, 1.0)
+proc renderLayers*(ctx: Target, camera: Camera, layers: seq[Layer]) =
+  for layer in layers:
+    ctx.renderLayer(camera, layer)
 
 proc render*(this: Scene, ctx: Target) =
   this.sortLayers()
   if this.camera != nil:
-    this.renderWithCamera(ctx)
+    ctx.renderLayers(this.camera, this.layers)
   else:
     for layer in this.layers:
       layer.render(ctx)

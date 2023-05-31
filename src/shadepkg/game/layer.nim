@@ -26,7 +26,8 @@ proc newLayer*(z: float = 1.0): Layer =
   result = Layer()
   initLayer(result, z)
 
-template z*(this: Layer): float = this.z
+template z*(this: Layer): float =
+  this.z
 
 proc `z=`*(this: Layer, z: float) =
   if this.z != z:
