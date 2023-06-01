@@ -12,7 +12,7 @@ type
     animations: Table[string, Animation]
     currentAnimation: Animation
     currentAnimationName: string
-    currentAnimationTime: float
+    currentAnimationTime*: float
 
 proc addAnimations*(this: AnimationPlayer, animations: openArray[NamedAnimation])
 

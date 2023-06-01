@@ -36,6 +36,7 @@ proc newText*(
   initUIComponent(UIComponent result)
   result.color = textColor
   result.imageFilter = imageFilter
+  result.determineWidthAndHeight()
 
 proc text*(this: UITextComponent): string =
   return this.text
