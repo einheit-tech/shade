@@ -41,7 +41,9 @@ type
     of CollisionShapeKind.CIRCLE:
       circle*: Circle
     of CollisionShapeKind.POLYGON:
+      # Unrotated original polygon.
       polygon*: Polygon
+      rotatedPolygonInstance: Polygon
       polyProjectionAxes: seq[Vector]
     of CollisionShapeKind.AABB:
       aabb*: AABB
@@ -107,6 +109,7 @@ proc initCollisionShape*(collisionShape: var CollisionShape, shape: Shape, mater
     collisionShape.circle = shape
   elif shape is Polygon:
     collisionShape.polygon = shape
+    collisionShape.rotatedPolygonInstance = shape
   elif shape is AABB:
     collisionShape.aabb = shape
   else:
@@ -134,7 +137,7 @@ proc getBounds*(this: var CollisionShape): AABB =
   if this.bounds == AABB_ZERO:
     case this.kind:
       of CollisionShapeKind.POLYGON:
-        this.bounds = this.polygon.getBounds()
+        this.bounds = this.rotatedPolygonInstance.getBounds()
       of CollisionShapeKind.CIRCLE:
         this.bounds = this.circle.calcBounds()
       of CollisionShapeKind.AABB:
@@ -223,13 +226,13 @@ func getProjectionAxes*(
       of CollisionShapeKind.CIRCLE:
         return this.circle.getCircleToCircleProjectionAxes(otherShape.circle, toOther)
       of CollisionShapeKind.POLYGON:
-        return this.circle.getCircleToPolygonProjectionAxes(otherShape.polygon, toOther)
+        return this.circle.getCircleToPolygonProjectionAxes(otherShape.rotatedPolygonInstance, toOther)
       of CollisionShapeKind.AABB:
         return this.circle.getCircleToAABBProjectionAxes(otherShape.aabb, toOther)
 
     of CollisionShapeKind.POLYGON:
       if this.polyProjectionAxes.len == 0:
-        this.polyProjectionAxes = this.polygon.getPolygonProjectionAxes()
+        this.polyProjectionAxes = this.rotatedPolygonInstance.getPolygonProjectionAxes()
       return this.polyProjectionAxes
 
     of CollisionShapeKind.AABB:
@@ -238,11 +241,20 @@ func getProjectionAxes*(
 template project*(this: CollisionShape, relativeLoc, axis: Vector): Vector =
   case this.kind:
   of CollisionShapeKind.POLYGON:
-    this.polygon.projectOnAxis(relativeLoc, axis)
+    this.rotatedPolygonInstance.projectOnAxis(relativeLoc, axis)
   of CollisionShapeKind.CIRCLE:
     this.circle.projectOnAxis(relativeLoc, axis)
   of CollisionShapeKind.AABB:
     this.aabb.projectOnAxis(relativeLoc, axis)
+
+proc setRotation*(this: var CollisionShape, rotation: float) =
+  ## Rotates the CollisionShape.
+  ## Note this only affects the CollisionShape if it is a Polygon.
+  ## @param rotation The radians to rotate.
+  if this.kind != CollisionShapeKind.POLYGON:
+    return
+  
+  this.rotatedPolygonInstance = this.polygon.getRotatedInstance(rotation)
 
 proc stroke*(
   this: CollisionShape,
@@ -253,7 +265,7 @@ proc stroke*(
 ) =
   case this.kind:
   of CollisionShapeKind.POLYGON:
-    this.polygon.stroke(ctx, offsetX, offsetY, color)
+    this.rotatedPolygonInstance.stroke(ctx, offsetX, offsetY, color)
   of CollisionShapeKind.CIRCLE:
     this.circle.stroke(ctx, offsetX, offsetY, color)
   of CollisionShapeKind.AABB:
@@ -268,7 +280,7 @@ proc fill*(
 ) =
   case this.kind:
   of CollisionShapeKind.POLYGON:
-    this.polygon.fill(ctx, offsetX, offsetY, color)
+    this.rotatedPolygonInstance.fill(ctx, offsetX, offsetY, color)
   of CollisionShapeKind.CIRCLE:
     this.circle.fill(ctx, offsetX, offsetY, color)
   of CollisionShapeKind.AABB:

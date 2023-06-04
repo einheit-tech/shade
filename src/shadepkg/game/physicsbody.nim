@@ -29,6 +29,8 @@ type
   PhysicsBody* = ref object of Node
     # TODO: Make collisionShape required.
     collisionShape: CollisionShape
+    # We are tracking the rotation from the last frame to see if we need to rotate the collisionShape.
+    previousRotation: float
     velocity*: Vector
     lastMoveVector*: Vector
     bounds: AABB
@@ -68,6 +70,8 @@ proc initPhysicsBody*(
   physicsBody.collisionListeners = newSafeSeq[CollisionListener]()
   if physicsBody.kind != PhysicsBodyKind.STATIC:
     physicsBody.addCollisionListener(wallAndGroundSetter)
+
+  physicsBody.previousRotation = physicsBody.rotation
 
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
@@ -155,6 +159,11 @@ proc wallAndGroundSetter(
 
 method update*(this: PhysicsBody, deltaTime: float) =
   procCall Node(this).update(deltaTime)
+
+  if this.previousRotation != this.rotation:
+    # Ensure the collisionShape has been rotated
+    this.collisionShape.setRotation(this.rotation.toRadians())
+    this.previousRotation = this.rotation
 
   this.lastMoveVector = this.velocity * deltaTime
   if this.velocity != VECTOR_ZERO:

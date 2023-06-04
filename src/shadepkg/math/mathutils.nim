@@ -315,3 +315,7 @@ proc lerp*(v1, v2: Vector, completionRatio: CompletionRatio): Vector =
 func toAngle*(radians: float): float =
   return (radians * 180) / PI
 
+func toRadians*(angle: float): float =
+  const piOver180 = PI / 180
+  return angle * piOver180
+

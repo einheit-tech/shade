@@ -155,10 +155,23 @@ func area*(this: Polygon): float =
   return this.area.get
 
 func center*(this: Polygon): Vector =
-  ## Gets the centroid of the Polygon.
+  ## Gets the center of the Polygon.
   if this.center.isSome:
     return this.center.get
 
+  var x, y: float
+  for v in this.vertices:
+    x += v.x
+    y += v.y
+
+  x /= float(this.vertices.len)
+  y /= float(this.vertices.len)
+
+  this.center = some(vector(x, y))
+  return this.center.get
+
+func centroid*(this: Polygon): Vector =
+  ## Gets the centroid of the Polygon.
   var
     area, x, y: float
     lastV = this[this.vertices.high]
@@ -174,13 +187,24 @@ func center*(this: Polygon): Vector =
   let area6 = 1.0 / (area * 6.0)
   x *= area6
   y *= area6
-  this.center = some(vector(x, y))
-  return this.center.get
+  return vector(x, y)
 
 template getWidth*(this: Vector): float = this.getBounds().width
 template getHeight*(this: Vector): float = this.getBounds().height
 template getSize*(this: Vector): Vector =
   Vector(this.getWidth(), this.getHeight())
+
+func getRotatedInstance*(this: Polygon, rotation: float): Polygon =
+  if rotation == 0.0:
+    return newPolygon(this.vertices)
+
+  var vertices = newSeq[Vector](this.vertices.len)
+  let center = center(this)
+  for i, vertex in this:
+    vertices[i] = vertex.rotateAround(rotation, center)
+
+  result = newPolygon(vertices)
+  result.center = some(center)
 
 func getTranslatedInstance*(this: Polygon, delta: Vector): Polygon =
   var verts: seq[Vector]
@@ -199,6 +223,9 @@ func getScaledInstance*(this: Polygon, scale, anchorPoint: Vector): Polygon =
 
 func getScaledInstance*(this: Polygon, scale: Vector): Polygon =
   return this.getScaledInstance(scale, center(this))
+
+func getScaledInstance*(this: Polygon, scale: float): Polygon =
+  return this.getScaledInstance(vector(scale, scale))
 
 proc createRandomConvex*(vertexCount: int, width, height: float): Polygon =
   ## Generates a random convex polygon.
