@@ -53,6 +53,14 @@ func subtract*(this: SomeVector, x, y: float): SomeVector =
 
 # Multiply
 
+proc `*=`*(this: var SomeVector, v: SomeVector) =
+  this.x *= v.x
+  this.y *= v.y
+
+proc `*=`*(this: var SomeVector, scalar: float) =
+  this.x *= scalar
+  this.y *= scalar
+
 func `*`*(this, v: SomeVector): SomeVector =
   vector(this.x * v.x, this.y * v.y)
 
@@ -146,9 +154,9 @@ func getAngleRadiansTo*(this, v: SomeVector): float =
   )
 
 func getAngleTo*(this, v: SomeVector): float =
-  ## Gets the angle of this vector to `v`, in radians.
+  ## Gets the angle of this vector to `v`.
   ## (from -179 to 179)
-  (this.getAngleRadiansTo(v) * 180) / PI
+  this.getAngleRadiansTo(v).toAngle()
 
 func fromRadians*(radians: float): SomeVector =
   ## Creates a new unit vector from the radian value.

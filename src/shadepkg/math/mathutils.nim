@@ -312,3 +312,6 @@ proc lerp*(v1, v2: Vector, completionRatio: CompletionRatio): Vector =
   ## @returns {Vector} A new vector with the lerped values.
   return v1.ease(v2, completionRatio, mathutils.lerp)
 
+func toAngle*(radians: float): float =
+  return (radians * 180) / PI
+

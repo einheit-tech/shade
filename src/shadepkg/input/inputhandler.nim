@@ -96,7 +96,7 @@ type
     keys: Table[Keycode, KeyState]
     keyPressedListeners: Table[Keycode, SafeSeq[KeyListener]]
     keyReleasedListeners: Table[Keycode, SafeSeq[KeyListener]]
-    eventListeners: seq[KeyListener]
+    eventListeners: SafeSeq[KeyListener]
 
   ControllerStickState* = object
     x*: float
@@ -190,7 +190,7 @@ proc initInputHandlerSingleton*(windowScaling: Vector) =
     raise newException(Exception, "InputHandler singleton already active!")
   Input = InputHandler(
     mouse: Mouse(),
-    keyboard: Keyboard(),
+    keyboard: Keyboard(eventListeners: newSafeSeq[KeyListener]()),
     controller: Controller(deadzoneRadius: DEFAULT_DEADZONE),
     windowScaling: windowScaling,
     customActionsToFireThisFrame: newSafeSeq[string]()
@@ -215,14 +215,7 @@ proc addKeyboardEventListener*(this: InputHandler, listener: KeyListener) =
   this.keyboard.eventListeners.add(listener)
 
 proc removeKeyboardEventListener*(this: InputHandler, listener: KeyListener) =
-  var index = -1
-  for i, l in this.keyboard.eventListeners:
-    if listener == l:
-      index = i
-      break
-
-  if index >= 0:
-    this.keyboard.eventListeners.delete(index)
+  this.keyboard.eventListeners.remove(listener)
 
 template onKeyEvent*(this: InputHandler, body: untyped) =
   this.addKeyboardEventListener(

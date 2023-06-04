@@ -241,11 +241,12 @@ proc createRandomConvex*(vertexCount: int, width, height: float): Polygon =
 
   # Divide interior points into two chains, and convert them to vector components.
   var
-    xComponents: seq[float]
-    yComponents: seq[float]
+    xComponents: seq[float] = newSeq[float](vertexCount)
+    yComponents: seq[float] = newSeq[float](vertexCount)
     topX, bottomX, leftY, rightY: float
 
-  for i in 1..<vertexCount:
+  # NOTE: Yes, -2 here is intentional.
+  for i in countup(1, vertexCount - 2):
     # Find X
     let x = xCoords[i]
     # Pick true/false by random.
