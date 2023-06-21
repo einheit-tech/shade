@@ -35,7 +35,7 @@ proc newParticleEmitter*[P: Particle](
   createParticle: proc: P,
   resetParticle: proc(p: P) = nil
 ): ParticleEmitter[P] =
-  result = ParticleEmitter()
+  result = ParticleEmitter[P]()
   initParticleEmitter[P](result, creationRate, createParticle, resetParticle)
 
 proc shouldCreateParticle(this: ParticleEmitter): bool =
