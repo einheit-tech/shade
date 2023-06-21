@@ -19,6 +19,7 @@ requires "https://github.com/avahe-kellenberger/sdl2_nim#head"
 requires "safeseq >= 0.1.0"
 requires "nimtest >= 0.1.2"
 requires "seq2d >= 0.1.1"
+requires "delaunator >= 20230606"
 
 task create_deps_artifact, "Compresses contents of .usr dir needed for development":
   exec "nim r -d:release src/shade.nim --compress"
