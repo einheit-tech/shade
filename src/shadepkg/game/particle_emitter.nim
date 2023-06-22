@@ -9,16 +9,19 @@ type
     creationRate: Vector
     particlePool: ObjectPool[P]
     secondsTillParticleCreation: float
+    onParticleCreated: proc(p: P, isNewParticle: bool)
 
 proc initParticleEmitter*[P: Particle](
   this: ParticleEmitter[P],
   creationRate: Vector,
   createParticle: proc: P,
+  onParticleCreated: proc(p: P, isNewParticle: bool),
   resetParticle: proc(p: P) = nil
 ) =
   ## creationRate: The min and max time to spawn the next particle.
-  initNode(Node this)
+  initNode(Node this, {LayerObjectFlags.UPDATE})
   this.creationRate = creationRate
+  this.onParticleCreated = onParticleCreated
   this.particlePool = newObjectPool[P](
     createParticle,
     proc(p: var P) =
@@ -33,22 +36,25 @@ proc initParticleEmitter*[P: Particle](
 proc newParticleEmitter*[P: Particle](
   creationRate: Vector,
   createParticle: proc: P,
+  onParticleCreated: proc(p: P, isNewParticle: bool),
   resetParticle: proc(p: P) = nil
 ): ParticleEmitter[P] =
   result = ParticleEmitter[P]()
-  initParticleEmitter[P](result, creationRate, createParticle, resetParticle)
+  initParticleEmitter[P](result, creationRate, createParticle, onParticleCreated, resetParticle)
 
 proc shouldCreateParticle(this: ParticleEmitter): bool =
   return this.secondsTillParticleCreation <= 0
 
-method update*(this: ParticleEmitter, deltaTime: float) =
-  procCall Particle(this).update(deltaTime)
+method update*[P: Particle](this: ParticleEmitter[P], deltaTime: float) =
+  procCall Node(this).update(deltaTime)
 
   this.secondsTillParticleCreation -= deltaTime
   while this.shouldCreateParticle():
-    let particle = this.particlePool.get()
+    let (particle, isNewParticle) = this.particlePool.getWithInfo()
     particle.onExpired:
-      this.particlePool.recycle(particle)
+      discard this.particlePool.recycle(particle)
 
+    particle.setLocation(this.getLocation())
+    this.onParticleCreated(particle, isNewParticle)
     this.secondsTillParticleCreation += this.creationRate.random()
 

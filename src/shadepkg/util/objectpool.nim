@@ -51,6 +51,15 @@ proc get*[O](this: ObjectPool[O]): O =
   else:
     return this.factoryFunction()
 
+# TODO: better name
+proc getWithInfo*[O](this: ObjectPool[O]): tuple[obj: O, isNewParticle: bool] =
+  if this.pool.len > 0:
+    result = (this.pool.pop(), false)
+    if this.resetObjectFunction != nil:
+      this.resetObjectFunction(result.obj)
+  else:
+    return (this.factoryFunction(), true)
+
 proc recycle*[O](this: ObjectPool[O], o: O): bool =
   ## Attempts to add an object to the pool.
   ## Returns if the pool was not full, and added the object.

@@ -1,8 +1,11 @@
 import ../../src/shade
+import std/random
+
+randomize()
 
 const
-  width = 400
-  height = 300
+  width = 800
+  height = 600
 
 initEngineSingleton("Particle Emitter Example", width, height)
 let layer = newLayer()
@@ -11,7 +14,8 @@ Game.scene.addLayer(layer)
 const
   # Particles will live for 3 seconds
   particleLifespan = 3.0
-  creationRate = vector(0.1, 0.5)
+  creationRate = vector(0.01, 0.05)
+  screenCenter = vector(width / 2, height / 2)
 
 # Create our particle
 type SquareParticle* = ref object of Particle
@@ -31,11 +35,23 @@ SquareParticle.renderAsChildOf(Particle):
     this.color
   )
 
+proc createRandomParticle(): SquareParticle =
+  result = newSquareParticle(RED, vector(4.0, 4.0))
+  result.velocity = vector(rand(-20.0 .. 20.0), rand(100.0 .. 180.0))
+
 # Create our particle emitter
 let emitter = newParticleEmitter[SquareParticle](
   creationRate,
-  (proc(): SquareParticle = newSquareParticle(RED, vector(4, 4)))
+  (proc(): SquareParticle = createRandomParticle()),
+  (proc(p: SquareParticle, isNewParticle: bool) =
+    if isNewParticle:
+      layer.addChild(p)
+  )
 )
+
+emitter.setLocation(screenCenter)
+
+layer.addChild(emitter)
 
 Game.start()
 
