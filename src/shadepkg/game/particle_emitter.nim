@@ -18,7 +18,19 @@ proc initParticleEmitter*[P: Particle](
   onParticleCreated: proc(p: P, isNewParticle: bool),
   resetParticle: proc(p: P) = nil
 ) =
-  ## creationRate: The min and max time to spawn the next particle.
+  ## @param creationRate:
+  ##   The min and max time in seconds to spawn the next particle.
+  ##
+  ## @param createParticle:
+  ##   A procedure used to create a new particle.
+  ##
+  ## @param onParticleCreated:
+  ##   A callback invoked when a particle is created.
+  ##   `isNewParticle` is true if a new particle was created,
+  ##   and false if the particle was recycled.
+  ##
+  ## @param resetParticle:
+  ##   A function invoked to reset some state of each particle after it's been recycled.
   initNode(Node this, {LayerObjectFlags.UPDATE})
   this.creationRate = creationRate
   this.onParticleCreated = onParticleCreated
@@ -39,6 +51,19 @@ proc newParticleEmitter*[P: Particle](
   onParticleCreated: proc(p: P, isNewParticle: bool),
   resetParticle: proc(p: P) = nil
 ): ParticleEmitter[P] =
+  ## @param creationRate:
+  ##   The min and max time in seconds to spawn the next particle.
+  ##
+  ## @param createParticle:
+  ##   A procedure used to create a new particle.
+  ##
+  ## @param onParticleCreated:
+  ##   A callback invoked when a particle is created.
+  ##   `isNewParticle` is true if a new particle was created,
+  ##   and false if the particle was recycled.
+  ##
+  ## @param resetParticle:
+  ##   A function invoked to reset some state of each particle after it's been recycled.
   result = ParticleEmitter[P]()
   initParticleEmitter[P](result, creationRate, createParticle, onParticleCreated, resetParticle)
 
@@ -50,11 +75,19 @@ method update*[P: Particle](this: ParticleEmitter[P], deltaTime: float) =
 
   this.secondsTillParticleCreation -= deltaTime
   while this.shouldCreateParticle():
-    let (particle, isNewParticle) = this.particlePool.getWithInfo()
-    particle.onExpired:
-      discard this.particlePool.recycle(particle)
+    this.secondsTillParticleCreation += this.creationRate.random()
 
+    let (particle, isNewParticle) = this.particlePool.getWithInfo()
+    particle.ttl = particle.maxTtl
+
+    particle.flags = UPDATE_RENDER_FLAGS
     particle.setLocation(this.getLocation())
     this.onParticleCreated(particle, isNewParticle)
-    this.secondsTillParticleCreation += this.creationRate.random()
+
+    # Add an expiration listener if it's a newly created particle.
+    if isNewParticle:
+      particle.onExpired:
+        if this.particlePool.recycle(particle):
+          particle.ttl = particle.maxTtl
+          particle.flags = {}
 

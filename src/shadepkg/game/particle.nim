@@ -12,12 +12,16 @@ type
     expirationListeners: SafeSeq[ExpirationListener]
 
 proc initParticle*(this: Particle, ttl: float) =
+  ## @param ttl:
+  ##   The number of seconds the particle should live
   initNode(Node this)
   this.ttl = ttl
   this.maxTtl = ttl
   this.expirationListeners = newSafeSeq[ExpirationListener]()
 
 proc newParticle*(ttl: float): Particle =
+  ## @param ttl:
+  ##   The number of seconds the particle should live
   result = Particle()
   initParticle(result, ttl)
 
@@ -34,11 +38,14 @@ proc expire(this: Particle) =
     listener()
 
 method update*(this: Particle, deltaTime: float) =
+  if this.ttl <= 0:
+    return
+
   procCall Node(this).update(deltaTime)
 
   this.ttl -= deltaTime
   if this.ttl <= 0:
     this.expire()
-
-  this.move(this.velocity.x * deltaTime, this.velocity.y * deltaTime)
+  else:
+    this.move(this.velocity.x * deltaTime, this.velocity.y * deltaTime)
 

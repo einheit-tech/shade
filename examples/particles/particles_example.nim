@@ -13,8 +13,8 @@ Game.scene.addLayer(layer)
 
 const
   # Particles will live for 3 seconds
-  particleLifespan = 3.0
-  creationRate = vector(0.01, 0.05)
+  particleLifespan = 1.0
+  creationRate = vector(0.001, 0.001)
   screenCenter = vector(width / 2, height / 2)
 
 # Create our particle
@@ -27,6 +27,10 @@ proc newSquareParticle(color: Color, size: Vector): SquareParticle =
   initParticle(result, particleLifespan)
 
 SquareParticle.renderAsChildOf(Particle):
+  if this.ttl <= 0:
+    return
+
+  this.color.a = uint8 easeOutQuadratic(255, 0, 1.0 - max(0, this.ttl / this.maxTtl))
   ctx.rectangleFilled(
     offsetX + this.x - this.size.x / 2,
     offsetY + this.y - this.size.y / 2,
@@ -52,6 +56,13 @@ let emitter = newParticleEmitter[SquareParticle](
 emitter.setLocation(screenCenter)
 
 layer.addChild(emitter)
+
+emitter.onUpdate = proc(this: Node, deltaTime: float) =
+  this.setLocation(Input.mouseLocation)
+
+Input.onKeyEvent:
+  if key == K_ESCAPE:
+    Game.stop()
 
 Game.start()
 
