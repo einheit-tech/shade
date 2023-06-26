@@ -1,5 +1,6 @@
 from sdl2_nim/sdl import Color
 
+import std/strformat
 import ../math/mathutils
 
 export Color
@@ -14,6 +15,9 @@ func lerp*(startValue, endValue: Color, completionRatio: CompletionRatio): Color
     uint8 lerp(float startValue.b, float endValue.b, completionRatio),
     uint8 lerp(float startValue.a, float endValue.a, completionRatio)
   )
+
+proc `$`*(this: Color): string =
+  return fmt"(r: {this.r}, g: {this.g}, b: {this.b}, a: {this.a})"
 
 const
   TRANSPARENT* = Color()

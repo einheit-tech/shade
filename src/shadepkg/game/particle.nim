@@ -1,51 +1,58 @@
-import safeseq
 import node
-import ../render/render
+import ../render/[render, color]
 import ../math/vector2
 
 type
-  ExpirationListener* = proc()
-  Particle* = ref object of Node
+  Particle* = object
+    location*: Vector
     velocity*: Vector
+    color*: Color
+    size*: float
     ttl*: float
-    maxTtl*: float
-    expirationListeners: SafeSeq[ExpirationListener]
+    lifetime: float
 
-proc initParticle*(this: Particle, ttl: float) =
-  ## @param ttl:
-  ##   The number of seconds the particle should live
-  initNode(Node this)
-  this.ttl = ttl
-  this.maxTtl = ttl
-  this.expirationListeners = newSafeSeq[ExpirationListener]()
-
-proc newParticle*(ttl: float): Particle =
-  ## @param ttl:
+proc newParticle*(color: Color, size, lifetime: float): Particle =
+  ## @param color:
+  ##   The color to render the particle.
+  ##
+  ## @param size:
+  ##   The size of the particle in pixels.
+  ##
+  ## @param lifetime:
   ##   The number of seconds the particle should live
   result = Particle()
-  initParticle(result, ttl)
+  result.color = color
+  result.size = size
+  result.ttl = lifetime
+  result.lifetime = lifetime
 
-proc addExpirationListener*(this: Particle, listener: ExpirationListener) =
-  this.expirationListeners.add(listener)
+template x*(this: Particle): float =
+  this.location.x
 
-template onExpired*(this: Particle, body: untyped) =
-  this.addExpirationListener(proc() =
-    body
-  )
+template y*(this: Particle): float =
+  this.location.y
 
-proc expire(this: Particle) =
-  for listener in this.expirationListeners:
-    listener()
+proc lifetime*(this: Particle): float =
+  ## The entire amount of time in seconds the particle lives.
+  return this.lifetime
 
-method update*(this: Particle, deltaTime: float) =
+proc update*(this: var Particle, deltaTime: float) =
   if this.ttl <= 0:
     return
 
-  procCall Node(this).update(deltaTime)
-
+  this.location += this.velocity * deltaTime
   this.ttl -= deltaTime
+
+Particle.render:
   if this.ttl <= 0:
-    this.expire()
-  else:
-    this.move(this.velocity.x * deltaTime, this.velocity.y * deltaTime)
+    return
+
+  let halfSize = this.size * 0.5
+  ctx.rectangleFilled(
+    offsetX + this.x - halfSize,
+    offsetY + this.y - halfSize,
+    offsetX + this.x + halfSize,
+    offsetY + this.y + halfSize,
+    this.color
+  )
 

@@ -1,93 +1,111 @@
-import ../util/objectpool
 import ../math/vector2
 import node, particle
 
 type
-  ParticleParent = concept p
-    p of Particle
-  ParticleEmitter*[P: ParticleParent] = ref object of Node
+  ParticleEmitter* = ref object of Node
+    createParticle: proc: Particle
     creationRate: Vector
-    particlePool: ObjectPool[P]
     secondsTillParticleCreation: float
-    onParticleCreated: proc(p: P, isNewParticle: bool)
+    particles: seq[Particle]
+    particleIDs: seq[int]
+    particleCounter: int
+    firstDeadParticleIDIndex: int
 
-proc initParticleEmitter*[P: Particle](
-  this: ParticleEmitter[P],
+proc initParticleEmitter*(
+  this: ParticleEmitter,
   creationRate: Vector,
-  createParticle: proc: P,
-  onParticleCreated: proc(p: P, isNewParticle: bool),
-  resetParticle: proc(p: P) = nil
+  createParticle: proc: Particle,
+  initialNumParticles: int
 ) =
   ## @param creationRate:
   ##   The min and max time in seconds to spawn the next particle.
   ##
   ## @param createParticle:
   ##   A procedure used to create a new particle.
-  ##
-  ## @param onParticleCreated:
-  ##   A callback invoked when a particle is created.
-  ##   `isNewParticle` is true if a new particle was created,
-  ##   and false if the particle was recycled.
-  ##
-  ## @param resetParticle:
-  ##   A function invoked to reset some state of each particle after it's been recycled.
-  initNode(Node this, {LayerObjectFlags.UPDATE})
+  initNode(Node this)
+  this.createParticle = createParticle
   this.creationRate = creationRate
-  this.onParticleCreated = onParticleCreated
-  this.particlePool = newObjectPool[P](
-    createParticle,
-    proc(p: var P) =
-      if resetParticle != nil:
-        resetParticle(p)
-      p.ttl = p.maxTtl
-      p.setLocation(this.getLocation())
-  )
-
   this.secondsTillParticleCreation = this.creationRate.random()
+  this.particles = newSeq[Particle](initialNumParticles)
+  this.particleIDs = newSeq[int](initialNumParticles)
+  for i in 0 ..< initialNumParticles:
+    this.particles[i] = createParticle()
+    this.particleIDs[i] = i
 
-proc newParticleEmitter*[P: Particle](
+  # We leave this.firstDeadParticleIDIndex at 0
+  # so that particles will be set to the emitter location
+  # when `recycleParticle` is invoked.
+  # This means the particles are considered "dead" initially,
+  # even though we've initialized their state above.
+
+proc newParticleEmitter*(
   creationRate: Vector,
-  createParticle: proc: P,
-  onParticleCreated: proc(p: P, isNewParticle: bool),
-  resetParticle: proc(p: P) = nil
-): ParticleEmitter[P] =
+  createParticle: proc: Particle,
+  initialNumParticles: int
+): ParticleEmitter =
   ## @param creationRate:
   ##   The min and max time in seconds to spawn the next particle.
   ##
   ## @param createParticle:
   ##   A procedure used to create a new particle.
-  ##
-  ## @param onParticleCreated:
-  ##   A callback invoked when a particle is created.
-  ##   `isNewParticle` is true if a new particle was created,
-  ##   and false if the particle was recycled.
-  ##
-  ## @param resetParticle:
-  ##   A function invoked to reset some state of each particle after it's been recycled.
-  result = ParticleEmitter[P]()
-  initParticleEmitter[P](result, creationRate, createParticle, onParticleCreated, resetParticle)
+  result = ParticleEmitter()
+  initParticleEmitter(result, creationRate, createParticle, initialNumParticles)
 
 proc shouldCreateParticle(this: ParticleEmitter): bool =
   return this.secondsTillParticleCreation <= 0
 
-method update*[P: Particle](this: ParticleEmitter[P], deltaTime: float) =
+template numDeadParticles*(this: ParticleEmitter): int =
+  this.particles.len() - this.firstDeadParticleIDIndex
+
+template numLivingParticles*(this: ParticleEmitter): int =
+  this.particles.len() - this.numDeadParticles()
+
+template hasDeadParticles*(this: ParticleEmitter): bool =
+  this.firstDeadParticleIDIndex < this.particles.len()
+
+template emitNewParticle(this: ParticleEmitter) =
+  # This means we have no particles to recycle,
+  # so we just add a new particle to the end of the array.
+  var p = this.createParticle()
+  p.location = this.getLocation()
+  this.particleIDs.add(this.particles.len())
+  this.particles.add(p)
+  inc this.firstDeadParticleIDIndex
+
+template recycleParticle(this: ParticleEmitter) =
+  # We have particles that can be recycled.
+  let recycledParticleID = this.particleIDs[this.firstDeadParticleIDIndex]
+  template recycledParticle: Particle =
+    this.particles[recycledParticleID]
+  recycledParticle.ttl = recycledParticle.lifetime
+  recycledParticle.location = this.getLocation()
+  inc this.firstDeadParticleIDIndex
+
+template emitParticle(this: ParticleEmitter) =
+  if this.hasDeadParticles():
+    this.recycleParticle()
+  else:
+    this.emitNewParticle()
+
+iterator forEachLivingParticle(this: ParticleEmitter): var Particle =
+  for i in 0 ..< this.firstDeadParticleIDIndex:
+    let id = this.particleIDs[i]
+    yield this.particles[id]
+
+method update*(this: ParticleEmitter, deltaTime: float) =
   procCall Node(this).update(deltaTime)
 
+  # Emit any new particles needed
   this.secondsTillParticleCreation -= deltaTime
   while this.shouldCreateParticle():
     this.secondsTillParticleCreation += this.creationRate.random()
+    this.emitParticle()
 
-    let (particle, isNewParticle) = this.particlePool.getWithInfo()
-    particle.ttl = particle.maxTtl
+  # Update all living particles
+  for particle in this.forEachLivingParticle:
+    particle.update(deltaTime)
 
-    particle.flags = UPDATE_RENDER_FLAGS
-    particle.setLocation(this.getLocation())
-    this.onParticleCreated(particle, isNewParticle)
-
-    # Add an expiration listener if it's a newly created particle.
-    if isNewParticle:
-      particle.onExpired:
-        if this.particlePool.recycle(particle):
-          particle.ttl = particle.maxTtl
-          particle.flags = {}
+ParticleEmitter.renderAsNodeChild:
+  for particle in this.forEachLivingParticle:
+    particle.render(ctx, offsetX, offsetY)
 
