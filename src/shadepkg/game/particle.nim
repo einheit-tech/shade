@@ -10,6 +10,7 @@ type
     size*: float
     ttl*: float
     lifetime: float
+    onUpdate*: proc(p: var Particle, deltaTime: float)
 
 proc newParticle*(color: Color, size, lifetime: float): Particle =
   ## @param color:
@@ -43,7 +44,10 @@ proc update*(this: var Particle, deltaTime: float) =
   this.location += this.velocity * deltaTime
   this.ttl -= deltaTime
 
-Particle.render:
+  if this.onUpdate != nil:
+    this.onUpdate(this, deltaTime)
+
+proc render*(this: var Particle, ctx: Target, offsetX: float = 0, offsetY: float = 0) =
   if this.ttl <= 0:
     return
 

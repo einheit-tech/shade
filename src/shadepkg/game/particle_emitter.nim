@@ -4,28 +4,28 @@ import node, particle
 type
   ParticleEmitter* = ref object of Node
     createParticle: proc: Particle
-    creationRate: Vector
+    particlesPerSecond: float
     secondsTillParticleCreation: float
     particles: seq[Particle]
     particleIDs: seq[int]
     particleCounter: int
     firstDeadParticleIDIndex: int
+    numParticlesToCreate: float
 
 proc initParticleEmitter*(
   this: ParticleEmitter,
-  creationRate: Vector,
+  particlesPerSecond: float,
   createParticle: proc: Particle,
   initialNumParticles: int
 ) =
-  ## @param creationRate:
-  ##   The min and max time in seconds to spawn the next particle.
+  ## @param particlesPerSecond:
+  ##   The number of particles to emit per second.
   ##
   ## @param createParticle:
   ##   A procedure used to create a new particle.
   initNode(Node this)
   this.createParticle = createParticle
-  this.creationRate = creationRate
-  this.secondsTillParticleCreation = this.creationRate.random()
+  this.particlesPerSecond = particlesPerSecond
   this.particles = newSeq[Particle](initialNumParticles)
   this.particleIDs = newSeq[int](initialNumParticles)
   for i in 0 ..< initialNumParticles:
@@ -39,20 +39,17 @@ proc initParticleEmitter*(
   # even though we've initialized their state above.
 
 proc newParticleEmitter*(
-  creationRate: Vector,
+  particlesPerSecond: float,
   createParticle: proc: Particle,
   initialNumParticles: int
 ): ParticleEmitter =
-  ## @param creationRate:
-  ##   The min and max time in seconds to spawn the next particle.
+  ## @param particlesPerSecond:
+  ##   The number of particles to emit per second.
   ##
   ## @param createParticle:
   ##   A procedure used to create a new particle.
   result = ParticleEmitter()
-  initParticleEmitter(result, creationRate, createParticle, initialNumParticles)
-
-proc shouldCreateParticle(this: ParticleEmitter): bool =
-  return this.secondsTillParticleCreation <= 0
+  initParticleEmitter(result, particlesPerSecond, createParticle, initialNumParticles)
 
 template numDeadParticles*(this: ParticleEmitter): int =
   this.particles.len() - this.firstDeadParticleIDIndex
@@ -95,11 +92,13 @@ iterator forEachLivingParticle(this: ParticleEmitter): var Particle =
 method update*(this: ParticleEmitter, deltaTime: float) =
   procCall Node(this).update(deltaTime)
 
+  this.numParticlesToCreate += this.particlesPerSecond * deltaTime
+
   # Emit any new particles needed
   this.secondsTillParticleCreation -= deltaTime
-  while this.shouldCreateParticle():
-    this.secondsTillParticleCreation += this.creationRate.random()
+  while this.numParticlesToCreate >= 1.0:
     this.emitParticle()
+    this.numParticlesToCreate -= 1.0
 
   # Update all living particles
   for particle in this.forEachLivingParticle:
