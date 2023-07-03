@@ -1,5 +1,5 @@
 import
-  mathutils,
+  vector2,
   ../render/render,
   ../render/color
 

@@ -6,13 +6,12 @@ import
   gamestate,
   ../render/render,
   ../render/shader,
-  ../math/mathutils
+  ../math/vector2
 
 export
   hashes,
   sequtils,
-  render,
-  mathutils
+  render
 
 type
   ## Flags indicating how the object should be treated by a layer.

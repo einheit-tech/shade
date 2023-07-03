@@ -1,4 +1,5 @@
-import ../mathutils
+import ../vector2
+export vector2
 
 type CollisionResult* = ref object
   intrusion*: float

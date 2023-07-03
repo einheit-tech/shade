@@ -5,7 +5,8 @@ import
   sdl2_nim/sdl,
   safeseq
 
-import ../math/mathutils
+import ../math/[mathutils, vector2]
+export mathutils, vector2
 
 export
   Scancode,

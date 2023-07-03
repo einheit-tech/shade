@@ -1,9 +1,9 @@
 import
   node,
-  ../math/aabb,
+  ../math/[aabb, vector2, mathutils],
   ../game/gamestate
 
-export aabb
+export aabb, vector2, mathutils
 
 type
   Camera* = ref object of Node

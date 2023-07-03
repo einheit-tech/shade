@@ -4,6 +4,7 @@ import
 
 import
   node,
+  ../math/mathutils,
   ../math/collision/collisionshape,
   ../math/collision/collisionresult
 

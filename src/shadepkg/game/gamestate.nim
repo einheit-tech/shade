@@ -1,4 +1,4 @@
-import ../math/mathutils
+import ../math/vector2
 
 type ResolutionCallback = proc()
 

@@ -1,6 +1,7 @@
 import ../game/gamestate
 import sdl2_nim/sdl_gpu
-import ../math/mathutils
+# import ../math/mathutils
+import ../math/vector2
 
 var
   resolution: array[2, cfloat] = [ cfloat 0, 0 ]

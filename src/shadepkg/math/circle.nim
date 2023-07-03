@@ -5,8 +5,11 @@ import
 
 import
   mathutils,
+  vector2,
   aabb,
   ../render/color
+
+export vector2
 
 type Circle* = object
   center*: Vector

@@ -13,9 +13,11 @@ import safeseq
 
 import
   node,
-  ../math/mathutils,
+  ../math/[vector2, mathutils],
   ../util/types,
   ../render/color
+
+export vector2
 
 type
   ClosureProc* = proc() {.closure.}

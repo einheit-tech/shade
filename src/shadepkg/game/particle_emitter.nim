@@ -4,6 +4,9 @@ import node, particle
 type
   ParticleEmitter* = ref object of Node
     createParticle: proc: Particle
+    ## The location to spawn the next particle.
+    ## If nil, ParticleEmitter.location will be used.
+    getNextParticleSpawnLocation*: proc: Vector
     particlesPerSecond: float
     secondsTillParticleCreation: float
     particles: seq[Particle]
@@ -11,32 +14,6 @@ type
     particleCounter: int
     firstDeadParticleIDIndex: int
     numParticlesToCreate: float
-
-proc initParticleEmitter*(
-  this: ParticleEmitter,
-  particlesPerSecond: float,
-  createParticle: proc: Particle,
-  initialNumParticles: int
-) =
-  ## @param particlesPerSecond:
-  ##   The number of particles to emit per second.
-  ##
-  ## @param createParticle:
-  ##   A procedure used to create a new particle.
-  initNode(Node this)
-  this.createParticle = createParticle
-  this.particlesPerSecond = particlesPerSecond
-  this.particles = newSeq[Particle](initialNumParticles)
-  this.particleIDs = newSeq[int](initialNumParticles)
-  for i in 0 ..< initialNumParticles:
-    this.particles[i] = createParticle()
-    this.particleIDs[i] = i
-
-  # We leave this.firstDeadParticleIDIndex at 0
-  # so that particles will be set to the emitter location
-  # when `recycleParticle` is invoked.
-  # This means the particles are considered "dead" initially,
-  # even though we've initialized their state above.
 
 proc newParticleEmitter*(
   particlesPerSecond: float,
@@ -49,7 +26,20 @@ proc newParticleEmitter*(
   ## @param createParticle:
   ##   A procedure used to create a new particle.
   result = ParticleEmitter()
-  initParticleEmitter(result, particlesPerSecond, createParticle, initialNumParticles)
+  initNode(Node result)
+  result.createParticle = createParticle
+  result.particlesPerSecond = particlesPerSecond
+  result.particles = newSeq[Particle](initialNumParticles)
+  result.particleIDs = newSeq[int](initialNumParticles)
+  for i in 0 ..< initialNumParticles:
+    result.particles[i] = createParticle()
+    result.particleIDs[i] = i
+
+  # We leave this.firstDeadParticleIDIndex at 0
+  # so that particles will be set to the emitter location
+  # when `recycleParticle` is invoked.
+  # This means the particles are considered "dead" initially,
+  # even though we've initialized their state above.
 
 template numDeadParticles*(this: ParticleEmitter): int =
   this.particles.len() - this.firstDeadParticleIDIndex
@@ -64,7 +54,12 @@ template emitNewParticle(this: ParticleEmitter) =
   # This means we have no particles to recycle,
   # so we just add a new particle to the end of the array.
   var p = this.createParticle()
-  p.location = this.getLocation()
+  p.location = 
+    if this.getNextParticleSpawnLocation == nil:
+      this.getLocation()
+    else:
+      this.getNextParticleSpawnLocation()
+
   this.particleIDs.add(this.particles.len())
   this.particles.add(p)
   inc this.firstDeadParticleIDIndex
@@ -75,7 +70,12 @@ template recycleParticle(this: ParticleEmitter) =
   template recycledParticle: Particle =
     this.particles[recycledParticleID]
   recycledParticle.ttl = recycledParticle.lifetime
-  recycledParticle.location = this.getLocation()
+  recycledParticle.location = 
+    if this.getNextParticleSpawnLocation == nil:
+      this.getLocation()
+    else:
+      this.getNextParticleSpawnLocation()
+
   inc this.firstDeadParticleIDIndex
 
 template emitParticle(this: ParticleEmitter) =
@@ -88,6 +88,17 @@ iterator forEachLivingParticle(this: ParticleEmitter): var Particle =
   for i in 0 ..< this.firstDeadParticleIDIndex:
     let id = this.particleIDs[i]
     yield this.particles[id]
+
+proc setEnabled*(this: ParticleEmitter, enabled: bool) =
+  if enabled:
+    if UPDATE notin this.flags:
+      this.flags = UPDATE_RENDER_FLAGS
+  else:
+    if UPDATE in this.flags:
+      this.flags = { RENDER }
+
+proc isEnabled*(this: ParticleEmitter): bool =
+  return UPDATE in this.flags
 
 method update*(this: ParticleEmitter, deltaTime: float) =
   procCall Node(this).update(deltaTime)

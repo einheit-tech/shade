@@ -1,6 +1,8 @@
 import
   ../render/render,
-  ../math/mathutils
+  ../math/vector2
+
+export vector2
 
 type Spritesheet* = ref object
   sheetImage: Image

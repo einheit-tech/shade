@@ -2,7 +2,10 @@ import sdl2_nim/[sdl, sdl_ttf]
 
 import 
   ../node,
-  ../../render/color
+  ../../render/color,
+  ../../math/vector2
+
+export vector2
 
 type
   TextBoxObj = object of Node

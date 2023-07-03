@@ -1,6 +1,4 @@
-import
-  math,
-  random
+import random, mathutils
 
 type
   Vector* = object
@@ -8,6 +6,17 @@ type
   IVector* = object
     x*, y*: int
   SomeVector* = Vector|IVector
+
+func lerp*(startValue, endValue: IVector, completionRatio: CompletionRatio): IVector
+func cubicBezierVector*(t: float, p0, p1, p2, p3: Vector): Vector
+func cubicBezier*(t, p0, p1, p2, p3: float): float
+func quadraticBezierVector*(t: float, p0, p1, p2: Vector): Vector
+func quadraticBezier*(t, p0, p1, p2: float): float
+func linearBezierVector*(t: float, p0, p1: Vector): Vector
+func easeInExpo*(startValue, endValue: Vector, completionRatio: CompletionRatio): Vector
+func easeInQuadratic*(startValue, endValue: Vector, completionRatio: CompletionRatio): Vector
+func easeInAndOutQuadratic*(startValue, endValue: Vector, completionRatio: CompletionRatio): Vector
+func easeOutQuadratic*(startValue, endValue: Vector, completionRatio: CompletionRatio): Vector
 
 proc vector*(x, y: float): Vector =
   Vector(x: x, y: y)
@@ -162,6 +171,11 @@ func fromRadians*(radians: float): SomeVector =
   ## Creates a new unit vector from the radian value.
   vector(cos(radians), sin(radians))
 
+func fromAngle*(angle: float): SomeVector =
+  ## Creates a new unit vector from the radian value.
+  let radians = toRadians(angle)
+  vector(cos(radians), sin(radians))
+
 func rotate*(this: SomeVector, rotation: float): SomeVector =
   ## Gets a copy of this vector rotated around its origin by the given amount.
   ## @param rotation the number of radians to rotate the vector by.
@@ -192,3 +206,105 @@ func perpendicular*(this: SomeVector): SomeVector =
 
 proc random*(this: SomeVector): float =
   rand(this.y - this.x) + this.x
+
+func lerp*(startValue, endValue: IVector, completionRatio: CompletionRatio): IVector =
+  return ivector(
+    lerp(startValue.x, endValue.x, completionRatio),
+    lerp(startValue.y, endValue.y, completionRatio)
+  )
+
+func linearBezierVector*(t: float, p0, p1: Vector): Vector =
+  ## Calculates the position between the two points at a given ratio.
+  ##
+  ## @param {float} t The ratio of completion (0.0 starting point, 1.0 finishing point).
+  ## @param {Vector} p0 The starting point.
+  ## @param {Vector} p1 The ending point.
+  return vector(linearBezier(t, p0.x, p1.x), linearBezier(t, p0.y, p1.y))
+
+func easeInExpo*(startValue, endValue: Vector, completionRatio: CompletionRatio): Vector =
+  return vector(
+    easeInExpo(startValue.x, endValue.x, completionRatio),
+    easeInExpo(startValue.y, endValue.y, completionRatio)
+  )
+
+func easeInQuadratic*(startValue, endValue: Vector, completionRatio: CompletionRatio): Vector =
+  return vector(
+    easeInQuadratic(startValue.x, endValue.x, completionRatio),
+    easeInQuadratic(startValue.y, endValue.y, completionRatio)
+  )
+
+func easeInAndOutQuadratic*(startValue, endValue: Vector, completionRatio: CompletionRatio): Vector =
+  return vector(
+    easeInAndOutQuadratic(startValue.x, endValue.x, completionRatio),
+    easeInAndOutQuadratic(startValue.y, endValue.y, completionRatio)
+  )
+
+func easeOutQuadratic*(startValue, endValue: Vector, completionRatio: CompletionRatio): Vector =
+  return vector(
+    easeOutQuadratic(startValue.x, endValue.x, completionRatio),
+    easeOutQuadratic(startValue.y, endValue.y, completionRatio)
+  )
+
+func quadraticBezier*(t, p0, p1, p2: float): float =
+  ## Calculates the quadratic Bezier curve of three values.
+  ##
+  ## @param {float} t The ratio of completion (0.0 starting point, 1.0 finishing point).
+  ## @param {Vector} p0 The initial value.
+  ## @param {Vector} p1 The value being approached, but not reached.
+  ## @param {Vector} p2 The value being reached.
+  return pow(1 - t, 2) * p0 + (1 - t) * 2 * t * p1 + t * t * p2
+
+func quadraticBezierVector*(t: float, p0, p1, p2: Vector): Vector =
+  ## Calculates the quadratic Bezier curve of three points.
+  ##
+  ## @param {float} t The ratio of completion (0.0 starting point, 1.0 finishing point).
+  ## @param {Vector} p0 The initial point.
+  ## @param {Vector} p1 The point being approached, but not reached.
+  ## @param {Vector} p2 The point being reached.
+  return vector(quadraticBezier(t, p0.x, p1.x, p2.x), quadraticBezier(t, p0.y, p1.y, p2.y))
+
+func cubicBezier*(t, p0, p1, p2, p3: float): float =
+  ## Calculates the cubic Bezier curve of 4 values.
+  ##
+  ## @param {float} t The ratio of completion (0.0 starting point, 1.0 finishing point).
+  ## @param {Vector} p0 The starting value.
+  ## @param {Vector} p1 The first value to approach.
+  ## @param {Vector} p2 The second value to approach.
+  ## @param {Vector} p3 The end value.
+  return 
+    pow(1 - t, 3) * p0 +
+    pow(1 - t, 2) * 3 * t * p1 +
+    (1 - t) * 3 * t * t * p2 +
+    pow(t, 3) * p3
+
+func cubicBezierVector*(t: float, p0, p1, p2, p3: Vector): Vector =
+  ## Calculates the cubic Bezier curve of 4 points.
+  ##
+  ## @param {float} t The ratio of completion (0.0 starting point, 1.0 finishing point).
+  ## @param {Vector} p0 The starting location.
+  ## @param {Vector} p1 The first point to approach.
+  ## @param {Vector} p2 The second point to approach.
+  ## @param {Vector} p3 The end point.
+  return vector(cubicBezier(t, p0.x, p1.x, p2.x, p3.x), cubicBezier(t, p0.y, p1.y, p2.y, p3.y))
+
+# Vector
+
+proc ease*(v1, v2: Vector, completionRatio: CompletionRatio, f: EasingFunction[float]): Vector =
+  ## Applies an easing function
+  ## @param {Vector} v1 The starting vector values.
+  ## @param {Vector} v2 The ending vector values.
+  ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation
+  ## @returns {Vector} A new vector with the lerped values.
+  return vector(
+    f(v1.x, v2.x, completionRatio),
+    f(v1.y, v2.y, completionRatio)
+  )
+
+proc lerp*(v1, v2: Vector, completionRatio: CompletionRatio): Vector =
+  ## Lerps the values between two vector (from v1 to v2).
+  ## @param {Vector} v1 The starting vector values.
+  ## @param {Vector} v2 The ending vector values.
+  ## @param {float} completionRatio A value between 0.0 and 1.0 indicating the percent of interpolation
+  ## @returns {Vector} A new vector with the lerped values.
+  return v1.ease(v2, completionRatio, mathutils.lerp)
+

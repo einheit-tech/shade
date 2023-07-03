@@ -1,11 +1,11 @@
 import sdl2_nim/sdl_gpu
 import
   ui_component,
-  ../math/mathutils,
+  ../math/vector2,
   ../math/aabb,
   ../images/imageatlas
 
-export ui_component
+export ui_component, vector2
 
 type
   ImageFit* = enum

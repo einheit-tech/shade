@@ -7,9 +7,10 @@ import
 import
   aabb,
   mathutils,
+  vector2,
   ../render/color
 
-export aabb
+export aabb, vector2
 
 type Polygon* = ref object
   vertices*: seq[Vector]
