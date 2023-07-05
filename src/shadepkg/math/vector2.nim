@@ -172,7 +172,7 @@ func fromRadians*(radians: float): SomeVector =
   vector(cos(radians), sin(radians))
 
 func fromAngle*(angle: float): SomeVector =
-  ## Creates a new unit vector from the radian value.
+  ## Creates a new unit vector from the angle.
   let radians = toRadians(angle)
   vector(cos(radians), sin(radians))
 
