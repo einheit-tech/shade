@@ -15,31 +15,33 @@ export
 
 type
   ## Flags indicating how the object should be treated by a layer.
-  LayerObjectFlags* {.pure.} = enum
-    UPDATE
-    RENDER
+  LayerObjectFlags* = uint8
 
   Node* = ref object of RootObj
+    flags*: LayerObjectFlags
     # Invoked after this node has been updated.
     onUpdate*: proc(this: Node, deltaTime: float)
 
     shader*: Shader
-    flags*: set[LayerObjectFlags]
 
     location: Vector
     # Rotation in degrees (clockwise).
     rotation*: float
 
-const UPDATE_RENDER_FLAGS* = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}
+const
+  DEAD* =  0b0001'u8
+  UPDATE* = 0b0010'u8
+  RENDER* = 0b0100'u8
+  UPDATE_AND_RENDER*: LayerObjectFlags = UPDATE or RENDER
 
 method setLocation*(this: Node, x, y: float) {.base.}
 method hash*(this: Node): Hash {.base.}
 method update*(this: Node, deltaTime: float) {.base.}
 
-proc initNode*(node: Node, flags: set[LayerObjectFlags] = UPDATE_RENDER_FLAGS) =
+proc initNode*(node: Node, flags: LayerObjectFlags = UPDATE_AND_RENDER) =
   node.flags = flags
 
-proc newNode*(flags: set[LayerObjectFlags] = UPDATE_RENDER_FLAGS): Node =
+proc newNode*(flags: LayerObjectFlags = UPDATE_AND_RENDER): Node =
   result = Node()
   initNode(result, flags)
 
@@ -57,6 +59,18 @@ template y*(this: Node): float =
 
 template `y=`*(this: Node, y: float) =
   this.setLocation(this.x, y)
+
+template isAlive*(this: Node): bool =
+  (this.flags and DEAD) == not DEAD
+
+template isDead*(this: Node): bool =
+  (this.flags and DEAD) == DEAD
+
+template shouldUpdate*(this: Node): bool =
+  (this.flags and UPDATE) == UPDATE
+
+template shouldRender*(this: Node): bool =
+  (this.flags and RENDER) == RENDER
 
 method setLocation*(this: Node, x, y: float) {.base.} =
   this.location.x = x

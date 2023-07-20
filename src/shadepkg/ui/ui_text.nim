@@ -1,7 +1,6 @@
 import sdl2_nim/[sdl, sdl_gpu, sdl_ttf]
 import
   ui_component,
-  ../math/mathutils,
   ../math/aabb
 
 type

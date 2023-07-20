@@ -1,7 +1,6 @@
 import
   collisionshape,
-  collisionresult,
-  ../mathutils
+  collisionresult
 
 export
   collisionresult,
