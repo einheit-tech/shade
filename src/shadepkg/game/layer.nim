@@ -1,6 +1,7 @@
-import node, safeseq
+import node
+import std/algorithm
 
-export node, safeseq
+export node
 
 type
   ZChangeListener = proc(oldZ, newZ: float): void
@@ -12,7 +13,7 @@ type
   ## All nodes on the layer are assumed to share this same coordinate.
   ##
   Layer* = ref object of RootObj
-    children: SafeSeq[Node]
+    children: seq[Node]
     # Location of the layer on the `z` axis.
     z: float
     zChangeListeners: seq[ZChangeListener]
@@ -20,7 +21,6 @@ type
 
 proc initLayer*(layer: Layer, z: float = 1.0) =
   layer.z = z
-  layer.children = newSafeSeq[Node]()
 
 proc newLayer*(z: float = 1.0): Layer =
   result = Layer()
@@ -36,27 +36,20 @@ proc `z=`*(this: Layer, z: float) =
     for listener in this.zChangeListeners:
       listener(oldZ, this.z)
 
-iterator childIterator*(this: Layer): Node =
-  for child in this.children:
-    yield child
+proc sortChildren*(this: Layer, cmp: proc (x, y: Node): int) =
+  this.children.sort(cmp)
 
 method addChild*(this: Layer, child: Node) {.base.} =
   ## Adds the child to this Node.
   this.children.add(child)
 
 method removeChild*(this: Layer, child: Node) {.base.} =
-  ## Removes the child from this Node.
-  this.children.remove(child)
+  ## Marks the child to be removed on the next update.
+  child.flags = (child.flags or DEAD)
 
-method visitChildren*(this: Layer, handler: proc(child: Node)) {.base.} =
+iterator items*(this: Layer): Node =
   for child in this.children:
-    handler(child)
-
-template forEachChild*(this: Layer, body: untyped) =
-  this.visitChildren(
-    proc(child {.inject.}: Node) =
-      body
-  )
+    yield child
 
 proc addZChangeListener*(this: Layer, listener: ZChangeListener) =
   this.zChangeListeners.add(listener)
@@ -83,12 +76,16 @@ method update*(this: Layer, deltaTime: float) {.base.} =
   if this.onUpdate != nil:
     this.onUpdate(this, deltaTime)
 
-  for child in this.childIterator:
-    if LayerObjectFlags.UPDATE in child.flags:
+  for child in this.children:
+    if child.shouldUpdate:
       child.update(deltaTime)
 
+  for i in countdown(this.children.len() - 1, 0):
+    if this.children[i].isDead:
+      this.children.del(i)
+
 Layer.renderAsParent:
-  this.forEachChild:
-    if LayerObjectFlags.RENDER in child.flags:
+  for child in this:
+    if child.shouldRender:
       child.render(ctx, offsetX, offsetY)
 

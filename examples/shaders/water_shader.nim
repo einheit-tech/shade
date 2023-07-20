@@ -29,7 +29,7 @@ Background.renderAsNodeChild:
   )
 
 let bg = Background(shader: shaderProgram)
-initNode(Node bg, {LayerObjectFlags.Render})
+initNode(Node bg, RENDER)
 layer.addChild(bg)
 
 Input.addKeyPressedListener(

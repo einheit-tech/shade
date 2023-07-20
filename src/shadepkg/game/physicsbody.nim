@@ -64,7 +64,7 @@ template `collisionShape=`*(this: PhysicsBody, shape: var CollisionShape) =
 proc initPhysicsBody*(
   physicsBody: var PhysicsBody,
   shape: var CollisionShape,
-  flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}
+  flags = UPDATE_AND_RENDER
 ) =
   initNode(Node(physicsBody), flags)
   `collisionShape=`(physicsBody, shape)
@@ -77,7 +77,7 @@ proc initPhysicsBody*(
 proc newPhysicsBody*(
   kind: PhysicsBodyKind,
   shape: var CollisionShape,
-  flags: set[LayerObjectFlags] = {LayerObjectFlags.UPDATE, LayerObjectFlags.RENDER}
+  flags = UPDATE_AND_RENDER
 ): PhysicsBody =
   ## Creates a new PhysicsBody.
   result = PhysicsBody(kind: kind)

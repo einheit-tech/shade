@@ -12,7 +12,6 @@ import macros
 import safeseq
 
 import
-  node,
   ../math/[vector2, mathutils],
   ../util/types,
   ../render/color

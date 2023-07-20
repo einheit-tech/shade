@@ -5,7 +5,6 @@ import
 import
   layer,
   physicsbody,
-  ../math/mathutils,
   ../math/collision/sat,
   ../math/collision/collisionresult,
   ../math/collision/spatialgrid

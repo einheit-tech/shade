@@ -20,7 +20,7 @@ type
 proc updateViewport*(this: Camera)
 
 proc initCamera*(camera: Camera) =
-  initNode(Node(camera), {LayerObjectFlags.UPDATE})
+  initNode(Node(camera), UPDATE)
   camera.bounds = AABB_ZERO
   camera.viewport = AABB_ZERO
   camera.offset = VECTOR_ZERO
