@@ -30,6 +30,8 @@ type
   PhysicsBody* = ref object of Node
     # TODO: Make collisionShape required.
     collisionShape: CollisionShape
+    # Degrees rotated per second.
+    angularVelocity*: float
     # We are tracking the rotation from the last frame to see if we need to rotate the collisionShape.
     previousRotation: float
     velocity*: Vector
@@ -160,6 +162,9 @@ proc wallAndGroundSetter(
 
 method update*(this: PhysicsBody, deltaTime: float) =
   procCall Node(this).update(deltaTime)
+
+  if this.angularVelocity != 0:
+    this.rotation += (this.angularVelocity * deltaTime) mod 360.0
 
   if this.previousRotation != this.rotation:
     # Ensure the collisionShape has been rotated

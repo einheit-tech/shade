@@ -33,6 +33,14 @@ const
   IVECTOR_ZERO* = ivector(0, 0)
   IVECTOR_ONE* = ivector(1, 1)
 
+template `[]`*(this: SomeVector, i: static int): float|int =
+  when i == 0:
+    this.x
+  elif i == 1:
+    this.y
+  else:
+    raise newException(Exception, "Invalid vector index")
+
 template `$`*(this: SomeVector): string =
   "(x: " & $this.x & ", y: " & $this.y & ")"
 
