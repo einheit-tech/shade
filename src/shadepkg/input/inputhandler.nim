@@ -248,6 +248,12 @@ proc addMousePressedListener*(this: InputHandler, listener: MouseButtonEventList
 proc addMouseReleasedListener*(this: InputHandler, listener: MouseButtonEventListener) =
   this.mouse.buttonReleasedListeners.add(listener)
 
+template onMousePressed*(this: InputHandler, body: untyped) =
+  this.addMousePressedListener(
+    proc(button {.inject.}: int, state {.inject.}: ButtonState, x, y, clicks {.inject.}: int) =
+      body
+  )
+
 proc addControllerButtonPressedListener*(
   this: InputHandler,
   button: ControllerButton,
