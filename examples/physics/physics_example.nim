@@ -82,7 +82,7 @@ proc addRandomBodyToLayer(mouseButton: int, state: ButtonState, x, y, clicks: in
 
   body.onUpdate = proc(this: Node, deltaTime: float) =
     # Remove the body if off screen
-    if this.y > height + 100:
+    if Entity(this).y > height + 100:
       layer.removeChild(this)
 
   body.buildCollisionListener:

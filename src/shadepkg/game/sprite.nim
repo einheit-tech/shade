@@ -1,12 +1,12 @@
 import
-  node,
+  entity,
   spritesheet,
   ../math/mathutils
 
 when defined(spriteBounds):
   import ../render/color
 
-export node, spritesheet, mathutils
+export entity, spritesheet, mathutils
 
 type
   Sprite* = ref object

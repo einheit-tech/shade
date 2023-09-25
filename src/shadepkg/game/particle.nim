@@ -1,4 +1,3 @@
-import node
 import ../render/[render, color]
 import ../math/vector2
 

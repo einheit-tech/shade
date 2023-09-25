@@ -1,30 +1,30 @@
 import
-  node,
+  entity,
   ../math/[aabb, vector2, mathutils],
   ../game/gamestate
 
-export aabb, vector2, mathutils
+export entity, aabb, vector2, mathutils
 
 type
-  Camera* = ref object of Node
+  Camera* = ref object of Entity
     z*: float
     bounds: AABB
     viewport*: AABB
 
-    # For node tracking
+    # For entity tracking
     offset*: Vector
-    trackedNode*: Node
+    trackedEntity*: Entity
     completionRatioPerFrame*: CompletionRatio
     easingFunction*: EasingFunction[Vector]
 
 proc updateViewport*(this: Camera)
 
 proc initCamera*(camera: Camera) =
-  initNode(Node(camera), UPDATE)
+  initEntity(Entity(camera), UPDATE)
   camera.bounds = AABB_ZERO
   camera.viewport = AABB_ZERO
   camera.offset = VECTOR_ZERO
-  camera.trackedNode = nil
+  camera.trackedEntity = nil
   camera.completionRatioPerFrame = 1.0
   camera.easingFunction = lerp
   camera.updateViewport()
@@ -34,19 +34,19 @@ proc newCamera*(): Camera =
   initCamera(result)
 
 proc newCamera*(
-  trackedNode: Node,
+  trackedEntity: Entity,
   completionRatioPerFrame: CompletionRatio,
   easingFunction: EasingFunction[Vector] = lerp
 ): Camera =
-  ## Creates a camera which follows a node.
+  ## Creates a camera which follows a entity.
   ## completionRatioPerFrame: The distance * CompletionRatio to travel each frame.
   ##   If set to 1, it would track the entity perfectly.
   ##   Set to 0, the camera will not move.
   ##   Typically, lower values are desired (0.1 - 0.3).
-  ## easingFunction: Determines how the camera follows the tracked node.
+  ## easingFunction: Determines how the camera follows the tracked entity.
   result = Camera()
   initCamera(result)
-  result.trackedNode = trackedNode
+  result.trackedEntity = trackedEntity
   result.completionRatioPerFrame = completionRatioPerFrame
   result.easingFunction = easingFunction
 
@@ -72,8 +72,8 @@ proc updateViewport*(this: Camera) =
 proc setTrackingEasingFunction*(this: Camera, easingFunction: EasingFunction[Vector]) =
   this.easingFunction = easingFunction
 
-proc setTrackedNode*(this: Camera, n: Node) =
-  this.trackedNode = n
+proc setTrackedEntity*(this: Camera, n: Entity) =
+  this.trackedEntity = n
 
 proc bounds*(this: Camera): AABB =
   if this.bounds == AABB_ZERO:
@@ -112,23 +112,23 @@ template screenToWorldCoord*(this: Camera, x, y: float|int, relativeZ: float = 1
   this.screenToWorldCoord(vector(x, y), relativeZ)
 
 method setLocation*(this: Camera, x, y: float) =
-  procCall Node(this).setLocation(x, y)
+  procCall Entity(this).setLocation(x, y)
   this.updateViewport()
 
 method update*(this: Camera, deltaTime: float) =
-  procCall Node(this).update(deltaTime)
+  procCall Entity(this).update(deltaTime)
 
-  if this.trackedNode == nil:
-    # Don't need to track a node
+  if this.trackedEntity == nil:
+    # Don't need to track a entity
     return
 
   if this.easingFunction == nil:
-    this.setLocation(this.trackedNode.getLocation())
+    this.setLocation(this.trackedEntity.getLocation())
   else:
     this.setLocation(
       this.easingFunction(
         this.getLocation(),
-        this.trackedNode.getLocation() + this.offset,
+        this.trackedEntity.getLocation() + this.offset,
         this.completionRatioPerFrame
       )
     )

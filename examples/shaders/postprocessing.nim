@@ -21,7 +21,7 @@ let
   backgroundImageSprite = newSprite(image)
 
 backgroundImageSprite.scale = vector(4, 4)
-let background = newSpriteNode(backgroundImageSprite)
+let background = newSpriteEntity(backgroundImageSprite)
 background.setLocation(width * 0.5, height * 0.5)
 layer.addChild(background)
 

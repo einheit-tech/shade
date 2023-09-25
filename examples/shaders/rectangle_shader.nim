@@ -19,7 +19,7 @@ let shaderProgram = newShader(vertShaderPath, fragShaderPath)
 
 type Background = ref object of Node
 
-Background.renderAsNodeChild:
+Background.renderAsEntityChild:
   ctx.rectangleFilled(
     0,
     0,
@@ -29,7 +29,7 @@ Background.renderAsNodeChild:
   )
 
 let bg = Background(shader: shaderProgram)
-initNode(Node bg, {LayerObjectFlags.Render})
+initNode(Node bg, RENDER)
 layer.addChild(bg)
 
 Input.addKeyPressedListener(

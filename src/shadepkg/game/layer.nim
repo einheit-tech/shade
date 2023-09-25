@@ -1,4 +1,5 @@
 import node
+import ../render/render
 import std/algorithm
 
 export node
@@ -40,7 +41,7 @@ proc sortChildren*(this: Layer, cmp: proc (x, y: Node): int) =
   this.children.sort(cmp)
 
 method addChild*(this: Layer, child: Node) {.base.} =
-  ## Adds the child to this Node.
+  ## Adds the child to this Layer.
   this.children.add(child)
 
 method removeChild*(this: Layer, child: Node) {.base.} =
@@ -78,7 +79,7 @@ method update*(this: Layer, deltaTime: float) {.base.} =
 
   for child in this.children:
     if child.shouldUpdate:
-      child.update(deltaTime)
+      update(child, deltaTime)
 
   for i in countdown(this.children.len() - 1, 0):
     if this.children[i].isDead:

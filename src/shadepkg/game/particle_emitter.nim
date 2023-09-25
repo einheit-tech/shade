@@ -1,9 +1,9 @@
 import ../math/vector2
-import node, particle
+import entity, particle
 import std/decls
 
 type
-  ParticleEmitter* = ref object of Node
+  ParticleEmitter* = ref object of Entity
     createParticle: proc: Particle
     onParticleEmission*: proc(p: var Particle)
     particlesPerSecond: float
@@ -26,7 +26,7 @@ proc newParticleEmitter*(
   ## @param createParticle:
   ##   A procedure used to create a new particle.
   result = ParticleEmitter()
-  initNode(Node result)
+  initEntity(Entity result)
   result.createParticle = createParticle
   result.particlesPerSecond = particlesPerSecond
   result.particles = newSeq[Particle](initialNumParticles)
@@ -89,7 +89,7 @@ iterator forEachLivingParticle(this: ParticleEmitter): var Particle =
     yield this.particles[id]
 
 method update*(this: ParticleEmitter, deltaTime: float) =
-  procCall Node(this).update(deltaTime)
+  procCall Entity(this).update(deltaTime)
 
   if this.enabled:
     this.numParticlesToCreate += this.particlesPerSecond * deltaTime
@@ -121,7 +121,7 @@ method update*(this: ParticleEmitter, deltaTime: float) =
     # [ alive, alive, alive, expired, expired ]
     # NOTE: this.firstDeadParticleIDIndex was 4, now it is 3.
 
-ParticleEmitter.renderAsNodeChild:
+ParticleEmitter.renderAsEntityChild:
   for particle in this.forEachLivingParticle:
     particle.render(ctx, offsetX, offsetY)
 
