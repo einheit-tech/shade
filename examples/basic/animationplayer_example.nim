@@ -10,7 +10,7 @@ Game.scene.addLayer(layer)
 
 let (_, image) = Images.loadImage("./examples/assets/images/king.png", FILTER_NEAREST)
 
-let king = newSpriteNode(newSprite(image, 11, 8))
+let king = newSpriteEntity(newSprite(image, 11, 8))
 
 # Set up the run animation
 const
@@ -53,6 +53,12 @@ king.onUpdate = proc(this: Node, deltaTime: float) =
 
 king.setLocation(vector(width / 2, height / 2))
 layer.addChild king
+
+Input.addKeyPressedListener(
+  K_ESCAPE,
+  proc(key: Keycode, state: KeyState) =
+    Game.stop()
+)
 
 Game.start()
 

@@ -3,13 +3,13 @@ import
   safeseq
 
 import
-  node,
+  entity,
   ../math/mathutils,
   ../math/collision/collisionshape,
   ../math/collision/collisionresult
 
 export
-  node,
+  entity,
   collisionshape,
   collisionresult
 
@@ -27,7 +27,7 @@ type
     ## TODO: More docs about Kinematic bodies
     KINEMATIC
 
-  PhysicsBody* = ref object of Node
+  PhysicsBody* = ref object of Entity
     # TODO: Make collisionShape required.
     collisionShape: CollisionShape
     # Degrees rotated per second.
@@ -68,7 +68,7 @@ proc initPhysicsBody*(
   shape: var CollisionShape,
   flags = UPDATE_AND_RENDER
 ) =
-  initNode(Node(physicsBody), flags)
+  initEntity(Entity(physicsBody), flags)
   `collisionShape=`(physicsBody, shape)
   physicsBody.collisionListeners = newSafeSeq[CollisionListener]()
   if physicsBody.kind != PhysicsBodyKind.STATIC:
@@ -116,7 +116,7 @@ method setLocation*(this: PhysicsBody, x, y: float) =
     this.bounds.topLeft += delta
     this.bounds.bottomRight += delta
 
-  procCall setLocation((Node) this, x, y)
+  procCall setLocation((Entity) this, x, y)
 
 proc getBounds*(this: PhysicsBody): AABB =
   if this.bounds == AABB_ZERO:
@@ -161,7 +161,7 @@ proc wallAndGroundSetter(
     this.isOnWall = true
 
 method update*(this: PhysicsBody, deltaTime: float) =
-  procCall Node(this).update(deltaTime)
+  procCall Entity(this).update(deltaTime)
 
   if this.angularVelocity != 0:
     this.rotation += (this.angularVelocity * deltaTime) mod 360.0
@@ -181,7 +181,7 @@ method update*(this: PhysicsBody, deltaTime: float) =
     this.isOnWall = false
 
 when defined(collisionoutlines):
-  PhysicsBody.renderAsNodeChild:
+  PhysicsBody.renderAsChildOf(Entity):
     discard setLineThickness(1.0)
     this.collisionShape.render(ctx, this.x + offsetX, this.y + offsetY)
 

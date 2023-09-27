@@ -6,7 +6,7 @@ template renderAsChildOf*(ChildType, ParentType: typedesc, body: untyped): untyp
   ## Helper for the render method.
   ##
   ## Example:
-  ## renderChild(B, A):
+  ## A.renderAsChildOf(B):
   ##   ctx.blit(image, this.x + offsetX, this.y + offsetY)
 
   method render*(
@@ -18,13 +18,13 @@ template renderAsChildOf*(ChildType, ParentType: typedesc, body: untyped): untyp
     procCall `ParentType`(this).render(ctx, offsetX, offsetY)
     `body`
 
-template renderAsNodeChild*(ChildType: typedesc, body: untyped): untyped =
+template renderAsEntityChild*(ChildType: typedesc, body: untyped): untyped =
   ## Helper for the render method.
   ##
   ## Example:
-  ## renderNodeChild(T):
+  ## renderAsEntityChild(T):
   ##   ctx.blit(image, this.x + offsetX, this.y + offsetY)
-  ChildType.renderAsChildOf(Node):
+  ChildType.renderAsChildOf(Entity):
     body
 
 template renderAsParent*(T: typedesc, body: untyped): untyped =

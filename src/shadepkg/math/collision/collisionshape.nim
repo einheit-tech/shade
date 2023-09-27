@@ -7,12 +7,12 @@
 import sdl2_nim/sdl_gpu
 
 import
-  ../../game/node,
   ../../game/material,
   ../circle,
   ../polygon,
   ../aabb,
   ../mathutils,
+  ../../render/render,
   ../../render/color
 
 export

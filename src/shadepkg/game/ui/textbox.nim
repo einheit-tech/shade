@@ -1,14 +1,15 @@
 import sdl2_nim/[sdl, sdl_ttf]
 
 import 
-  ../node,
+  ../entity,
+  ../../render/render,
   ../../render/color,
   ../../math/vector2
 
 export vector2
 
 type
-  TextBoxObj = object of Node
+  TextBoxObj = object of Entity
     font: Font
     text: string
     color: Color
@@ -28,7 +29,7 @@ proc initTextBox*(
   renderFilter: Filter = FILTER_LINEAR_MIPMAP,
   scale: Vector = VECTOR_ONE
 ) =
-  initNode(textBox)
+  initEntity(textBox)
   textBox.font = font
   textBox.text = text
   textBox.color = color
@@ -57,7 +58,7 @@ proc setRenderFilter*(this: TextBox, filter: Filter) =
   if this.imageOfText != nil:
     this.imageOfText.setImageFilter(this.filter)
 
-TextBox.renderAsNodeChild:
+TextBox.renderAsEntityChild:
   if this.imageOfText == nil:
     let surface = renderText_Blended_Wrapped(
       this.font,
