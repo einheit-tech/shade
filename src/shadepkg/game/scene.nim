@@ -49,9 +49,7 @@ proc renderLayer*(ctx: Target, camera: Camera, layer: Layer) =
     let halfViewportSize = camera.viewport.getSize() * 0.5
 
     # Subtract half the viewport to center the camera.
-    # TODO: Why does this think getLocation doesn't exist?
     let trans = camera.getLocation() - halfViewportSize * relativeZ
-    # let trans = VECTOR_ZERO
     scale(inversedScalar, inversedScalar, 1.0)
     layer.render(ctx, -trans.x, -trans.y)
     scale(relativeZ, relativeZ, 1.0)
