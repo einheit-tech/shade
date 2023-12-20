@@ -31,7 +31,7 @@ type
 proc `scale=`*(this: UIImage, scale: Vector)
 method getImageViewport*(this: UIImage): Rect {.base.}
 
-proc `=destroy`(this: var UIImageObj) =
+proc `=destroy`(this: UIImageObj) =
   if this.image != nil:
     freeImage(this.image)
 

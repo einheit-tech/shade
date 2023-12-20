@@ -21,7 +21,7 @@ type
   UITextComponent* = ref UITextComponentObj
 
 proc determineWidthAndHeight*(this: UITextComponent)
-proc `=destroy`(this: var UITextComponentObj) =
+proc `=destroy`(this: UITextComponentObj) =
   if this.imageOfText != nil:
     freeImage(this.imageOfText)
 

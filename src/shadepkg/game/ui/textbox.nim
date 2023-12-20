@@ -19,7 +19,7 @@ type
 
   TextBox* = ref TextBoxObj
 
-proc `=destroy`(this: var TextBoxObj)
+proc `=destroy`(this: TextBoxObj)
 
 proc initTextBox*(
   textBox: TextBox,
@@ -81,7 +81,7 @@ TextBox.renderAsEntityChild:
     this.scale.y
   )
 
-proc `=destroy`(this: var TextBoxObj) =
+proc `=destroy`(this: TextBoxObj) =
   if this.imageOfText != nil:
     freeImage(this.imageOfText)
 
