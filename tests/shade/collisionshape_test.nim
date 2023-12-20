@@ -1,6 +1,4 @@
-import
-  nimtest,
-  shade
+import ../../src/shade, nimtest
 
 describe "CollisionShape tests":
 
