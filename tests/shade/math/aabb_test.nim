@@ -1,6 +1,4 @@
-import
-  shade,
-  nimtest
+import ../../../src/shade, nimtest
 
 describe "AABB":
 
