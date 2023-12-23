@@ -18,14 +18,15 @@ type
   ## Return true if we should remove the listener after it's been invoked.
 
   PhysicsBodyKind* {.pure.} = enum
-    ## A body controlled by applied forces.
+    ## Dynamic bodies are moved based on their previous velocities, gravity, applied forces,
+    ## and the restitution and friction values of their materials when they experience collisions.
     DYNAMIC
+    ## Kinetic bodies are moved based on their previous velocities
+    KINEMATIC
     ## A body that does not move based on forces, collisions, etc.
     ## Mainly used for terrain, moving platforms, and the like.
     STATIC
-    ## A body which is controlled by code, rather than the physics engine.
-    ## TODO: More docs about Kinematic bodies
-    KINEMATIC
+
 
   PhysicsBody* = ref object of Entity
     # TODO: Make collisionShape required.

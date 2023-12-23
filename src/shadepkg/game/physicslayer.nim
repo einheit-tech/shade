@@ -84,9 +84,9 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
     mtv = collision.getMinimumTranslationVector()
 
   # Translate bodies out of each other.
-  if bodyA.kind == PhysicsBodyKind.STATIC:
+  if bodyA.kind != PhysicsBodyKind.DYNAMIC:
     bodyB.move(mtv.negate())
-  elif bodyB.kind == PhysicsBodyKind.STATIC:
+  elif bodyB.kind != PhysicsBodyKind.DYNAMIC:
     bodyA.move(mtv)
   else:
     bodyA.move(mtv * 0.5)
@@ -101,14 +101,17 @@ template resolve(collision: CollisionResult, bodyA, bodyB: PhysicsBody) =
       restitution = min(bodyA.collisionShape.elasticity, bodyB.collisionShape.elasticity)
       impulse = collision.normal * (-(1.0 + restitution) * velAlongNormal / (iMassA + iMassB))
 
-    if bodyA.kind != PhysicsBodyKind.STATIC:
+    if bodyA.kind == PhysicsBodyKind.DYNAMIC:
       bodyA.velocity -= impulse * iMassA
 
-    if bodyB.kind != PhysicsBodyKind.STATIC:
+    if bodyB.kind == PhysicsBodyKind.DYNAMIC:
       bodyB.velocity += impulse * iMassB
 
 template handleCollision*(this: PhysicsLayer, bodyA, bodyB: PhysicsBody) =
-  if bodyA.kind == PhysicsBodyKind.STATIC and bodyB.kind == PhysicsBodyKind.STATIC:
+  if bodyA.kind != PhysicsBodyKind.DYNAMIC and bodyB.kind != PhysicsBodyKind.DYNAMIC:
+    # Static bodies do not collide with other static bodies.
+    # Kinematic bodies do not collide with other kinematic or static bodies.
+    # The only other body type is DYNAMIC, so we only check for those here.
     continue
   
   if this.collisionFilter == nil or this.collisionFilter(this, bodyA, bodyB):
@@ -152,7 +155,7 @@ iterator spatialBodyPairs*(this: PhysicsLayer): BodyPair {.closure.} =
 
 template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
   for body in this.physicsBodyChildren:
-    if body.kind == PhysicsBodyKind.STATIC:
+    if body.kind != PhysicsBodyKind.DYNAMIC:
       continue
 
     # Apply forces to all non-static bodies.
@@ -160,12 +163,9 @@ template applyForcesToBodies*(this: PhysicsLayer, deltaTime: float) =
       body.velocity += force * deltaTime
 
     # Clear forces every frame.
-    if body.kind == PhysicsBodyKind.DYNAMIC and this.gravity != VECTOR_ZERO:
-      # Re-apply gravity to dynamic bodies.
-      body.forces.setLen(1)
-      body.forces[0] = this.gravity
-    else:
-      body.forces.setLen(0)
+    # Re-apply gravity to dynamic bodies.
+    body.forces.setLen(1)
+    body.forces[0] = this.gravity
 
 macro repeat(qty: static int, body: untyped) =
   result = newStmtList()
