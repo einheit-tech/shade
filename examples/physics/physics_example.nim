@@ -75,31 +75,29 @@ proc createRandomCollisionShape(mouseButton: int): CollisionShape =
       result = newCollisionShape(aabb(-halfWidth, -halfHeight, halfHeight, halfWidth))
 
 proc addRandomBodyToLayer(mouseButton: int, state: ButtonState, x, y, clicks: int) =
-  var shape = createRandomCollisionShape(mouseButton)
-  let body = newPhysicsShape(shape, getRandomColor())
+  if state.justPressed:
+    var shape = createRandomCollisionShape(mouseButton)
+    let body = newPhysicsShape(shape, getRandomColor())
 
-  body.setLocation(vector(x, y))
+    body.setLocation(vector(x, y))
 
-  body.onUpdate = proc(this: Node, deltaTime: float) =
-    # Remove the body if off screen
-    if Entity(this).y > height + 100:
-      layer.removeChild(this)
+    body.onUpdate = proc(this: Node, deltaTime: float) =
+      # Remove the body if off screen
+      if Entity(this).y > height + 100:
+        layer.removeChild(this)
 
-  body.buildCollisionListener:
-    if this.collisionShape.kind == CollisionShapeKind.CIRCLE and
-       other.collisionShape.kind == CollisionShapeKind.CIRCLE:
-      echo "Circle collisions!"
-      return true
+    body.buildCollisionListener:
+      if this.collisionShape.kind == CollisionShapeKind.CIRCLE and
+         other.collisionShape.kind == CollisionShapeKind.CIRCLE:
+        echo "Circle collisions!"
+        return true
 
-  layer.addChild(body)
+    layer.addChild(body)
 
 # Add random shapes on click.
-Input.addMousePressedListener(addRandomBodyToLayer)
-Input.addKeyPressedListener(
-  K_ESCAPE,
-  proc(key: Keycode, state: KeyState) =
-    Game.stop()
-)
+Input.addMouseButtonListener(addRandomBodyToLayer)
+Input.onKeyPressed(K_ESCAPE):
+  Game.stop()
 
 Game.start()
 

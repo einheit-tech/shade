@@ -54,11 +54,8 @@ king.onUpdate = proc(this: Node, deltaTime: float) =
 king.setLocation(vector(width / 2, height / 2))
 layer.addChild king
 
-Input.addKeyPressedListener(
-  K_ESCAPE,
-  proc(key: Keycode, state: KeyState) =
-    Game.stop()
-)
+Input.onKeyPressed(K_ESCAPE):
+  Game.stop()
 
 Game.start()
 

@@ -79,6 +79,12 @@ task platformer, "Runs the platformer example":
 task platformerd, "Runs the platformer example in debug mode":
   exec "nim r -d:debug -d:collisionoutlines examples/platformer/platformer_example.nim"
 
+task particles, "Runs the particles example":
+  exec "nim r -d:release examples/particles/particles_example.nim"
+
+task particlesd, "Runs the particles example in debug mode":
+  exec "nim r -d:debug examples/particles/particles_example.nim"
+
 task textbox, "Runs the textbox example":
   exec "nim r -d:release examples/textbox/textbox_example.nim"
 

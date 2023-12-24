@@ -44,9 +44,8 @@ emitter.setLocation(screenCenter)
 
 layer.addChild(emitter)
 
-Input.onKeyEvent:
-  if key == K_ESCAPE:
-    Game.stop()
+Input.onKeyEvent(K_ESCAPE):
+  Game.stop()
 
 Game.start()
 

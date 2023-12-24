@@ -22,11 +22,8 @@ let textBox = newTextBox(kennyPixel, "Hello, world!", RED)
 textBox.setLocation(400, 300)
 layer.addChild(textBox)
 
-Input.addKeyPressedListener(
-  K_ESCAPE,
-  proc(key: Keycode, state: KeyState) =
-    Game.stop()
-)
+Input.onKeyPressed(K_ESCAPE):
+  Game.stop()
 
 Game.start()
 

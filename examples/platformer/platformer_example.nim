@@ -96,10 +96,6 @@ const
   jumpForce = -350.0
 
 proc physicsProcess(this: Node, deltaTime: float) =
-  if Input.wasKeyJustPressed(K_ESCAPE):
-    Game.stop()
-    return
-
   let
     leftStickX = Input.leftStick.x
     leftPressed = Input.isKeyPressed(K_LEFT) or leftStickX < 0
@@ -149,17 +145,13 @@ player.onUpdate = physicsProcess
 
 # Toggle transparency upon pressing "t"
 var isTransparent = false
-Input.addKeyPressedListener(
-  K_t,
-  proc(key: Keycode, state: KeyState) =
-    if state.justPressed:
-      if isTransparent:
-        player.sprite.alpha = 1.0
-      else:
-        player.sprite.alpha = 0.5
+Input.onKeyPressed(K_t):
+  if isTransparent:
+    player.sprite.alpha = 1.0
+  else:
+    player.sprite.alpha = 0.5
 
-      isTransparent = not isTransparent
-  )
+  isTransparent = not isTransparent
 
 when not defined(debug):
   # Play some music
@@ -174,8 +166,9 @@ Input.registerCustomAction("jump")
 Input.addCustomActionTrigger("jump", MouseButton.LEFT)
 Input.addCustomActionTrigger("jump", ControllerButton.A)
 Input.addCustomActionTrigger("jump", K_SPACE)
-Input.addCustomActionTrigger("jump", ControllerStick.RIGHT, Direction.UP)
-Input.addCustomActionTrigger("jump", ControllerTrigger.RIGHT)
+
+Input.onKeyPressed(K_ESCAPE):
+  Game.stop()
 
 Game.start()
 

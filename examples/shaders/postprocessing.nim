@@ -25,11 +25,8 @@ let background = newSpriteEntity(backgroundImageSprite)
 background.setLocation(width * 0.5, height * 0.5)
 layer.addChild(background)
 
-Input.addKeyPressedListener(
-  K_ESCAPE,
-  proc(key: Keycode, state: KeyState) =
-    Game.stop()
-)
+Input.onKeyPressed(K_ESCAPE):
+  Game.stop()
 
 Game.postProcessingShader = shaderProgram
 

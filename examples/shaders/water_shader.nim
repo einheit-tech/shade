@@ -32,11 +32,8 @@ let bg = Background(shader: shaderProgram)
 initEntity(Entity bg, RENDER)
 layer.addChild(bg)
 
-Input.addKeyPressedListener(
-  K_ESCAPE,
-  proc(key: Keycode, state: KeyState) =
-    Game.stop()
-)
+Input.onKeyPressed(K_ESCAPE):
+  Game.stop()
 
 Game.start()
 
