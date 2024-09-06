@@ -3,3 +3,4 @@
 nimcache
 testresults
 *.exe
+.modules

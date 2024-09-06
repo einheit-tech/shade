@@ -1,6 +1,7 @@
 import node
 import ../render/render
-import std/algorithm
+
+import safeseq
 
 export node
 
@@ -14,7 +15,7 @@ type
   ## All nodes on the layer are assumed to share this same coordinate.
   ##
   Layer* = ref object of RootObj
-    children: seq[Node]
+    children: SafeSeq[Node]
     # Location of the layer on the `z` axis.
     z: float
     zChangeListeners: seq[ZChangeListener]
@@ -22,6 +23,7 @@ type
 
 proc initLayer*(layer: Layer, z: float = 1.0) =
   layer.z = z
+  layer.children = newSafeSeq[Node]()
 
 proc newLayer*(z: float = 1.0): Layer =
   result = Layer()
@@ -37,8 +39,8 @@ proc `z=`*(this: Layer, z: float) =
     for listener in this.zChangeListeners:
       listener(oldZ, this.z)
 
-proc sortChildren*(this: Layer, cmp: proc (x, y: Node): int) =
-  this.children.sort(cmp)
+# proc sortChildren*(this: Layer, cmp: proc (x, y: Node): int) =
+#   this.children.sort(cmp)
 
 method addChild*(this: Layer, child: Node) {.base.} =
   ## Adds the child to this Layer.
@@ -81,9 +83,12 @@ method update*(this: Layer, deltaTime: float) {.base.} =
     if child.shouldUpdate:
       update(child, deltaTime)
 
-  for i in countdown(this.children.len() - 1, 0):
-    if this.children[i].isDead:
-      this.children.del(i)
+  # for i in countdown(this.children.len() - 1, 0):
+  #   if this.children[i].isDead:
+  #     this.children.del(i)
+
+  if not this.children.areElementsLocked():
+    this.children.keepItIf(not it.isDead)
 
 Layer.renderAsParent:
   for child in this:
