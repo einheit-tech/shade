@@ -8,7 +8,7 @@ export entity, aabb, vector2, mathutils
 type
   Camera* = ref object of Entity
     z*: float
-    bounds: AABB
+    bounds*: AABB
     viewport*: AABB
 
     # For entity tracking
@@ -83,8 +83,9 @@ proc bounds*(this: Camera): AABB =
 template confineToBounds(this: Camera) =
   if this.bounds != AABB_ZERO:
     let
-      halfViewportWidth = this.viewport.width * 0.5
-      halfViewportHeight = this.viewport.height * 0.5
+      distToPlane = 1.0 - this.z
+      halfViewportWidth = this.viewport.width * 0.5 * distToPlane
+      halfViewportHeight = this.viewport.height * 0.5 * distToPlane
 
     this.x = clamp(
       this.bounds.left + halfViewportWidth,

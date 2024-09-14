@@ -12,6 +12,9 @@ type AABB* = object
 template aabb*(left, top, right, bottom: float): AABB =
   AABB(topLeft: vector(left, top), bottomRight: vector(right, bottom))
 
+template aabb*(left, top, right, bottom: int): AABB =
+  AABB(topLeft: vector(left, top), bottomRight: vector(right, bottom))
+
 const
   AABB_ZERO* = aabb(0, 0, 0, 0)
   AABB_INF* = aabb(NegInf, NegInf, Inf, Inf)
