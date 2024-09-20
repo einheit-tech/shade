@@ -15,9 +15,9 @@ type Scene* = ref object
 
 proc initScene*(scene: Scene) =
   scene.isLayerOrderValid = true
-  gamestate.onResolutionChanged:
-    if scene.camera != nil:
-      scene.camera.updateViewport()
+  # gamestate.onResolutionChanged:
+  #   if scene.camera != nil:
+  #     scene.camera.updateViewport()
 
 proc newScene*(): Scene = 
   result = Scene()
