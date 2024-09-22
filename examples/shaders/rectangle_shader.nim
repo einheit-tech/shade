@@ -15,20 +15,26 @@ const
   fragShaderPath = "./examples/shaders/rectangle.frag"
   vertShaderPath = "./examples/shaders/common.vert"
 
+let (_, image) = Images.loadImage("./examples/assets/images/default.png")
+setImageFilter(image, FILTER_NEAREST)
+
 let shaderProgram = newShader(vertShaderPath, fragShaderPath)
 
-type Background = ref object of Entity
+type Rectangle = ref object of Entity
+  image: Image
 
-Background.renderAsEntityChild:
-  ctx.rectangleFilled(
-    10,
-    10,
-    50,
-    50,
-    WHITE
+Rectangle.renderAsEntityChild:
+  blitScale(
+    image,
+    nil,
+    ctx,
+    gamestate.resolution.x / 2,
+    gamestate.resolution.y / 2,
+    16,
+    16,
   )
 
-let bg = Background(shader: shaderProgram)
+let bg = Rectangle(shader: shaderProgram)
 initNode(Entity bg, RENDER)
 layer.addChild(bg)
 

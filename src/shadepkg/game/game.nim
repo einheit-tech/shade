@@ -195,36 +195,49 @@ proc loop(this: Engine) =
       )
 
       if this.postProcessingShader != nil:
-        this.postProcessingShader.render(gamestate.runTime, gamestate.resolution)
-
-      blitScale(
-        image,
-        rect.addr,
-        this.screen,
-        float(this.screen.w) / 2.0,
-        float(this.screen.h) / 2.0,
-        maxAspect,
-        maxAspect
-      )
-
-      if this.postProcessingShader != nil:
-        this.postProcessingShader.deactivate()
+        renderWith(this.postProcessingShader):
+          blitScale(
+            image,
+            rect.addr,
+            this.screen,
+            float(this.screen.w) / 2.0,
+            float(this.screen.h) / 2.0,
+            maxAspect,
+            maxAspect
+          )
+      else:
+        blitScale(
+          image,
+          rect.addr,
+          this.screen,
+          float(this.screen.w) / 2.0,
+          float(this.screen.h) / 2.0,
+          maxAspect,
+          maxAspect
+        )
 
     else:
       if this.postProcessingShader != nil:
-        this.postProcessingShader.render(gamestate.runTime, gamestate.resolution)
-
-      blitScale(
-        image,
-        nil,
-        this.screen,
-        float(this.screen.w) / 2.0,
-        float(this.screen.h) / 2.0,
-        maxAspect,
-        maxAspect
-      )
-      if this.postProcessingShader != nil:
-        this.postProcessingShader.deactivate()
+        renderWith(this.postProcessingShader):
+          blitScale(
+            image,
+            nil,
+            this.screen,
+            float(this.screen.w) / 2.0,
+            float(this.screen.h) / 2.0,
+            maxAspect,
+            maxAspect
+          )
+      else:
+        blitScale(
+          image,
+          nil,
+          this.screen,
+          float(this.screen.w) / 2.0,
+          float(this.screen.h) / 2.0,
+          maxAspect,
+          maxAspect
+        )
 
     flip(this.screen)
 

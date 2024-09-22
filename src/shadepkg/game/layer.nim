@@ -1,5 +1,5 @@
 import node
-import ../render/render
+import ../render/[render, shader]
 
 import safeseq
 
@@ -20,6 +20,8 @@ type
     z: float
     zChangeListeners: seq[ZChangeListener]
     onUpdate*: proc(this: Layer, deltaTime: float)
+
+    # TODO: Give shaders to layers?
 
 proc initLayer*(layer: Layer, z: float = 1.0) =
   layer.z = z
@@ -92,6 +94,12 @@ method update*(this: Layer, deltaTime: float) {.base.} =
 
 Layer.renderAsParent:
   for child in this:
-    if child.shouldRender:
+    if not child.shouldRender:
+      continue
+
+    if child.shader != nil:
+      renderWith(child.shader):
+        child.render(ctx, offsetX, offsetY)
+    else:
       child.render(ctx, offsetX, offsetY)
 

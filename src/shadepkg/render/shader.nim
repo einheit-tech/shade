@@ -67,8 +67,13 @@ proc activate*(this: Shader) =
 proc deactivate*(this: Shader) =
   deactivateShaderProgram()
 
-proc render*(this: Shader, time: float, screenResolution: Vector) =
-  activateShaderProgram(this.programID, this.shaderBlock.addr)
-  this.updateTimeUniform(time)
-  this.updateResolutionUniform(screenResolution)
+proc render*(this: Shader) =
+  this.activate()
+  this.updateTimeUniform(gamestate.runTime)
+  this.updateResolutionUniform(gamestate.resolution)
+
+template renderWith*(this: Shader, body: untyped) =
+  this.render()
+  body
+  this.deactivate()
 

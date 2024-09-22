@@ -1,4 +1,5 @@
-import ../render/render
+import ../render/[render, shader]
+export shader
 
 type
   ## Flags indicating how the object should be treated.
@@ -8,6 +9,7 @@ type
     flags*: NodeFlags
     # Invoked after this node has been updated.
     onUpdate*: proc(this: Node, deltaTime: float)
+    shader*: Shader
 
 const
   DEAD* =  0b0001'u8

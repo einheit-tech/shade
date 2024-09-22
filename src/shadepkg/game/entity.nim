@@ -6,7 +6,6 @@ import
   node,
   gamestate,
   ../render/render,
-  ../render/shader,
   ../math/vector2
 
 export
@@ -17,7 +16,6 @@ export
 
 type
   Entity* = ref object of Node
-    shader*: Shader
     location: Vector
     # Rotation in degrees (clockwise).
     rotation*: float
@@ -62,8 +60,4 @@ method move*(this: Entity, v: Vector) {.base.} =
 
 method hash*(this: Entity): Hash {.base.} =
   return hash(this[].unsafeAddr)
-
-Entity.renderAsChildOf(Node):
-  if this.shader != nil:
-    this.shader.render(gamestate.runTime, gamestate.resolution)
 
