@@ -29,8 +29,8 @@ type
     useFixedDeltaTime*: bool
 
     postProcessingShader*: Shader
-    gameWidth: int
-    gameHeight: int
+    gameWidth*: int
+    gameHeight*: int
 
 proc detectWindowScaling(this: Engine): Vector
 proc update*(this: Engine, deltaTime: float)
@@ -177,31 +177,54 @@ proc loop(this: Engine) =
       aspectX = float(this.screen.w) / float(image.w)
       aspectY = float(this.screen.h) / float(image.h)
       maxAspect = max(aspectX, aspectY)
-      offsetX = max(0.001, this.scene.camera.x - floor(this.scene.camera.x))
-      offsetY = max(0.001, this.scene.camera.y - floor(this.scene.camera.y))
-      # TODO: The second 1.0 should be the plane's z coordinate
-      inversedScalar = 1.0 / (1.0 - this.scene.camera.z)
 
-    # NOTE: The offset ISN'T scaled, we scale it ourselves.
-    var rect: sdl_gpu.Rect = (
-      cfloat(offsetX * inversedScalar - 1.0),
-      cfloat(offsetY * inversedScalar - 1.0),
-      cfloat image.w,
-      cfloat image.h,
-    )
+    if this.scene.camera != nil:
+      let
+        offsetX = max(0.001, this.scene.camera.x - floor(this.scene.camera.x))
+        offsetY = max(0.001, this.scene.camera.y - floor(this.scene.camera.y))
+        # TODO: The second 1.0 should be the plane's z coordinate
+        # This all should be put into Scene, and have it be responsible for rendering each layer
+        inversedScalar = 1.0 / (1.0 - this.scene.camera.z)
 
-    # TODO: Weird artifact on the bottom/right edges
-    # Because there's nothing to sample outside the image range...
+      # NOTE: The offset ISN'T scaled, we scale it ourselves.
+      var rect: sdl_gpu.Rect = (
+        cfloat(offsetX * inversedScalar - 1.0),
+        cfloat(offsetY * inversedScalar - 1.0),
+        cfloat image.w,
+        cfloat image.h,
+      )
 
-    blitScale(
-      image,
-      rect.addr,
-      this.screen,
-      float(this.screen.w) / 2.0,
-      float(this.screen.h) / 2.0,
-      maxAspect,
-      maxAspect
-    )
+      if this.postProcessingShader != nil:
+        this.postProcessingShader.render(gamestate.runTime, gamestate.resolution)
+
+      blitScale(
+        image,
+        rect.addr,
+        this.screen,
+        float(this.screen.w) / 2.0,
+        float(this.screen.h) / 2.0,
+        maxAspect,
+        maxAspect
+      )
+
+      if this.postProcessingShader != nil:
+        this.postProcessingShader.deactivate()
+
+    else:
+      if this.postProcessingShader != nil:
+        this.postProcessingShader.render(gamestate.runTime, gamestate.resolution)
+
+      blitScale(
+        image,
+        nil,
+        this.screen,
+        float(this.screen.w) / 2.0,
+        float(this.screen.h) / 2.0,
+        maxAspect,
+        maxAspect
+      )
+      if this.postProcessingShader != nil:
+        this.postProcessingShader.deactivate()
 
     flip(this.screen)
 
@@ -268,12 +291,6 @@ proc render*(this: Engine, ctx: Target) =
   this.ui.layout(gamestate.resolution.x, gamestate.resolution.y)
   this.ui.render(ctx)
 
-  if this.postProcessingShader != nil:
-    this.postProcessingShader.render(gamestate.runTime, gamestate.resolution)
-
   # Restore normal matrix
   popMatrix()
-
-  # Render the image to the screen
-  ctx.image.blit(nil, this.screen, gamestate.resolution.x * 0.5, gamestate.resolution.y * 0.5)
 

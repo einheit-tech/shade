@@ -6,10 +6,9 @@ uniform mat4 gpu_ModelViewProjectionMatrix;
 varying vec4 color;
 varying vec2 texCoord;
 
-void main(void)
-{
-	color = gpu_Color;
-	texCoord = vec2(gpu_TexCoord);
-	gl_Position = gpu_ModelViewProjectionMatrix * vec4(gpu_Vertex, 1.0);
+void main(void) {
+  color = gpu_Color;
+  texCoord = vec2(gpu_TexCoord);
+  gl_Position = gpu_ModelViewProjectionMatrix * vec4(gpu_Vertex, 1.0);
 }
 

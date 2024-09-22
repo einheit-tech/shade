@@ -17,26 +17,23 @@ const
 
 let shaderProgram = newShader(vertShaderPath, fragShaderPath)
 
-type Background = ref object of Node
+type Background = ref object of Entity
 
 Background.renderAsEntityChild:
   ctx.rectangleFilled(
-    0,
-    0,
-    gamestate.resolution.x,
-    gamestate.resolution.y,
+    10,
+    10,
+    50,
+    50,
     WHITE
   )
 
 let bg = Background(shader: shaderProgram)
-initNode(Node bg, RENDER)
+initNode(Entity bg, RENDER)
 layer.addChild(bg)
 
-Input.addKeyPressedListener(
-  K_ESCAPE,
-  proc(key: Keycode, state: KeyState) =
-    Game.stop()
-)
+Input.onKeyEvent(K_ESCAPE):
+  Game.stop()
 
 Game.start()
 

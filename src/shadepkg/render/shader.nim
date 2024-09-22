@@ -1,6 +1,5 @@
 import ../game/gamestate
 import sdl2_nim/sdl_gpu
-# import ../math/mathutils
 import ../math/vector2
 
 var
@@ -61,6 +60,12 @@ proc updateTimeUniform*(this: Shader, time: float) =
 
 proc updateResolutionUniform(this: Shader, screenResolution: Vector) =
   setUniformfv(this.resolutionUniformID, 2, 1, cast[ptr cfloat](resolution.addr))
+
+proc activate*(this: Shader) =
+  activateShaderProgram(this.programID, this.shaderBlock.addr)
+
+proc deactivate*(this: Shader) =
+  deactivateShaderProgram()
 
 proc render*(this: Shader, time: float, screenResolution: Vector) =
   activateShaderProgram(this.programID, this.shaderBlock.addr)

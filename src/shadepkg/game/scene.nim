@@ -3,8 +3,7 @@ import ../render/render
 
 import
   layer,
-  camera,
-  gamestate
+  camera
 
 export layer
 
