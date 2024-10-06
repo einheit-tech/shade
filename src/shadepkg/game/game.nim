@@ -6,6 +6,7 @@ import
 import
   refresh_rate_calculator as refresh_rate_calculator_module,
   scene,
+  camera,
   gamestate,
   ../input/inputhandler,
   ../audio/audioplayer,
@@ -28,6 +29,8 @@ type
     useFixedDeltaTime*: bool
 
     postProcessingShader*: Shader
+    gameWidth*: int
+    gameHeight*: int
 
 proc detectWindowScaling(this: Engine): Vector
 proc update*(this: Engine, deltaTime: float)
@@ -69,6 +72,9 @@ proc initEngineSingleton*(
   var refreshRate = 0
 
   Game = Engine()
+
+  Game.gameWidth = gameWidth
+  Game.gameHeight = gameHeight
 
   if target.context != nil:
     Game.window = getWindowFromId(target.context.windowID)
@@ -115,9 +121,6 @@ proc initEngineSingleton*(
   Input.onEvent(FINGERDOWN):
     Game.ui.handlePress(float e.tfinger.x, float e.tfinger.y)
 
-template screen*(this: Engine): Target =
-  this.screen
-
 template scene*(this: Engine): Scene =
   this.scene
 
@@ -158,24 +161,87 @@ proc loop(this: Engine) =
     refreshRateCalculator: RefreshRateCalculator
 
   var
-    imageNeedsResize = false
-    image = createImage(this.screen.w, this.screen.h, FORMAT_RGBA)
+    # NOTE: Adding 2 so we can center the smooth camera rect by 1 pixel, below
+    image = createImage(uint16 this.gameWidth + 2, uint16 this.gameHeight + 2, FORMAT_RGBA)
     renderTarget = getTarget(image)
 
-  gamestate.onResolutionChanged:
-    imageNeedsResize = true
+  # TODO: Need this option for pixel art
+  image.setImageFilter(FILTER_LINEAR)
 
   while not this.shouldExit:
-    if imageNeedsResize:
-      freeImage(image)
-      image = createImage(this.screen.w, this.screen.h, FORMAT_RGBA)
-      renderTarget = getTarget(image)
-
     this.handleEvents()
     this.update(deltaTime)
     this.render(renderTarget)
-    Input.resetFrameSpecificState()
+
+    let
+      aspectX = float(this.screen.w) / float(image.w)
+      aspectY = float(this.screen.h) / float(image.h)
+      maxAspect = max(aspectX, aspectY)
+
+    if this.scene.camera != nil:
+      let
+        offsetX = max(0.001, this.scene.camera.x - floor(this.scene.camera.x))
+        offsetY = max(0.001, this.scene.camera.y - floor(this.scene.camera.y))
+        # TODO: The second 1.0 should be the plane's z coordinate
+        # This all should be put into Scene, and have it be responsible for rendering each layer
+        inversedScalar = 1.0 / (1.0 - this.scene.camera.z)
+
+      # NOTE: The offset ISN'T scaled, we scale it ourselves.
+      var rect: sdl_gpu.Rect = (
+        cfloat(offsetX * inversedScalar - 1.0),
+        cfloat(offsetY * inversedScalar - 1.0),
+        cfloat image.w,
+        cfloat image.h,
+      )
+
+      if this.postProcessingShader != nil:
+        renderWith(this.postProcessingShader):
+          blitScale(
+            image,
+            rect.addr,
+            this.screen,
+            float(this.screen.w) / 2.0,
+            float(this.screen.h) / 2.0,
+            maxAspect,
+            maxAspect
+          )
+      else:
+        blitScale(
+          image,
+          rect.addr,
+          this.screen,
+          float(this.screen.w) / 2.0,
+          float(this.screen.h) / 2.0,
+          maxAspect,
+          maxAspect
+        )
+
+    else:
+      if this.postProcessingShader != nil:
+        renderWith(this.postProcessingShader):
+          blitScale(
+            image,
+            nil,
+            this.screen,
+            float(this.screen.w) / 2.0,
+            float(this.screen.h) / 2.0,
+            maxAspect,
+            maxAspect
+          )
+      else:
+        blitScale(
+          image,
+          nil,
+          this.screen,
+          float(this.screen.w) / 2.0,
+          float(this.screen.h) / 2.0,
+          maxAspect,
+          maxAspect
+        )
+
     flip(this.screen)
+
+    Input.resetFrameSpecificState()
 
     let time = getMonoTime().ticks
     let elapsedNanos = time - previousTimeNanos
@@ -238,12 +304,6 @@ proc render*(this: Engine, ctx: Target) =
   this.ui.layout(gamestate.resolution.x, gamestate.resolution.y)
   this.ui.render(ctx)
 
-  if this.postProcessingShader != nil:
-    this.postProcessingShader.render(gamestate.runTime, gamestate.resolution)
-
   # Restore normal matrix
   popMatrix()
-
-  # Render the image to the screen
-  ctx.image.blit(nil, this.screen, gamestate.resolution.x * 0.5, gamestate.resolution.y * 0.5)
 

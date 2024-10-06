@@ -186,7 +186,9 @@ proc initInputHandlerSingleton*(windowScaling: Vector) =
     customActions: initTable[string, ptr InputState]()
   )
 
-  if init(INIT_GAMECONTROLLER) != 0:
+  # TODO: Put this back in when it stops lagging
+  # if init(INIT_GAMECONTROLLER) != 0:
+  if init(INIT_EVENTS) != 0:
     raise newException(Exception, "Unable to init controller support")
 
 proc addListener*(this: InputHandler, eventKind: EventKind, listener: EventListener) =

@@ -15,28 +15,31 @@ const
   fragShaderPath = "./examples/shaders/rectangle.frag"
   vertShaderPath = "./examples/shaders/common.vert"
 
+let (_, image) = Images.loadImage("./examples/assets/images/default.png")
+setImageFilter(image, FILTER_NEAREST)
+
 let shaderProgram = newShader(vertShaderPath, fragShaderPath)
 
-type Background = ref object of Node
+type Rectangle = ref object of Entity
+  image: Image
 
-Background.renderAsEntityChild:
-  ctx.rectangleFilled(
-    0,
-    0,
-    gamestate.resolution.x,
-    gamestate.resolution.y,
-    WHITE
+Rectangle.renderAsEntityChild:
+  blitScale(
+    image,
+    nil,
+    ctx,
+    gamestate.resolution.x / 2,
+    gamestate.resolution.y / 2,
+    16,
+    16,
   )
 
-let bg = Background(shader: shaderProgram)
-initNode(Node bg, RENDER)
+let bg = Rectangle(shader: shaderProgram)
+initNode(Entity bg, RENDER)
 layer.addChild(bg)
 
-Input.addKeyPressedListener(
-  K_ESCAPE,
-  proc(key: Keycode, state: KeyState) =
-    Game.stop()
-)
+Input.onKeyEvent(K_ESCAPE):
+  Game.stop()
 
 Game.start()
 

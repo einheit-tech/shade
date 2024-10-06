@@ -125,6 +125,7 @@ template handleCollision*(this: PhysicsLayer, bodyA, bodyB: PhysicsBody) =
     if collision == nil:
       continue
 
+    # TODO: Need a way to not "resolve" the collision, but notify of overlap?
     collision.resolve(bodyA, bodyB)
 
     # Register the collision for any existing callbacks.

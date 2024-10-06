@@ -6,7 +6,6 @@
 
 varying vec2 vertex;
 varying vec2 texCoord;
-varying vec4 color;
 
 uniform sampler2D tex;
 uniform float time;
@@ -106,7 +105,8 @@ void main(void) {
   }
 
   float t = time * 0.5;
-  vec2 coord = gl_FragCoord.xy * 0.015 - vec2(t * 0.5, resolution.y / 2.0);
+  ivec2 texSize = textureSize(tex, 0);
+  vec2 coord = gl_FragCoord.xy * 0.015 - vec2(t * 0.5, texSize.y / 2.0);
   float speed = 0.3 * SPEED;
   float limit = 0.1;
   float border = 0.025;

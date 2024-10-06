@@ -179,7 +179,7 @@ macro addNewAnimationTrack*[T: TrackType](
   field: T,
   frames: openArray[Keyframe[T]],
   wrapInterpolation: bool = false,
-  ease: EasingFunction[T] = lerp
+  ease: EasingFunction[T] = mathutils.lerp
 ) =
   ## Adds a new "track" to the animation.
   ## This is a value that's updated at set intervals as the animation is updated.

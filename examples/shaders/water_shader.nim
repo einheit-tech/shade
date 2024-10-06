@@ -15,21 +15,25 @@ const
   fragShaderPath = "./examples/shaders/water.frag"
   vertShaderPath = "./examples/shaders/common.vert"
 
+let (_, image) = Images.loadImage("./examples/assets/images/default.png")
+
 let shaderProgram = newShader(vertShaderPath, fragShaderPath)
 
-type Background = ref object of Entity
+type Rectangle = ref object of Node
 
-Background.renderAsEntityChild:
-  ctx.rectangleFilled(
-    0,
-    0,
-    gamestate.resolution.x,
-    gamestate.resolution.y,
-    WHITE
+Rectangle.renderAsNodeChild:
+  blitScale(
+    image,
+    nil,
+    ctx,
+    gamestate.resolution.x / 2,
+    gamestate.resolution.y / 2,
+    16,
+    16,
   )
 
-let bg = Background(shader: shaderProgram)
-initEntity(Entity bg, RENDER)
+let bg = Rectangle(shader: shaderProgram)
+initNode(Node bg, RENDER)
 layer.addChild(bg)
 
 Input.onKeyPressed(K_ESCAPE):
